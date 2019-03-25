@@ -6,10 +6,10 @@
 
 .DESCRIPTION
 
-    ADRecon is a tool which extracts various artifacts (as highlighted below) out of an AD environment in a specially formatted Microsoft Excel report that includes summary views with metrics to facilitate analysis.
-    The report can provide a holistic picture of the current state of the target AD environment.
+    ADRecon is a tool which extracts and combines various artefacts (as highlighted below) out of an AD environment. The information can be presented in a specially formatted Microsoft Excel report that includes summary views with metrics to facilitate analysis and provide a holistic picture of the current state of the target AD environment.
     The tool is useful to various classes of security professionals like auditors, DFIR, students, administrators, etc. It can also be an invaluable post-exploitation tool for a penetration tester.
-    It can be run from any workstation that is connected to the environment even hosts that are not domain members. Furthermore, the tool can be executed in the context of a non-privileged (i.e. standard domain user) accounts. Fine Grained Password Policy, LAPS and BitLocker may require Privileged user accounts.
+    It can be run from any workstation that is connected to the environment, even hosts that are not domain members. Furthermore, the tool can be executed in the context of a non-privileged (i.e. standard domain user) account.
+    Fine Grained Password Policy, LAPS and BitLocker may require Privileged user accounts.
     The tool will use Microsoft Remote Server Administration Tools (RSAT) if available, otherwise it will communicate with the Domain Controller using LDAP.
     The following information is gathered by the tool:
     - Forest;
@@ -17,20 +17,23 @@
     - Trusts;
     - Sites;
     - Subnets;
-    - Default Password Policy;
-    - Fine Grained Password Policy (if implemented);
+    - Default and Fine Grained Password Policy (if implemented);
     - Domain Controllers, SMB versions, whether SMB Signing is supported and FSMO roles;
     - Users and their attributes;
-    - Service Principal Names;
+    - Service Principal Names (SPNs);
     - Groups and memberships;
-    - Organizational Units (OUs) and their ACLs;
-    - Group Policy Object details;
+    - Organizational Units (OUs);
+    - Group Policy Object and gPLink details;
     - DNS Zones and Records;
     - Printers;
     - Computers and their attributes;
+    - PasswordAttributes (Experimental);
     - LAPS passwords (if implemented);
-    - BitLocker Recovery Keys (if implemented); and
-    - Domain GPO Report (requires RSAT).
+    - BitLocker Recovery Keys (if implemented);
+    - ACLs (DACLs and SACLs) for the Domain, OUs, Root Containers, GPO, Users, Computers and Groups objects;
+    - GPOReport (requires RSAT);
+    - Kerberoast (not included in the default collection method); and
+    - Domain accounts used for service accounts (requires privileged account and not included in the default collection method).
 
     Author     : Prashant Mahajan
     Company    : https://www.senseofsecurity.com.au
@@ -74,8 +77,8 @@
 	Path for ADRecon output folder to save the files and the ADRecon-Report.xlsx. (The folder specified will be created if it doesn't exist)
 
 .PARAMETER Collect
-    What attributes to collect; Comma separated; e.g Forest,Domain (Default all)
-    Valid values include: Forest, Domain, Trusts, Sites, Subnets, PasswordPolicy, FineGrainedPasswordPolicy, DomainControllers, Users, UserSPNs, Groups, GroupMembers, OUs, OUPermissions, GPOs, GPOReport, DNSZones, Printers, Computers, ComputerSPNs, LAPS, BitLocker.
+    Which modules to run; Comma separated; e.g Forest,Domain (Default all except Kerberoast, DomainAccountsusedforServiceLogon)
+    Valid values include: Forest, Domain, Trusts, Sites, Subnets, PasswordPolicy, FineGrainedPasswordPolicy, DomainControllers, Users, UserSPNs, PasswordAttributes, Groups, GroupMembers, OUs, GPOs, gPLinks, DNSZones, Printers, Computers, ComputerSPNs, LAPS, BitLocker, ACLs, GPOReport, Kerberoast, DomainAccountsusedforServiceLogon.
 
 .PARAMETER OutputType
     Output Type; Comma seperated; e.g STDOUT,CSV,XML,JSON,HTML,Excel (Default STDOUT with -Collect parameter, else CSV and Excel).
@@ -83,6 +86,9 @@
 
 .PARAMETER DormantTimeSpan
     Timespan for Dormant accounts. (Default 90 days)
+
+.PARAMETER PassMaxAge
+    Maximum machine account password age. (Default 30 days)
 
 .PARAMETER PageSize
     The PageSize to set for the LDAP searcher object.
@@ -132,24 +138,30 @@
     [*] Commencing - <timestamp>
     [-] Domain
     [-] Forest
+    [-] Trusts
+    [-] Sites
+    [-] Subnets
     [-] Default Password Policy
     [-] Fine Grained Password Policy - May need a Privileged Account
     [-] Domain Controllers
-    [-] Domain Users - May take some time
-    [-] Domain User SPNs
-    [-] Domain Groups - May take some time
-    [-] Domain Group Memberships - May take some time
-    [-] Domain OrganizationalUnits (OUs)
-    [-] Domain OrganizationalUnits Permissions - May take some time
-    [-] Domain GPOs
-    [-] Domain DNS Zones and Records
-    [-] Domain Printers
-    [-] Domain Computers - May take some time
-    [-] Domain Computer SPNs
+    [-] Users - May take some time
+    [-] User SPNs
+    [-] PasswordAttributes - Experimental
+    [-] Groups - May take some time
+    [-] Group Memberships - May take some time
+    [-] OrganizationalUnits (OUs)
+    [-] GPOs
+    [-] gPLinks - Scope of Management (SOM)
+    [-] DNS Zones and Records
+    [-] Printers
+    [-] Computers - May take some time
+    [-] Computer SPNs
     [-] LAPS - Needs Privileged Account
     WARNING: [*] LAPS is not implemented.
     [-] BitLocker Recovery Keys - Needs Privileged Account
-    [-] Domain GPO Report - May take some time
+    [-] ACLs - May take some time
+    WARNING: [*] SACLs - Currently, the module is only supported with LDAP.
+    [-] GPOReport - May take some time
     WARNING: [EXCEPTION] Current security context is not associated with an Active Directory domain or forest.
     WARNING: [*] Run the tool using RUNAS.
     WARNING: [*] runas /user:<Domain FQDN>\<Username> /netonly powershell.exe
@@ -169,32 +181,29 @@
     [*] Commencing - <timestamp>
     [-] Domain
     [-] Forest
+    [-] Trusts
+    [-] Sites
+    [-] Subnets
     [-] Default Password Policy
     [-] Fine Grained Password Policy - May need a Privileged Account
     [-] Domain Controllers
-    [-] Domain Users - May take some time
-    [-] Domain User SPNs
-    [-] Domain Groups - May take some time
-    [-] Domain Group Memberships - May take some time
-    [-] Domain OrganizationalUnits (OUs)
-    [-] Domain OrganizationalUnits Permissions - May take some time
-    [-] Domain GPOs
-    [-] Domain DNS Zones and Records
-    WARNING: [*] DomainDnsZones, try running with a Privileged Account
-    WARNING: [EXCEPTION] Exception calling "FindAll" with "0" argument(s): "The specified directory service attribute or
-    value does not exist.
-    "
-    WARNING: [*] ForestDnsZones, try running with a Privileged Account
-    WARNING: [EXCEPTION] Exception calling "FindAll" with "0" argument(s): "The specified directory service attribute or
-    value does not exist.
-    "
-    [-] Domain Printers
-    [-] Domain Computers - May take some time
-    [-] Domain Computer SPNs
+    [-] Users - May take some time
+    [-] User SPNs
+    [-] PasswordAttributes - Experimental
+    [-] Groups - May take some time
+    [-] Group Memberships - May take some time
+    [-] OrganizationalUnits (OUs)
+    [-] GPOs
+    [-] gPLinks - Scope of Management (SOM)
+    [-] DNS Zones and Records
+    [-] Printers
+    [-] Computers - May take some time
+    [-] Computer SPNs
     [-] LAPS - Needs Privileged Account
     WARNING: [*] LAPS is not implemented.
     [-] BitLocker Recovery Keys - Needs Privileged Account
-    [-] Domain GPO Report - May take some time
+    [-] ACLs - May take some time
+    [-] GPOReport - May take some time
     WARNING: [*] Currently, the module is only supported with ADWS.
     [*] Total Execution Time (mins): <minutes>
     [*] Output Directory: C:\ADRecon-Report-<timestamp>
@@ -205,7 +214,7 @@
 
 .LINK
 
-https://github.com/sense-of-security/ADRecon
+    https://github.com/sense-of-security/ADRecon
 #>
 
 [CmdletBinding()]
@@ -221,14 +230,14 @@ param
     [Parameter(Mandatory = $false, HelpMessage = "Domain Credentials.")]
     [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Path for ADRecon output folder containing the CSV files to generate the ADRecon-Report-<ddMMMyy>.xlsx. Use it to generate the ADRecon-Report-<ddMMMyy>.xlsx when Microsoft Excel is not installed on the host used to run ADRecon.")]
+    [Parameter(Mandatory = $false, HelpMessage = "Path for ADRecon output folder containing the CSV files to generate the ADRecon-Report.xlsx. Use it to generate the ADRecon-Report.xlsx when Microsoft Excel is not installed on the host used to run ADRecon.")]
     [string] $GenExcel,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Path for ADRecon output folder to save the CSV/XML/JSON/HTML files and the ADRecon-Report-<ddMMMyy>.xlsx. (The folder specified will be created if it doesn't exist)")]
+    [Parameter(Mandatory = $false, HelpMessage = "Path for ADRecon output folder to save the CSV/XML/JSON/HTML files and the ADRecon-Report.xlsx. (The folder specified will be created if it doesn't exist)")]
     [string] $OutputDir,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Which modules to run; Comma separated; e.g Forest,Domain (Default all) Valid values include: Forest, Domain, Trusts, Sites, Subnets, PasswordPolicy, FineGrainedPasswordPolicy, DomainControllers, Users, UserSPNs, Groups, GroupMembers, OUs, OUPermissions, GPOs, GPOReport, DNSZones, Printers, Computers, ComputerSPNs, LAPS, BitLocker")]
-    [ValidateSet('Forest', 'Domain', 'Trusts', 'Sites', 'Subnets', 'PasswordPolicy', 'FineGrainedPasswordPolicy', 'DomainControllers', 'Users', 'UserSPNs', 'Groups', 'GroupMembers', 'OUs', 'OUPermissions', 'GPOs', 'GPOReport', 'DNSZones', 'Printers', 'Computers', 'ComputerSPNs', 'LAPS', 'BitLocker', 'Default')]
+    [Parameter(Mandatory = $false, HelpMessage = "Which modules to run; Comma separated; e.g Forest,Domain (Default all except Kerberoast, DomainAccountsusedforServiceLogon) Valid values include: Forest, Domain, Trusts, Sites, Subnets, PasswordPolicy, FineGrainedPasswordPolicy, DomainControllers, Users, UserSPNs, PasswordAttributes, Groups, GroupMembers, OUs, GPOs, gPLinks, DNSZones, Printers, Computers, ComputerSPNs, LAPS, BitLocker, ACLs, GPOReport, Kerberoast, DomainAccountsusedforServiceLogon")]
+    [ValidateSet('Forest', 'Domain', 'Trusts', 'Sites', 'Subnets', 'PasswordPolicy', 'FineGrainedPasswordPolicy', 'DomainControllers', 'Users', 'UserSPNs', 'PasswordAttributes', 'Groups', 'GroupMembers', 'OUs', 'GPOs', 'gPLinks', 'DNSZones', 'Printers', 'Computers', 'ComputerSPNs', 'LAPS', 'BitLocker', 'ACLs', 'GPOReport', 'Kerberoast', 'DomainAccountsusedforServiceLogon', 'Default')]
     [array] $Collect = 'Default',
 
     [Parameter(Mandatory = $false, HelpMessage = "Output type; Comma seperated; e.g STDOUT,CSV,XML,JSON,HTML,Excel (Default STDOUT with -Collect parameter, else CSV and Excel)")]
@@ -258,11 +267,13 @@ param
 $ADWSSource = @"
 // Thanks Dennis Albuquerque for the C# multithreading code
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
+using System.DirectoryServices;
 using System.Security.Principal;
+using System.Security.AccessControl;
 using System.Management.Automation;
 
 namespace ADRecon
@@ -272,6 +283,11 @@ namespace ADRecon
         private static DateTime Date1;
         private static int PassMaxAge;
         private static int DormantTimeSpan;
+        private static Dictionary<String, String> AdGroupDictionary = new Dictionary<String, String>();
+        private static String DomainSID;
+        private static Dictionary<String, String> AdGPODictionary = new Dictionary<String, String>();
+        private static Hashtable GUIDs = new Hashtable();
+        private static Dictionary<String, String> AdSIDDictionary = new Dictionary<String, String>();
         private static readonly HashSet<string> Groups = new HashSet<string> ( new String[] {"268435456", "268435457", "536870912", "536870913"} );
         private static readonly HashSet<string> Users = new HashSet<string> ( new String[] { "805306368" } );
         private static readonly HashSet<string> Computers = new HashSet<string> ( new String[] { "805306369" }) ;
@@ -324,7 +340,7 @@ namespace ADRecon
             {"\"", "'"}
         };
 
-        public static String CleanString(String StringtoClean)
+        public static String CleanString(Object StringtoClean)
         {
             // Remove extra spaces and new lines
             String CleanedString = String.Join(" ", ((Convert.ToString(StringtoClean)).Split((string[]) null, StringSplitOptions.RemoveEmptyEntries)));
@@ -340,11 +356,11 @@ namespace ADRecon
             return ADRObject.Length;
         }
 
-        public static Object[] UserParser(Object[] AdUsers, DateTime Date1, int PassMaxAge, int DormantTimeSpan, int numOfThreads)
+        public static Object[] UserParser(Object[] AdUsers, DateTime Date1, int DormantTimeSpan, int PassMaxAge, int numOfThreads)
         {
             ADWSClass.Date1 = Date1;
-            ADWSClass.PassMaxAge = PassMaxAge;
             ADWSClass.DormantTimeSpan = DormantTimeSpan;
+            ADWSClass.PassMaxAge = PassMaxAge;
 
             Object[] ADRObj = runProcessor(AdUsers, numOfThreads, "Users");
             return ADRObj;
@@ -362,9 +378,38 @@ namespace ADRecon
             return ADRObj;
         }
 
-        public static Object[] GroupMemberParser(Object[] AdGroupMembers, int numOfThreads)
+        public static Object[] GroupMemberParser(Object[] AdGroups, Object[] AdGroupMembers, String DomainSID, int numOfThreads)
         {
+            ADWSClass.AdGroupDictionary = new Dictionary<String, String>();
+            runProcessor(AdGroups, numOfThreads, "GroupsDictionary");
+            ADWSClass.DomainSID = DomainSID;
             Object[] ADRObj = runProcessor(AdGroupMembers, numOfThreads, "GroupMembers");
+            return ADRObj;
+        }
+
+        public static Object[] OUParser(Object[] AdOUs, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(AdOUs, numOfThreads, "OUs");
+            return ADRObj;
+        }
+
+        public static Object[] GPOParser(Object[] AdGPOs, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(AdGPOs, numOfThreads, "GPOs");
+            return ADRObj;
+        }
+
+        public static Object[] SOMParser(Object[] AdGPOs, Object[] AdSOMs, int numOfThreads)
+        {
+            ADWSClass.AdGPODictionary = new Dictionary<String, String>();
+            runProcessor(AdGPOs, numOfThreads, "GPOsDictionary");
+            Object[] ADRObj = runProcessor(AdSOMs, numOfThreads, "SOMs");
+            return ADRObj;
+        }
+
+        public static Object[] PrinterParser(Object[] ADPrinters, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(ADPrinters, numOfThreads, "Printers");
             return ADRObj;
         }
 
@@ -381,6 +426,28 @@ namespace ADRecon
         public static Object[] ComputerSPNParser(Object[] AdComputers, int numOfThreads)
         {
             Object[] ADRObj = runProcessor(AdComputers, numOfThreads, "ComputerSPNs");
+            return ADRObj;
+        }
+
+        public static Object[] LAPSParser(Object[] AdComputers, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(AdComputers, numOfThreads, "LAPS");
+            return ADRObj;
+        }
+
+        public static Object[] DACLParser(Object[] ADObjects, Object PSGUIDs, int numOfThreads)
+        {
+            ADWSClass.AdSIDDictionary = new Dictionary<String, String>();
+            runProcessor(ADObjects, numOfThreads, "SIDDictionary");
+            ADWSClass.GUIDs = (Hashtable) PSGUIDs;
+            Object[] ADRObj = runProcessor(ADObjects, numOfThreads, "DACLs");
+            return ADRObj;
+        }
+
+        public static Object[] SACLParser(Object[] ADObjects, Object PSGUIDs, int numOfThreads)
+        {
+            ADWSClass.GUIDs = (Hashtable) PSGUIDs;
+            Object[] ADRObj = runProcessor(ADObjects, numOfThreads, "SACLs");
             return ADRObj;
         }
 
@@ -427,12 +494,32 @@ namespace ADRecon
                     return new UserSPNRecordProcessor();
                 case "Groups":
                     return new GroupRecordProcessor();
+                case "GroupsDictionary":
+                    return new GroupRecordDictionaryProcessor();
                 case "GroupMembers":
                     return new GroupMemberRecordProcessor();
+                case "OUs":
+                    return new OURecordProcessor();
+                case "GPOs":
+                    return new GPORecordProcessor();
+                case "GPOsDictionary":
+                    return new GPORecordDictionaryProcessor();
+                case "SOMs":
+                    return new SOMRecordProcessor();
+                case "Printers":
+                    return new PrinterRecordProcessor();
                 case "Computers":
                     return new ComputerRecordProcessor();
                 case "ComputerSPNs":
                     return new ComputerSPNRecordProcessor();
+                case "LAPS":
+                    return new LAPSRecordProcessor();
+                case "SIDDictionary":
+                    return new SIDRecordDictionaryProcessor();
+                case "DACLs":
+                    return new DACLRecordProcessor();
+                case "SACLs":
+                    return new SACLRecordProcessor();
             }
             throw new ArgumentException("Invalid processor type " + name);
         }
@@ -478,13 +565,23 @@ namespace ADRecon
                     PSObject AdUser = (PSObject) record;
                     bool? Enabled = null;
                     bool MustChangePasswordatLogon = false;
-                    int DaysSinceLastPasswordChange = -1;
                     bool PasswordNotChangedafterMaxAge = false;
                     bool NeverLoggedIn = false;
-                    int DaysSinceLastLogon = -1;
+                    int? DaysSinceLastLogon = null;
+                    int? DaysSinceLastPasswordChange = null;
+                    int? AccountExpirationNumofDays = null;
                     bool Dormant = false;
                     String SIDHistory = "";
-                    DateTime PasswordLastSet = Convert.ToDateTime(AdUser.Members["PasswordLastSet"].Value);
+                    bool? KerberosRC4 = null;
+                    bool? KerberosAES128 = null;
+                    bool? KerberosAES256 = null;
+                    String DelegationType = null;
+                    String DelegationProtocol = null;
+                    String DelegationServices = null;
+                    DateTime? LastLogonDate = null;
+                    DateTime? PasswordLastSet = null;
+                    DateTime? AccountExpires = null;
+
                     try
                     {
                         // The Enabled field can be blank which raises an exception. This may occur when the user is not allowed to query the UserAccountControl attribute.
@@ -492,24 +589,14 @@ namespace ADRecon
                     }
                     catch //(Exception e)
                     {
-                        //    Console.WriteLine("{0} Exception caught.", e);
+                        //Console.WriteLine("{0} Exception caught.", e);
                     }
-                    if (Convert.ToString(AdUser.Members["pwdlastset"].Value) == "0")
+                    if (AdUser.Members["lastLogonTimeStamp"].Value != null)
                     {
-                        MustChangePasswordatLogon = true;
-                    }
-                    else
-                    {
-                        DaysSinceLastPasswordChange = Math.Abs((Date1 - PasswordLastSet).Days);
-                        if (DaysSinceLastPasswordChange > PassMaxAge)
-                        {
-                            PasswordNotChangedafterMaxAge = true;
-                        }
-                    }
-                    DateTime LastLogonDate = Convert.ToDateTime(AdUser.Members["LastLogonDate"].Value);
-                    if (AdUser.Members["LastLogonDate"].Value != null)
-                    {
-                        DaysSinceLastLogon = Math.Abs((Date1 - LastLogonDate).Days);
+                        //LastLogonDate = DateTime.FromFileTime((long)(AdUser.Members["lastLogonTimeStamp"].Value));
+                        // LastLogonDate is lastLogonTimeStamp converted to local time
+                        LastLogonDate = Convert.ToDateTime(AdUser.Members["LastLogonDate"].Value);
+                        DaysSinceLastLogon = Math.Abs((Date1 - (DateTime)LastLogonDate).Days);
                         if (DaysSinceLastLogon > DormantTimeSpan)
                         {
                             Dormant = true;
@@ -519,6 +606,44 @@ namespace ADRecon
                     {
                         NeverLoggedIn = true;
                     }
+                    if (Convert.ToString(AdUser.Members["pwdLastSet"].Value) == "0")
+                    {
+                        if ((bool) AdUser.Members["PasswordNeverExpires"].Value == false)
+                        {
+                            MustChangePasswordatLogon = true;
+                        }
+                    }
+                    if (AdUser.Members["PasswordLastSet"].Value != null)
+                    {
+                        //PasswordLastSet = DateTime.FromFileTime((long)(AdUser.Members["pwdLastSet"].Value));
+                        // PasswordLastSet is pwdLastSet converted to local time
+                        PasswordLastSet = Convert.ToDateTime(AdUser.Members["PasswordLastSet"].Value);
+                        DaysSinceLastPasswordChange = Math.Abs((Date1 - (DateTime)PasswordLastSet).Days);
+                        if (DaysSinceLastPasswordChange > PassMaxAge)
+                        {
+                            PasswordNotChangedafterMaxAge = true;
+                        }
+                    }
+                    //https://msdn.microsoft.com/en-us/library/ms675098(v=vs.85).aspx
+                    //if ((Int64) AdUser.Members["accountExpires"].Value != (Int64) 9223372036854775807)
+                    //{
+                        //if ((Int64) AdUser.Members["accountExpires"].Value != (Int64) 0)
+                        if (AdUser.Members["AccountExpirationDate"].Value != null)
+                        {
+                            try
+                            {
+                                //AccountExpires = DateTime.FromFileTime((long)(AdUser.Members["accountExpires"].Value));
+                                // AccountExpirationDate is accountExpires converted to local time
+                                AccountExpires = Convert.ToDateTime(AdUser.Members["AccountExpirationDate"].Value);
+                                AccountExpirationNumofDays = ((int)((DateTime)AccountExpires - Date1).Days);
+
+                            }
+                            catch //(Exception e)
+                            {
+                                //Console.WriteLine("{0} Exception caught.", e);
+                            }
+                        }
+                    //}
                     Microsoft.ActiveDirectory.Management.ADPropertyValueCollection history = (Microsoft.ActiveDirectory.Management.ADPropertyValueCollection) AdUser.Members["SIDHistory"].Value;
                     if (history.Value is System.Security.Principal.SecurityIdentifier[])
                     {
@@ -533,36 +658,104 @@ namespace ADRecon
                     {
                         SIDHistory = history != null ? Convert.ToString(history.Value) : "";
                     }
+                    if (AdUser.Members["msDS-SupportedEncryptionTypes"].Value != null)
+                    {
+                        var userKerbEncFlags = (KerbEncFlags) AdUser.Members["msDS-SupportedEncryptionTypes"].Value;
+                        if (userKerbEncFlags != KerbEncFlags.ZERO)
+                        {
+                            KerberosRC4 = (userKerbEncFlags & KerbEncFlags.RC4_HMAC) == KerbEncFlags.RC4_HMAC;
+                            KerberosAES128 = (userKerbEncFlags & KerbEncFlags.AES128_CTS_HMAC_SHA1_96) == KerbEncFlags.AES128_CTS_HMAC_SHA1_96;
+                            KerberosAES256 = (userKerbEncFlags & KerbEncFlags.AES256_CTS_HMAC_SHA1_96) == KerbEncFlags.AES256_CTS_HMAC_SHA1_96;
+                        }
+                    }
+                    if ((bool) AdUser.Members["TrustedForDelegation"].Value)
+                    {
+                        DelegationType = "Unconstrained";
+                        DelegationServices = "Any";
+                    }
+                    if (AdUser.Members["msDS-AllowedToDelegateTo"] != null)
+                    {
+                        Microsoft.ActiveDirectory.Management.ADPropertyValueCollection delegateto = (Microsoft.ActiveDirectory.Management.ADPropertyValueCollection) AdUser.Members["msDS-AllowedToDelegateTo"].Value;
+                        if (delegateto.Value != null)
+                        {
+                            DelegationType = "Constrained";
+                            if (delegateto.Value is System.String[])
+                            {
+                                foreach (var value in (String[]) delegateto.Value)
+                                {
+                                    DelegationServices = DelegationServices + "," + Convert.ToString(value);
+                                }
+                                DelegationServices = DelegationServices.TrimStart(',');
+                            }
+                            else
+                            {
+                                DelegationServices = Convert.ToString(delegateto.Value);
+                            }
+                        }
+                    }
+                    if ((bool) AdUser.Members["TrustedToAuthForDelegation"].Value == true)
+                    {
+                        DelegationProtocol = "Any";
+                    }
+                    else if (DelegationType != null)
+                    {
+                        DelegationProtocol = "Kerberos";
+                    }
 
                     PSObject UserObj = new PSObject();
-                    UserObj.Members.Add(new PSNoteProperty("Name", AdUser.Members["Name"].Value));
                     UserObj.Members.Add(new PSNoteProperty("UserName", AdUser.Members["SamAccountName"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Name", CleanString(AdUser.Members["Name"].Value)));
                     UserObj.Members.Add(new PSNoteProperty("Enabled", Enabled));
+                    UserObj.Members.Add(new PSNoteProperty("Must Change Password at Logon", MustChangePasswordatLogon));
                     UserObj.Members.Add(new PSNoteProperty("Cannot Change Password", AdUser.Members["CannotChangePassword"].Value));
                     UserObj.Members.Add(new PSNoteProperty("Password Never Expires", AdUser.Members["PasswordNeverExpires"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("Must Change Password at Logon", MustChangePasswordatLogon));
-                    UserObj.Members.Add(new PSNoteProperty("Days Since Last Password Change", DaysSinceLastPasswordChange));
-                    UserObj.Members.Add(new PSNoteProperty("Password Not Changed after Max Age", PasswordNotChangedafterMaxAge));
-                    UserObj.Members.Add(new PSNoteProperty("Account Locked Out", AdUser.Members["LockedOut"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("Never Logged in", NeverLoggedIn));
-                    UserObj.Members.Add(new PSNoteProperty("Days Since Last Logon", DaysSinceLastLogon));
-                    UserObj.Members.Add(new PSNoteProperty("Dormant (> " + DormantTimeSpan + " days)", Dormant));
                     UserObj.Members.Add(new PSNoteProperty("Reversible Password Encryption", AdUser.Members["AllowReversiblePasswordEncryption"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("Password Not Required", AdUser.Members["PasswordNotRequired"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("Trusted for Delegation", AdUser.Members["TrustedForDelegation"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("Trusted to Auth for Delegation", AdUser.Members["TrustedToAuthForDelegation"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Smartcard Logon Required", AdUser.Members["SmartcardLogonRequired"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Permitted", !((bool) AdUser.Members["AccountNotDelegated"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos DES Only", AdUser.Members["UseDESKeyOnly"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos RC4", KerberosRC4));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos AES-128bit", KerberosAES128));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos AES-256bit", KerberosAES256));
                     UserObj.Members.Add(new PSNoteProperty("Does Not Require Pre Auth", AdUser.Members["DoesNotRequirePreAuth"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Never Logged in", NeverLoggedIn));
+                    UserObj.Members.Add(new PSNoteProperty("Logon Age (days)", DaysSinceLastLogon));
+                    UserObj.Members.Add(new PSNoteProperty("Password Age (days)", DaysSinceLastPasswordChange));
+                    UserObj.Members.Add(new PSNoteProperty("Dormant (> " + DormantTimeSpan + " days)", Dormant));
+                    UserObj.Members.Add(new PSNoteProperty("Password Age (> " + PassMaxAge + " days)", PasswordNotChangedafterMaxAge));
+                    UserObj.Members.Add(new PSNoteProperty("Account Locked Out", AdUser.Members["LockedOut"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Password Expired", AdUser.Members["PasswordExpired"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Password Not Required", AdUser.Members["PasswordNotRequired"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Type", DelegationType));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Protocol", DelegationProtocol));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Services", DelegationServices));
                     UserObj.Members.Add(new PSNoteProperty("Logon Workstations", AdUser.Members["LogonWorkstations"].Value));
                     UserObj.Members.Add(new PSNoteProperty("AdminCount", AdUser.Members["AdminCount"].Value));
                     UserObj.Members.Add(new PSNoteProperty("Primary GroupID", AdUser.Members["primaryGroupID"].Value));
                     UserObj.Members.Add(new PSNoteProperty("SID", AdUser.Members["SID"].Value));
                     UserObj.Members.Add(new PSNoteProperty("SIDHistory", SIDHistory));
-                    UserObj.Members.Add(new PSNoteProperty("Description", AdUser.Members["Description"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("Password LastSet", PasswordLastSet));
+                    UserObj.Members.Add(new PSNoteProperty("Description", CleanString(AdUser.Members["Description"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Title", CleanString(AdUser.Members["Title"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Department", CleanString(AdUser.Members["Department"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Company", CleanString(AdUser.Members["Company"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Manager", CleanString(AdUser.Members["Manager"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Info", CleanString(AdUser.Members["Info"].Value)));
                     UserObj.Members.Add(new PSNoteProperty("Last Logon Date", LastLogonDate));
-                    UserObj.Members.Add(new PSNoteProperty("When Created", AdUser.Members["whenCreated"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("When Changed", AdUser.Members["whenChanged"].Value));
-                    UserObj.Members.Add(new PSNoteProperty("DistinguishedName", AdUser.Members["DistinguishedName"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("Password LastSet", PasswordLastSet));
+                    UserObj.Members.Add(new PSNoteProperty("Account Expiration Date", AccountExpires));
+                    UserObj.Members.Add(new PSNoteProperty("Account Expiration (days)", AccountExpirationNumofDays));
+                    UserObj.Members.Add(new PSNoteProperty("Mobile", CleanString(AdUser.Members["Mobile"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Email", CleanString(AdUser.Members["mail"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("HomeDirectory", AdUser.Members["homeDirectory"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("ProfilePath", AdUser.Members["profilePath"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("ScriptPath", AdUser.Members["ScriptPath"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("UserAccountControl", AdUser.Members["UserAccountControl"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("First Name", CleanString(AdUser.Members["givenName"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Middle Name", CleanString(AdUser.Members["middleName"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Last Name", CleanString(AdUser.Members["sn"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("Country", CleanString(AdUser.Members["c"].Value)));
+                    UserObj.Members.Add(new PSNoteProperty("whenCreated", AdUser.Members["whenCreated"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("whenChanged", AdUser.Members["whenChanged"].Value));
+                    UserObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(AdUser.Members["DistinguishedName"].Value)));
                     UserObj.Members.Add(new PSNoteProperty("CanonicalName", AdUser.Members["CanonicalName"].Value));
                     return new PSObject[] { UserObj };
                 }
@@ -606,10 +799,12 @@ namespace ADRecon
                         }
                         Memberof = Memberof.TrimStart(',');
                     }
-                    else
+                    else if (Memberof != null)
                     {
                         Memberof = ((Convert.ToString(MemberOfAttribute.Value)).Split(',')[0]).Split('=')[1];
                     }
+                    String Description = CleanString(AdUser.Members["Description"].Value);
+                    String PrimaryGroupID = Convert.ToString(AdUser.Members["primaryGroupID"].Value);
                     if (SPNs.Value is System.String[])
                     {
                         foreach (String SPN in (System.String[])SPNs.Value)
@@ -622,7 +817,8 @@ namespace ADRecon
                             UserSPNObj.Members.Add(new PSNoteProperty("Service", SPNArray[0]));
                             UserSPNObj.Members.Add(new PSNoteProperty("Host", SPNArray[1]));
                             UserSPNObj.Members.Add(new PSNoteProperty("Password Last Set", PasswordLastSet));
-                            UserSPNObj.Members.Add(new PSNoteProperty("Description", AdUser.Members["Description"].Value));
+                            UserSPNObj.Members.Add(new PSNoteProperty("Description", Description));
+                            UserSPNObj.Members.Add(new PSNoteProperty("Primary GroupID", PrimaryGroupID));
                             UserSPNObj.Members.Add(new PSNoteProperty("Memberof", Memberof));
                             SPNList.Add( UserSPNObj );
                         }
@@ -637,7 +833,8 @@ namespace ADRecon
                         UserSPNObj.Members.Add(new PSNoteProperty("Service", SPNArray[0]));
                         UserSPNObj.Members.Add(new PSNoteProperty("Host", SPNArray[1]));
                         UserSPNObj.Members.Add(new PSNoteProperty("Password Last Set", PasswordLastSet));
-                        UserSPNObj.Members.Add(new PSNoteProperty("Description", AdUser.Members["Description"].Value));
+                        UserSPNObj.Members.Add(new PSNoteProperty("Description", Description));
+                        UserSPNObj.Members.Add(new PSNoteProperty("Primary GroupID", PrimaryGroupID));
                         UserSPNObj.Members.Add(new PSNoteProperty("Memberof", Memberof));
                         SPNList.Add( UserSPNObj );
                     }
@@ -689,12 +886,31 @@ namespace ADRecon
                     GroupObj.Members.Add(new PSNoteProperty("ManagedBy", ManagedBy));
                     GroupObj.Members.Add(new PSNoteProperty("SID", AdGroup.Members["sid"].Value));
                     GroupObj.Members.Add(new PSNoteProperty("SIDHistory", SIDHistory));
-                    GroupObj.Members.Add(new PSNoteProperty("Description", CleanString(Convert.ToString(AdGroup.Members["Description"].Value))));
+                    GroupObj.Members.Add(new PSNoteProperty("Description", CleanString(AdGroup.Members["Description"].Value)));
                     GroupObj.Members.Add(new PSNoteProperty("whenCreated", AdGroup.Members["whenCreated"].Value));
                     GroupObj.Members.Add(new PSNoteProperty("whenChanged", AdGroup.Members["whenChanged"].Value));
-                    GroupObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(Convert.ToString(AdGroup.Members["DistinguishedName"].Value))));
+                    GroupObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(AdGroup.Members["DistinguishedName"].Value)));
                     GroupObj.Members.Add(new PSNoteProperty("CanonicalName", AdGroup.Members["CanonicalName"].Value));
                     return new PSObject[] { GroupObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+
+        class GroupRecordDictionaryProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdGroup = (PSObject) record;
+                    ADWSClass.AdGroupDictionary.Add((Convert.ToString(AdGroup.Properties["SID"].Value)), (Convert.ToString(AdGroup.Members["SamAccountName"].Value)));
+                    return new PSObject[] { };
                 }
                 catch (Exception e)
                 {
@@ -724,7 +940,7 @@ namespace ADRecon
                         AccountType = "group";
                         MemberName = ((Convert.ToString(AdGroup.Members["DistinguishedName"].Value)).Split(',')[0]).Split('=')[1];
                         Microsoft.ActiveDirectory.Management.ADPropertyValueCollection MemberGroups = (Microsoft.ActiveDirectory.Management.ADPropertyValueCollection)AdGroup.Members["memberof"].Value;
-                        if (AdGroup.Members["memberof"].Value != null)
+                        if (MemberGroups.Value != null)
                         {
                             if (MemberGroups.Value is System.String[])
                             {
@@ -756,8 +972,28 @@ namespace ADRecon
                         AccountType = "user";
                         MemberName = ((Convert.ToString(AdGroup.Members["DistinguishedName"].Value)).Split(',')[0]).Split('=')[1];
                         MemberUserName = Convert.ToString(AdGroup.Members["sAMAccountName"].Value);
+                        String PrimaryGroupID = Convert.ToString(AdGroup.Members["primaryGroupID"].Value);
+                        try
+                        {
+                            GroupName = ADWSClass.AdGroupDictionary[ADWSClass.DomainSID + "-" + PrimaryGroupID];
+                        }
+                        catch //(Exception e)
+                        {
+                            //Console.WriteLine("{0} Exception caught.", e);
+                            GroupName = PrimaryGroupID;
+                        }
+
+                        {
+                            PSObject GroupMemberObj = new PSObject();
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
+                            GroupsList.Add( GroupMemberObj );
+                        }
+
                         Microsoft.ActiveDirectory.Management.ADPropertyValueCollection MemberGroups = (Microsoft.ActiveDirectory.Management.ADPropertyValueCollection)AdGroup.Members["memberof"].Value;
-                        if (AdGroup.Members["memberof"].Value != null)
+                        if (MemberGroups.Value != null)
                         {
                             if (MemberGroups.Value is System.String[])
                             {
@@ -789,8 +1025,28 @@ namespace ADRecon
                         AccountType = "computer";
                         MemberName = ((Convert.ToString(AdGroup.Members["DistinguishedName"].Value)).Split(',')[0]).Split('=')[1];
                         MemberUserName = Convert.ToString(AdGroup.Members["sAMAccountName"].Value);
+                        String PrimaryGroupID = Convert.ToString(AdGroup.Members["primaryGroupID"].Value);
+                        try
+                        {
+                            GroupName = ADWSClass.AdGroupDictionary[ADWSClass.DomainSID + "-" + PrimaryGroupID];
+                        }
+                        catch //(Exception e)
+                        {
+                            //Console.WriteLine("{0} Exception caught.", e);
+                            GroupName = PrimaryGroupID;
+                        }
+
+                        {
+                            PSObject GroupMemberObj = new PSObject();
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
+                            GroupsList.Add( GroupMemberObj );
+                        }
+
                         Microsoft.ActiveDirectory.Management.ADPropertyValueCollection MemberGroups = (Microsoft.ActiveDirectory.Management.ADPropertyValueCollection)AdGroup.Members["memberof"].Value;
-                        if (AdGroup.Members["memberof"].Value != null)
+                        if (MemberGroups.Value != null)
                         {
                             if (MemberGroups.Value is System.String[])
                             {
@@ -822,6 +1078,182 @@ namespace ADRecon
                         // TO DO
                     }
                     return GroupsList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class OURecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdOU = (PSObject) record;
+                    PSObject OUObj = new PSObject();
+                    OUObj.Members.Add(new PSNoteProperty("Name", AdOU.Members["Name"].Value));
+                    OUObj.Members.Add(new PSNoteProperty("Depth", ((Convert.ToString(AdOU.Members["DistinguishedName"].Value).Split(new string[] { "OU=" }, StringSplitOptions.None)).Length -1)));
+                    OUObj.Members.Add(new PSNoteProperty("Description", AdOU.Members["Description"].Value));
+                    OUObj.Members.Add(new PSNoteProperty("whenCreated", AdOU.Members["whenCreated"].Value));
+                    OUObj.Members.Add(new PSNoteProperty("whenChanged", AdOU.Members["whenChanged"].Value));
+                    OUObj.Members.Add(new PSNoteProperty("DistinguishedName", AdOU.Members["DistinguishedName"].Value));
+                    return new PSObject[] { OUObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class GPORecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdGPO = (PSObject) record;
+
+                    PSObject GPOObj = new PSObject();
+                    GPOObj.Members.Add(new PSNoteProperty("DisplayName", CleanString(AdGPO.Members["DisplayName"].Value)));
+                    GPOObj.Members.Add(new PSNoteProperty("GUID", CleanString(AdGPO.Members["Name"].Value)));
+                    GPOObj.Members.Add(new PSNoteProperty("whenCreated", AdGPO.Members["whenCreated"].Value));
+                    GPOObj.Members.Add(new PSNoteProperty("whenChanged", AdGPO.Members["whenChanged"].Value));
+                    GPOObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(AdGPO.Members["DistinguishedName"].Value)));
+                    GPOObj.Members.Add(new PSNoteProperty("FilePath", AdGPO.Members["gPCFileSysPath"].Value));
+                    return new PSObject[] { GPOObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class GPORecordDictionaryProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdGPO = (PSObject) record;
+                    ADWSClass.AdGPODictionary.Add((Convert.ToString(AdGPO.Members["DistinguishedName"].Value).ToUpper()), (Convert.ToString(AdGPO.Members["DisplayName"].Value)));
+                    return new PSObject[] { };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class SOMRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdSOM = (PSObject) record;
+                    List<PSObject> SOMsList = new List<PSObject>();
+                    int Depth = 0;
+                    bool BlockInheritance = false;
+                    bool? LinkEnabled = null;
+                    bool? Enforced = null;
+                    String gPLink = Convert.ToString(AdSOM.Members["gPLink"].Value);
+                    String GPOName = null;
+
+                    Depth = (Convert.ToString(AdSOM.Members["DistinguishedName"].Value).Split(new string[] { "OU=" }, StringSplitOptions.None)).Length -1;
+                    if (AdSOM.Members["gPOptions"].Value != null && (int) AdSOM.Members["gPOptions"].Value == 1)
+                    {
+                        BlockInheritance = true;
+                    }
+                    var GPLinks = gPLink.Split(']', '[').Where(x => x.StartsWith("LDAP"));
+                    int Order = (GPLinks.ToArray()).Length;
+                    if (Order == 0)
+                    {
+                        PSObject SOMObj = new PSObject();
+                        SOMObj.Members.Add(new PSNoteProperty("Name", AdSOM.Members["Name"].Value));
+                        SOMObj.Members.Add(new PSNoteProperty("Depth", Depth));
+                        SOMObj.Members.Add(new PSNoteProperty("DistinguishedName", AdSOM.Members["DistinguishedName"].Value));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Order", null));
+                        SOMObj.Members.Add(new PSNoteProperty("GPO", GPOName));
+                        SOMObj.Members.Add(new PSNoteProperty("Enforced", Enforced));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Enabled", LinkEnabled));
+                        SOMObj.Members.Add(new PSNoteProperty("BlockInheritance", BlockInheritance));
+                        SOMObj.Members.Add(new PSNoteProperty("gPLink", gPLink));
+                        SOMObj.Members.Add(new PSNoteProperty("gPOptions", AdSOM.Members["gPOptions"].Value));
+                        SOMsList.Add( SOMObj );
+                    }
+                    foreach (String link in GPLinks)
+                    {
+                        String[] linksplit = link.Split('/', ';');
+                        if (!Convert.ToBoolean((Convert.ToInt32(linksplit[3]) & 1)))
+                        {
+                            LinkEnabled = true;
+                        }
+                        else
+                        {
+                            LinkEnabled = false;
+                        }
+                        if (Convert.ToBoolean((Convert.ToInt32(linksplit[3]) & 2)))
+                        {
+                            Enforced = true;
+                        }
+                        else
+                        {
+                            Enforced = false;
+                        }
+                        GPOName = ADWSClass.AdGPODictionary.ContainsKey(linksplit[2].ToUpper()) ? ADWSClass.AdGPODictionary[linksplit[2].ToUpper()] : linksplit[2].Split('=',',')[1];
+                        PSObject SOMObj = new PSObject();
+                        SOMObj.Members.Add(new PSNoteProperty("Name", AdSOM.Members["Name"].Value));
+                        SOMObj.Members.Add(new PSNoteProperty("Depth", Depth));
+                        SOMObj.Members.Add(new PSNoteProperty("DistinguishedName", AdSOM.Members["DistinguishedName"].Value));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Order", Order));
+                        SOMObj.Members.Add(new PSNoteProperty("GPO", GPOName));
+                        SOMObj.Members.Add(new PSNoteProperty("Enforced", Enforced));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Enabled", LinkEnabled));
+                        SOMObj.Members.Add(new PSNoteProperty("BlockInheritance", BlockInheritance));
+                        SOMObj.Members.Add(new PSNoteProperty("gPLink", gPLink));
+                        SOMObj.Members.Add(new PSNoteProperty("gPOptions", AdSOM.Members["gPOptions"].Value));
+                        SOMsList.Add( SOMObj );
+                        Order--;
+                    }
+                    return SOMsList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class PrinterRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdPrinter = (PSObject) record;
+
+                    PSObject PrinterObj = new PSObject();
+                    PrinterObj.Members.Add(new PSNoteProperty("Name", AdPrinter.Members["Name"].Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("ServerName", AdPrinter.Members["serverName"].Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("ShareName", ((Microsoft.ActiveDirectory.Management.ADPropertyValueCollection) (AdPrinter.Members["printShareName"].Value)).Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("DriverName", AdPrinter.Members["driverName"].Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("DriverVersion", AdPrinter.Members["driverVersion"].Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("PortName", ((Microsoft.ActiveDirectory.Management.ADPropertyValueCollection) (AdPrinter.Members["portName"].Value)).Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("URL", ((Microsoft.ActiveDirectory.Management.ADPropertyValueCollection) (AdPrinter.Members["url"].Value)).Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("whenCreated", AdPrinter.Members["whenCreated"].Value));
+                    PrinterObj.Members.Add(new PSNoteProperty("whenChanged", AdPrinter.Members["whenChanged"].Value));
+                    return new PSObject[] { PrinterObj };
                 }
                 catch (Exception e)
                 {
@@ -938,8 +1370,10 @@ namespace ADRecon
                     ComputerObj.Members.Add(new PSNoteProperty("SID", AdComputer.Members["SID"].Value));
                     ComputerObj.Members.Add(new PSNoteProperty("SIDHistory", SIDHistory));
                     ComputerObj.Members.Add(new PSNoteProperty("Description", AdComputer.Members["Description"].Value));
+                    ComputerObj.Members.Add(new PSNoteProperty("ms-ds-CreatorSid", AdComputer.Members["ms-ds-CreatorSid"].Value));
                     ComputerObj.Members.Add(new PSNoteProperty("Last Logon Date", LastLogonDate));
                     ComputerObj.Members.Add(new PSNoteProperty("Password LastSet", PasswordLastSet));
+                    ComputerObj.Members.Add(new PSNoteProperty("UserAccountControl", AdComputer.Members["UserAccountControl"].Value));
                     ComputerObj.Members.Add(new PSNoteProperty("whenCreated", AdComputer.Members["whenCreated"].Value));
                     ComputerObj.Members.Add(new PSNoteProperty("whenChanged", AdComputer.Members["whenChanged"].Value));
                     ComputerObj.Members.Add(new PSNoteProperty("Distinguished Name", AdComputer.Members["DistinguishedName"].Value));
@@ -1006,6 +1440,227 @@ namespace ADRecon
             }
         }
 
+        class LAPSRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdComputer = (PSObject) record;
+                    bool PasswordStored = false;
+                    DateTime? CurrentExpiration = null;
+                    try
+                    {
+                        CurrentExpiration = DateTime.FromFileTime((long)(AdComputer.Members["ms-Mcs-AdmPwdExpirationTime"].Value));
+                        PasswordStored = true;
+                    }
+                    catch //(Exception e)
+                    {
+                        //Console.WriteLine("{0} Exception caught.", e);
+                    }
+                    PSObject LAPSObj = new PSObject();
+                    LAPSObj.Members.Add(new PSNoteProperty("Hostname", (AdComputer.Members["DNSHostName"].Value != null ? AdComputer.Members["DNSHostName"].Value : AdComputer.Members["CN"].Value )));
+                    LAPSObj.Members.Add(new PSNoteProperty("Stored", PasswordStored));
+                    LAPSObj.Members.Add(new PSNoteProperty("Readable", (AdComputer.Members["ms-Mcs-AdmPwd"].Value != null ? true : false)));
+                    LAPSObj.Members.Add(new PSNoteProperty("Password", AdComputer.Members["ms-Mcs-AdmPwd"].Value));
+                    LAPSObj.Members.Add(new PSNoteProperty("Expiration", CurrentExpiration));
+                    return new PSObject[] { LAPSObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class SIDRecordDictionaryProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdObject = (PSObject) record;
+                    switch (Convert.ToString(AdObject.Members["ObjectClass"].Value))
+                    {
+                        case "user":
+                        case "computer":
+                        case "group":
+                            ADWSClass.AdSIDDictionary.Add(Convert.ToString(AdObject.Members["objectsid"].Value), Convert.ToString(AdObject.Members["Name"].Value));
+                            break;
+                    }
+                    return new PSObject[] { };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} {1} Exception caught.", ((PSObject) record).Members["ObjectClass"].Value, e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class DACLRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdObject = (PSObject) record;
+                    String Name = null;
+                    String Type = null;
+                    List<PSObject> DACLList = new List<PSObject>();
+
+                    Name = Convert.ToString(AdObject.Members["Name"].Value);
+
+                    switch (Convert.ToString(AdObject.Members["objectClass"].Value))
+                    {
+                        case "user":
+                            Type = "User";
+                            break;
+                        case "computer":
+                            Type = "Computer";
+                            break;
+                        case "group":
+                            Type = "Group";
+                            break;
+                        case "container":
+                            Type = "Container";
+                            break;
+                        case "groupPolicyContainer":
+                            Type = "GPO";
+                            Name = Convert.ToString(AdObject.Members["DisplayName"].Value);
+                            break;
+                        case "organizationalUnit":
+                            Type = "OU";
+                            break;
+                        case "domainDNS":
+                            Type = "Domain";
+                            break;
+                        default:
+                            Type = Convert.ToString(AdObject.Members["objectClass"].Value);
+                            break;
+                    }
+
+                    // When the user is not allowed to query the ntsecuritydescriptor attribute.
+                    if (AdObject.Members["ntsecuritydescriptor"] != null)
+                    {
+                        DirectoryObjectSecurity DirObjSec = (DirectoryObjectSecurity) AdObject.Members["ntsecuritydescriptor"].Value;
+                        AuthorizationRuleCollection AccessRules = (AuthorizationRuleCollection) DirObjSec.GetAccessRules(true,true,typeof(System.Security.Principal.NTAccount));
+                        foreach (ActiveDirectoryAccessRule Rule in AccessRules)
+                        {
+                            String IdentityReference = Convert.ToString(Rule.IdentityReference);
+                            String Owner = Convert.ToString(DirObjSec.GetOwner(typeof(System.Security.Principal.SecurityIdentifier)));
+                            PSObject ObjectObj = new PSObject();
+                            ObjectObj.Members.Add(new PSNoteProperty("Name", CleanString(Name)));
+                            ObjectObj.Members.Add(new PSNoteProperty("Type", Type));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectTypeName", ADWSClass.GUIDs[Convert.ToString(Rule.ObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectTypeName", ADWSClass.GUIDs[Convert.ToString(Rule.InheritedObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("ActiveDirectoryRights", Rule.ActiveDirectoryRights));
+                            ObjectObj.Members.Add(new PSNoteProperty("AccessControlType", Rule.AccessControlType));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReferenceName", ADWSClass.AdSIDDictionary.ContainsKey(IdentityReference) ? ADWSClass.AdSIDDictionary[IdentityReference] : IdentityReference));
+                            ObjectObj.Members.Add(new PSNoteProperty("OwnerName", ADWSClass.AdSIDDictionary.ContainsKey(Owner) ? ADWSClass.AdSIDDictionary[Owner] : Owner));
+                            ObjectObj.Members.Add(new PSNoteProperty("Inherited", Rule.IsInherited));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectFlags", Rule.ObjectFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceFlags", Rule.InheritanceFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceType", Rule.InheritanceType));
+                            ObjectObj.Members.Add(new PSNoteProperty("PropagationFlags", Rule.PropagationFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectType", Rule.ObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectType", Rule.InheritedObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReference", Rule.IdentityReference));
+                            ObjectObj.Members.Add(new PSNoteProperty("Owner", Owner));
+                            ObjectObj.Members.Add(new PSNoteProperty("DistinguishedName", AdObject.Members["DistinguishedName"].Value));
+                            DACLList.Add( ObjectObj );
+                        }
+                    }
+
+                    return DACLList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+    class SACLRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    PSObject AdObject = (PSObject) record;
+                    String Name = null;
+                    String Type = null;
+                    List<PSObject> SACLList = new List<PSObject>();
+
+                    Name = Convert.ToString(AdObject.Members["Name"].Value);
+
+                    switch (Convert.ToString(AdObject.Members["objectClass"].Value))
+                    {
+                        case "user":
+                            Type = "User";
+                            break;
+                        case "computer":
+                            Type = "Computer";
+                            break;
+                        case "group":
+                            Type = "Group";
+                            break;
+                        case "container":
+                            Type = "Container";
+                            break;
+                        case "groupPolicyContainer":
+                            Type = "GPO";
+                            Name = Convert.ToString(AdObject.Members["DisplayName"].Value);
+                            break;
+                        case "organizationalUnit":
+                            Type = "OU";
+                            break;
+                        case "domainDNS":
+                            Type = "Domain";
+                            break;
+                        default:
+                            Type = Convert.ToString(AdObject.Members["objectClass"].Value);
+                            break;
+                    }
+
+                    // When the user is not allowed to query the ntsecuritydescriptor attribute.
+                    if (AdObject.Members["ntsecuritydescriptor"] != null)
+                    {
+                        DirectoryObjectSecurity DirObjSec = (DirectoryObjectSecurity) AdObject.Members["ntsecuritydescriptor"].Value;
+                        AuthorizationRuleCollection AuditRules = (AuthorizationRuleCollection) DirObjSec.GetAuditRules(true,true,typeof(System.Security.Principal.NTAccount));
+                        foreach (ActiveDirectoryAuditRule Rule in AuditRules)
+                        {
+                            PSObject ObjectObj = new PSObject();
+                            ObjectObj.Members.Add(new PSNoteProperty("Name", CleanString(Name)));
+                            ObjectObj.Members.Add(new PSNoteProperty("Type", Type));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectTypeName", ADWSClass.GUIDs[Convert.ToString(Rule.ObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectTypeName", ADWSClass.GUIDs[Convert.ToString(Rule.InheritedObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("ActiveDirectoryRights", Rule.ActiveDirectoryRights));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReference", Rule.IdentityReference));
+                            ObjectObj.Members.Add(new PSNoteProperty("AuditFlags", Rule.AuditFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectFlags", Rule.ObjectFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceFlags", Rule.InheritanceFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceType", Rule.InheritanceType));
+                            ObjectObj.Members.Add(new PSNoteProperty("Inherited", Rule.IsInherited));
+                            ObjectObj.Members.Add(new PSNoteProperty("PropagationFlags", Rule.PropagationFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectType", Rule.ObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectType", Rule.InheritedObjectType));
+                            SACLList.Add( ObjectObj );
+                        }
+                    }
+
+                    return SACLList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
         //The interface and implmentation class used to handle the results (this implementation just writes the strings to a file)
 
         interface IResultsHandler
@@ -1050,13 +1705,14 @@ namespace ADRecon
 $LDAPSource = @"
 // Thanks Dennis Albuquerque for the C# multithreading code
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.DirectoryServices;
 using System.Security.Principal;
+using System.Security.AccessControl;
 using System.Management.Automation;
 
 namespace ADRecon
@@ -1066,7 +1722,11 @@ namespace ADRecon
         private static DateTime Date1;
         private static int PassMaxAge;
         private static int DormantTimeSpan;
-        private static Dictionary<string, bool> CannotChangePasswordDict;
+        private static Dictionary<String, String> AdGroupDictionary = new Dictionary<String, String>();
+        private static String DomainSID;
+        private static Dictionary<String, String> AdGPODictionary = new Dictionary<String, String>();
+        private static Hashtable GUIDs = new Hashtable();
+        private static Dictionary<String, String> AdSIDDictionary = new Dictionary<String, String>();
         private static readonly HashSet<string> Groups = new HashSet<string> ( new String[] {"268435456", "268435457", "536870912", "536870913"} );
         private static readonly HashSet<string> Users = new HashSet<string> ( new String[] { "805306368" } );
         private static readonly HashSet<string> Computers = new HashSet<string> ( new String[] { "805306369" }) ;
@@ -1130,7 +1790,7 @@ namespace ADRecon
             {"\"", "'"}
         };
 
-        public static String CleanString(String StringtoClean)
+        public static String CleanString(Object StringtoClean)
         {
             // Remove extra spaces and new lines
             String CleanedString = String.Join(" ", ((Convert.ToString(StringtoClean)).Split((string[]) null, StringSplitOptions.RemoveEmptyEntries)));
@@ -1146,12 +1806,25 @@ namespace ADRecon
             return ADRObject.Length;
         }
 
-        public static Object[] UserParser(Object[] AdUsers, DateTime Date1, int PassMaxAge, Dictionary<string, bool> CannotChangePasswordDict, int DormantTimeSpan, int numOfThreads)
+        public static bool LAPSCheck(Object[] AdComputers)
+        {
+            bool LAPS = false;
+            foreach (SearchResult AdComputer in AdComputers)
+            {
+                if (AdComputer.Properties["ms-mcs-admpwdexpirationtime"].Count == 1)
+                {
+                    LAPS = true;
+                    return LAPS;
+                }
+            }
+            return LAPS;
+        }
+
+        public static Object[] UserParser(Object[] AdUsers, DateTime Date1, int DormantTimeSpan, int PassMaxAge, int numOfThreads)
         {
             LDAPClass.Date1 = Date1;
-            LDAPClass.PassMaxAge = PassMaxAge;
             LDAPClass.DormantTimeSpan = DormantTimeSpan;
-            LDAPClass.CannotChangePasswordDict = CannotChangePasswordDict;
+            LDAPClass.PassMaxAge = PassMaxAge;
 
             Object[] ADRObj = runProcessor(AdUsers, numOfThreads, "Users");
             return ADRObj;
@@ -1169,9 +1842,38 @@ namespace ADRecon
             return ADRObj;
         }
 
-        public static Object[] GroupMemberParser(Object[] AdGroupMembers, int numOfThreads)
+        public static Object[] GroupMemberParser(Object[] AdGroups, Object[] AdGroupMembers, String DomainSID, int numOfThreads)
         {
+            LDAPClass.AdGroupDictionary = new Dictionary<String, String>();
+            runProcessor(AdGroups, numOfThreads, "GroupsDictionary");
+            LDAPClass.DomainSID = DomainSID;
             Object[] ADRObj = runProcessor(AdGroupMembers, numOfThreads, "GroupMembers");
+            return ADRObj;
+        }
+
+        public static Object[] OUParser(Object[] AdOUs, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(AdOUs, numOfThreads, "OUs");
+            return ADRObj;
+        }
+
+        public static Object[] GPOParser(Object[] AdGPOs, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(AdGPOs, numOfThreads, "GPOs");
+            return ADRObj;
+        }
+
+        public static Object[] SOMParser(Object[] AdGPOs, Object[] AdSOMs, int numOfThreads)
+        {
+            LDAPClass.AdGPODictionary = new Dictionary<String, String>();
+            runProcessor(AdGPOs, numOfThreads, "GPOsDictionary");
+            Object[] ADRObj = runProcessor(AdSOMs, numOfThreads, "SOMs");
+            return ADRObj;
+        }
+
+        public static Object[] PrinterParser(Object[] ADPrinters, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(ADPrinters, numOfThreads, "Printers");
             return ADRObj;
         }
 
@@ -1188,6 +1890,28 @@ namespace ADRecon
         public static Object[] ComputerSPNParser(Object[] AdComputers, int numOfThreads)
         {
             Object[] ADRObj = runProcessor(AdComputers, numOfThreads, "ComputerSPNs");
+            return ADRObj;
+        }
+
+        public static Object[] LAPSParser(Object[] AdComputers, int numOfThreads)
+        {
+            Object[] ADRObj = runProcessor(AdComputers, numOfThreads, "LAPS");
+            return ADRObj;
+        }
+
+        public static Object[] DACLParser(Object[] ADObjects, Object PSGUIDs, int numOfThreads)
+        {
+            LDAPClass.AdSIDDictionary = new Dictionary<String, String>();
+            runProcessor(ADObjects, numOfThreads, "SIDDictionary");
+            LDAPClass.GUIDs = (Hashtable) PSGUIDs;
+            Object[] ADRObj = runProcessor(ADObjects, numOfThreads, "DACLs");
+            return ADRObj;
+        }
+
+        public static Object[] SACLParser(Object[] ADObjects, Object PSGUIDs, int numOfThreads)
+        {
+            LDAPClass.GUIDs = (Hashtable) PSGUIDs;
+            Object[] ADRObj = runProcessor(ADObjects, numOfThreads, "SACLs");
             return ADRObj;
         }
 
@@ -1234,12 +1958,32 @@ namespace ADRecon
                     return new UserSPNRecordProcessor();
                 case "Groups":
                     return new GroupRecordProcessor();
+                case "GroupsDictionary":
+                    return new GroupRecordDictionaryProcessor();
                 case "GroupMembers":
                     return new GroupMemberRecordProcessor();
+                case "OUs":
+                    return new OURecordProcessor();
+                case "GPOs":
+                    return new GPORecordProcessor();
+                case "GPOsDictionary":
+                    return new GPORecordDictionaryProcessor();
+                case "SOMs":
+                    return new SOMRecordProcessor();
+                case "Printers":
+                    return new PrinterRecordProcessor();
                 case "Computers":
                     return new ComputerRecordProcessor();
                 case "ComputerSPNs":
                     return new ComputerSPNRecordProcessor();
+                case "LAPS":
+                    return new LAPSRecordProcessor();
+                case "SIDDictionary":
+                    return new SIDRecordDictionaryProcessor();
+                case "DACLs":
+                    return new DACLRecordProcessor();
+                case "SACLs":
+                    return new SACLRecordProcessor();
             }
             throw new ArgumentException("Invalid processor type " + name);
         }
@@ -1284,13 +2028,39 @@ namespace ADRecon
                 {
                     SearchResult AdUser = (SearchResult) record;
                     bool? Enabled = null;
+                    bool? CannotChangePassword = null;
                     bool? PasswordNeverExpires = null;
                     bool? AccountLockedOut = null;
+                    bool? PasswordExpired = null;
                     bool? ReversiblePasswordEncryption = null;
+                    bool? DelegationPermitted = null;
+                    bool? SmartcardRequired = null;
+                    bool? UseDESKeyOnly = null;
                     bool? PasswordNotRequired = null;
                     bool? TrustedforDelegation = null;
                     bool? TrustedtoAuthforDelegation = null;
                     bool? DoesNotRequirePreAuth = null;
+                    bool? KerberosRC4 = null;
+                    bool? KerberosAES128 = null;
+                    bool? KerberosAES256 = null;
+                    String DelegationType = null;
+                    String DelegationProtocol = null;
+                    String DelegationServices = null;
+                    bool MustChangePasswordatLogon = false;
+                    int? DaysSinceLastLogon = null;
+                    int? DaysSinceLastPasswordChange = null;
+                    int? AccountExpirationNumofDays = null;
+                    bool PasswordNotChangedafterMaxAge = false;
+                    bool NeverLoggedIn = false;
+                    bool Dormant = false;
+                    DateTime? LastLogonDate = null;
+                    DateTime? PasswordLastSet = null;
+                    DateTime? AccountExpires = null;
+                    byte[] ntSecurityDescriptor = null;
+                    bool DenyEveryone = false;
+                    bool DenySelf = false;
+                    String SIDHistory = "";
+
                     // When the user is not allowed to query the UserAccountControl attribute.
                     if (AdUser.Properties["useraccountcontrol"].Count != 0)
                     {
@@ -1298,41 +2068,72 @@ namespace ADRecon
                         Enabled = !((userFlags & UACFlags.ACCOUNTDISABLE) == UACFlags.ACCOUNTDISABLE);
                         PasswordNeverExpires = (userFlags & UACFlags.DONT_EXPIRE_PASSWD) == UACFlags.DONT_EXPIRE_PASSWD;
                         AccountLockedOut = (userFlags & UACFlags.LOCKOUT) == UACFlags.LOCKOUT;
+                        DelegationPermitted = !((userFlags & UACFlags.NOT_DELEGATED) == UACFlags.NOT_DELEGATED);
+                        SmartcardRequired = (userFlags & UACFlags.SMARTCARD_REQUIRED) == UACFlags.SMARTCARD_REQUIRED;
                         ReversiblePasswordEncryption = (userFlags & UACFlags.ENCRYPTED_TEXT_PASSWORD_ALLOWED) == UACFlags.ENCRYPTED_TEXT_PASSWORD_ALLOWED;
+                        UseDESKeyOnly = (userFlags & UACFlags.USE_DES_KEY_ONLY) == UACFlags.USE_DES_KEY_ONLY;
                         PasswordNotRequired = (userFlags & UACFlags.PASSWD_NOTREQD) == UACFlags.PASSWD_NOTREQD;
+                        PasswordExpired = (userFlags & UACFlags.PASSWORD_EXPIRED) == UACFlags.PASSWORD_EXPIRED;
                         TrustedforDelegation = (userFlags & UACFlags.TRUSTED_FOR_DELEGATION) == UACFlags.TRUSTED_FOR_DELEGATION;
                         TrustedtoAuthforDelegation = (userFlags & UACFlags.TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION) == UACFlags.TRUSTED_TO_AUTHENTICATE_FOR_DELEGATION;
                         DoesNotRequirePreAuth = (userFlags & UACFlags.DONT_REQUIRE_PREAUTH) == UACFlags.DONT_REQUIRE_PREAUTH;
                     }
-                    bool MustChangePasswordatLogon = false;
-                    int DaysSinceLastPasswordChange = -1;
-                    bool PasswordNotChangedafterMaxAge = false;
-                    bool NeverLoggedIn = false;
-                    int DaysSinceLastLogon = -1;
-                    bool Dormant = false;
-                    DateTime PasswordLastSet = new DateTime();
-                    DateTime LastLogonDate = new DateTime();
-                    bool CannotChangePassword = CannotChangePasswordDict[Convert.ToString(AdUser.Properties["samaccountname"][0])];
-                    if (AdUser.Properties["pwdLastSet"].Count != 0)
+                    if (AdUser.Properties["msds-supportedencryptiontypes"].Count != 0)
                     {
-                        if (Convert.ToString(AdUser.Properties["pwdlastset"][0]) == "0")
+                        var userKerbEncFlags = (KerbEncFlags) AdUser.Properties["msds-supportedencryptiontypes"][0];
+                        if (userKerbEncFlags != KerbEncFlags.ZERO)
                         {
-                            MustChangePasswordatLogon = true;
+                            KerberosRC4 = (userKerbEncFlags & KerbEncFlags.RC4_HMAC) == KerbEncFlags.RC4_HMAC;
+                            KerberosAES128 = (userKerbEncFlags & KerbEncFlags.AES128_CTS_HMAC_SHA1_96) == KerbEncFlags.AES128_CTS_HMAC_SHA1_96;
+                            KerberosAES256 = (userKerbEncFlags & KerbEncFlags.AES256_CTS_HMAC_SHA1_96) == KerbEncFlags.AES256_CTS_HMAC_SHA1_96;
+                        }
+                    }
+                    // When the user is not allowed to query the ntsecuritydescriptor attribute.
+                    if (AdUser.Properties["ntsecuritydescriptor"].Count != 0)
+                    {
+                        ntSecurityDescriptor = (byte[]) AdUser.Properties["ntsecuritydescriptor"][0];
+                    }
+                    else
+                    {
+                        DirectoryEntry AdUserEntry = ((SearchResult)record).GetDirectoryEntry();
+                        ntSecurityDescriptor = (byte[]) AdUserEntry.ObjectSecurity.GetSecurityDescriptorBinaryForm();
+                    }
+                    if (ntSecurityDescriptor != null)
+                    {
+                        DirectoryObjectSecurity DirObjSec = new ActiveDirectorySecurity();
+                        DirObjSec.SetSecurityDescriptorBinaryForm(ntSecurityDescriptor);
+                        AuthorizationRuleCollection AccessRules = (AuthorizationRuleCollection) DirObjSec.GetAccessRules(true,false,typeof(System.Security.Principal.NTAccount));
+                        foreach (ActiveDirectoryAccessRule Rule in AccessRules)
+                        {
+                            if ((Convert.ToString(Rule.ObjectType)).Equals("ab721a53-1e2f-11d0-9819-00aa0040529b"))
+                            {
+                                if (Rule.AccessControlType.ToString() == "Deny")
+                                {
+                                    String ObjectName = Convert.ToString(Rule.IdentityReference);
+                                    if (ObjectName == "Everyone")
+                                    {
+                                        DenyEveryone = true;
+                                    }
+                                    if (ObjectName == "NT AUTHORITY\\SELF")
+                                    {
+                                        DenySelf = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (DenyEveryone && DenySelf)
+                        {
+                            CannotChangePassword = true;
                         }
                         else
                         {
-                            PasswordLastSet = DateTime.FromFileTime((long)(AdUser.Properties["pwdLastSet"][0]));
-                            DaysSinceLastPasswordChange = Math.Abs((Date1 - PasswordLastSet).Days);
-                            if (DaysSinceLastPasswordChange > PassMaxAge)
-                            {
-                                PasswordNotChangedafterMaxAge = true;
-                            }
+                            CannotChangePassword = false;
                         }
                     }
                     if (AdUser.Properties["lastlogontimestamp"].Count != 0)
                     {
                         LastLogonDate = DateTime.FromFileTime((long)(AdUser.Properties["lastlogontimestamp"][0]));
-                        DaysSinceLastLogon = Math.Abs((Date1 - LastLogonDate).Days);
+                        DaysSinceLastLogon = Math.Abs((Date1 - (DateTime)LastLogonDate).Days);
                         if (DaysSinceLastLogon > DormantTimeSpan)
                         {
                             Dormant = true;
@@ -1342,7 +2143,65 @@ namespace ADRecon
                     {
                         NeverLoggedIn = true;
                     }
-                    string SIDHistory = "";
+                    if (AdUser.Properties["pwdLastSet"].Count != 0)
+                    {
+                        if (Convert.ToString(AdUser.Properties["pwdlastset"][0]) == "0")
+                        {
+                            if ((bool) PasswordNeverExpires == false)
+                            {
+                                MustChangePasswordatLogon = true;
+                            }
+                        }
+                        else
+                        {
+                            PasswordLastSet = DateTime.FromFileTime((long)(AdUser.Properties["pwdlastset"][0]));
+                            DaysSinceLastPasswordChange = Math.Abs((Date1 - (DateTime)PasswordLastSet).Days);
+                            if (DaysSinceLastPasswordChange > PassMaxAge)
+                            {
+                                PasswordNotChangedafterMaxAge = true;
+                            }
+                        }
+                    }
+                    if ((Int64) AdUser.Properties["accountExpires"][0] != (Int64) 9223372036854775807)
+                    {
+                        if ((Int64) AdUser.Properties["accountExpires"][0] != (Int64) 0)
+                        {
+                            try
+                            {
+                                //https://msdn.microsoft.com/en-us/library/ms675098(v=vs.85).aspx
+                                AccountExpires = DateTime.FromFileTime((long)(AdUser.Properties["accountExpires"][0]));
+                                AccountExpirationNumofDays = ((int)((DateTime)AccountExpires - Date1).Days);
+
+                            }
+                            catch //(Exception e)
+                            {
+                                //    Console.WriteLine("{0} Exception caught.", e);
+                            }
+                        }
+                    }
+                    if ((bool) TrustedforDelegation)
+                    {
+                        DelegationType = "Unconstrained";
+                        DelegationServices = "Any";
+                    }
+                    if (AdUser.Properties["msDS-AllowedToDelegateTo"].Count >= 1)
+                    {
+                        DelegationType = "Constrained";
+                        for (int i = 0; i < AdUser.Properties["msDS-AllowedToDelegateTo"].Count; i++)
+                        {
+                            var delegateto = AdUser.Properties["msDS-AllowedToDelegateTo"][i];
+                            DelegationServices = DelegationServices + "," + Convert.ToString(delegateto);
+                        }
+                        DelegationServices = DelegationServices.TrimStart(',');
+                    }
+                    if ((bool) TrustedtoAuthforDelegation)
+                    {
+                        DelegationProtocol = "Any";
+                    }
+                    else if (DelegationType != null)
+                    {
+                        DelegationProtocol = "Kerberos";
+                    }
                     if (AdUser.Properties["sidhistory"].Count >= 1)
                     {
                         string sids = "";
@@ -1355,34 +2214,59 @@ namespace ADRecon
                     }
 
                     PSObject UserObj = new PSObject();
-                    UserObj.Members.Add(new PSNoteProperty("Name", (AdUser.Properties["name"].Count != 0 ? AdUser.Properties["name"][0] : "")));
                     UserObj.Members.Add(new PSNoteProperty("UserName", (AdUser.Properties["samaccountname"].Count != 0 ? AdUser.Properties["samaccountname"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Name", (AdUser.Properties["name"].Count != 0 ? CleanString(AdUser.Properties["name"][0]) : "")));
                     UserObj.Members.Add(new PSNoteProperty("Enabled", Enabled));
+                    UserObj.Members.Add(new PSNoteProperty("Must Change Password at Logon", MustChangePasswordatLogon));
                     UserObj.Members.Add(new PSNoteProperty("Cannot Change Password", CannotChangePassword));
                     UserObj.Members.Add(new PSNoteProperty("Password Never Expires", PasswordNeverExpires));
-                    UserObj.Members.Add(new PSNoteProperty("Must Change Password at Logon", MustChangePasswordatLogon));
-                    UserObj.Members.Add(new PSNoteProperty("Days Since Last Password Change", DaysSinceLastPasswordChange));
-                    UserObj.Members.Add(new PSNoteProperty("Password Not Changed after Max Age", PasswordNotChangedafterMaxAge));
-                    UserObj.Members.Add(new PSNoteProperty("Account Locked Out", AccountLockedOut));
-                    UserObj.Members.Add(new PSNoteProperty("Never Logged in", NeverLoggedIn));
-                    UserObj.Members.Add(new PSNoteProperty("Days Since Last Logon", DaysSinceLastLogon));
-                    UserObj.Members.Add(new PSNoteProperty("Dormant (> " + DormantTimeSpan + " days)", Dormant));
                     UserObj.Members.Add(new PSNoteProperty("Reversible Password Encryption", ReversiblePasswordEncryption));
-                    UserObj.Members.Add(new PSNoteProperty("Password Not Required", PasswordNotRequired));
-                    UserObj.Members.Add(new PSNoteProperty("Trusted for Delegation", TrustedforDelegation));
-                    UserObj.Members.Add(new PSNoteProperty("Trusted to Auth for Delegation", TrustedtoAuthforDelegation));
+                    UserObj.Members.Add(new PSNoteProperty("Smartcard Logon Required", SmartcardRequired));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Permitted", DelegationPermitted));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos DES Only", UseDESKeyOnly));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos RC4", KerberosRC4));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos AES-128bit", KerberosAES128));
+                    UserObj.Members.Add(new PSNoteProperty("Kerberos AES-256bit", KerberosAES256));
                     UserObj.Members.Add(new PSNoteProperty("Does Not Require Pre Auth", DoesNotRequirePreAuth));
+                    UserObj.Members.Add(new PSNoteProperty("Never Logged in", NeverLoggedIn));
+                    UserObj.Members.Add(new PSNoteProperty("Logon Age (days)", DaysSinceLastLogon));
+                    UserObj.Members.Add(new PSNoteProperty("Password Age (days)", DaysSinceLastPasswordChange));
+                    UserObj.Members.Add(new PSNoteProperty("Dormant (> " + DormantTimeSpan + " days)", Dormant));
+                    UserObj.Members.Add(new PSNoteProperty("Password Age (> " + PassMaxAge + " days)", PasswordNotChangedafterMaxAge));
+                    UserObj.Members.Add(new PSNoteProperty("Account Locked Out", AccountLockedOut));
+                    UserObj.Members.Add(new PSNoteProperty("Password Expired", PasswordExpired));
+                    UserObj.Members.Add(new PSNoteProperty("Password Not Required", PasswordNotRequired));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Type", DelegationType));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Protocol", DelegationProtocol));
+                    UserObj.Members.Add(new PSNoteProperty("Delegation Services", DelegationServices));
                     UserObj.Members.Add(new PSNoteProperty("Logon Workstations", (AdUser.Properties["userworkstations"].Count != 0 ? AdUser.Properties["userworkstations"][0] : "")));
                     UserObj.Members.Add(new PSNoteProperty("AdminCount", (AdUser.Properties["admincount"].Count != 0 ? AdUser.Properties["admincount"][0] : "")));
                     UserObj.Members.Add(new PSNoteProperty("Primary GroupID", (AdUser.Properties["primarygroupid"].Count != 0 ? AdUser.Properties["primarygroupid"][0] : "")));
                     UserObj.Members.Add(new PSNoteProperty("SID", Convert.ToString(new SecurityIdentifier((byte[])AdUser.Properties["objectSID"][0], 0))));
                     UserObj.Members.Add(new PSNoteProperty("SIDHistory", SIDHistory));
-                    UserObj.Members.Add(new PSNoteProperty("Description", (AdUser.Properties["Description"].Count != 0 ? AdUser.Properties["Description"][0] : "")));
-                    UserObj.Members.Add(new PSNoteProperty("Password LastSet", PasswordLastSet));
+                    UserObj.Members.Add(new PSNoteProperty("Description", (AdUser.Properties["Description"].Count != 0 ? CleanString(AdUser.Properties["Description"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Title", (AdUser.Properties["Title"].Count != 0 ? CleanString(AdUser.Properties["Title"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Department", (AdUser.Properties["Department"].Count != 0 ? CleanString(AdUser.Properties["Department"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Company", (AdUser.Properties["Company"].Count != 0 ? CleanString(AdUser.Properties["Company"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Manager", (AdUser.Properties["Manager"].Count != 0 ? CleanString(AdUser.Properties["Manager"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Info", (AdUser.Properties["info"].Count != 0 ? CleanString(AdUser.Properties["info"][0]) : "")));
                     UserObj.Members.Add(new PSNoteProperty("Last Logon Date", LastLogonDate));
-                    UserObj.Members.Add(new PSNoteProperty("When Created", (AdUser.Properties["whencreated"].Count != 0 ? AdUser.Properties["whencreated"][0] : "")));
-                    UserObj.Members.Add(new PSNoteProperty("When Changed", (AdUser.Properties["whenchanged"].Count != 0 ? AdUser.Properties["whenchanged"][0] : "")));
-                    UserObj.Members.Add(new PSNoteProperty("DistinguishedName", (AdUser.Properties["distinguishedname"].Count != 0 ? AdUser.Properties["distinguishedname"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Password LastSet", PasswordLastSet));
+                    UserObj.Members.Add(new PSNoteProperty("Account Expiration Date", AccountExpires));
+                    UserObj.Members.Add(new PSNoteProperty("Account Expiration (days)", AccountExpirationNumofDays));
+                    UserObj.Members.Add(new PSNoteProperty("Mobile", (AdUser.Properties["mobile"].Count != 0 ? CleanString(AdUser.Properties["mobile"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Email", (AdUser.Properties["mail"].Count != 0 ? CleanString(AdUser.Properties["mail"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("HomeDirectory", (AdUser.Properties["homedirectory"].Count != 0 ? AdUser.Properties["homedirectory"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("ProfilePath", (AdUser.Properties["profilepath"].Count != 0 ? AdUser.Properties["profilepath"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("ScriptPath", (AdUser.Properties["scriptpath"].Count != 0 ? AdUser.Properties["scriptpath"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("UserAccountControl", (AdUser.Properties["useraccountcontrol"].Count != 0 ? AdUser.Properties["useraccountcontrol"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("First Name", (AdUser.Properties["givenName"].Count != 0 ? CleanString(AdUser.Properties["givenName"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Middle Name", (AdUser.Properties["middleName"].Count != 0 ? CleanString(AdUser.Properties["middleName"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Last Name", (AdUser.Properties["sn"].Count != 0 ? CleanString(AdUser.Properties["sn"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("Country", (AdUser.Properties["c"].Count != 0 ? CleanString(AdUser.Properties["c"][0]) : "")));
+                    UserObj.Members.Add(new PSNoteProperty("whenCreated", (AdUser.Properties["whencreated"].Count != 0 ? AdUser.Properties["whencreated"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("whenChanged", (AdUser.Properties["whenchanged"].Count != 0 ? AdUser.Properties["whenchanged"][0] : "")));
+                    UserObj.Members.Add(new PSNoteProperty("DistinguishedName", (AdUser.Properties["distinguishedname"].Count != 0 ? CleanString(AdUser.Properties["distinguishedname"][0]) : "")));
                     UserObj.Members.Add(new PSNoteProperty("CanonicalName", (AdUser.Properties["canonicalname"].Count != 0 ? AdUser.Properties["canonicalname"][0] : "")));
                     return new PSObject[] { UserObj };
                 }
@@ -1419,12 +2303,16 @@ namespace ADRecon
                         var userFlags = (UACFlags) AdUser.Properties["useraccountcontrol"][0];
                         Enabled = !((userFlags & UACFlags.ACCOUNTDISABLE) == UACFlags.ACCOUNTDISABLE);
                     }
-                    String Description = (AdUser.Properties["Description"].Count != 0 ? Convert.ToString(AdUser.Properties["Description"][0]) : "");
-                    foreach (String Member in AdUser.Properties["memberof"])
+                    String Description = (AdUser.Properties["Description"].Count != 0 ? CleanString(AdUser.Properties["Description"][0]) : "");
+                    String PrimaryGroupID = (AdUser.Properties["primarygroupid"].Count != 0 ? Convert.ToString(AdUser.Properties["primarygroupid"][0]) : "");
+                    if (AdUser.Properties["memberof"].Count != 0)
                     {
-                        Memberof = Memberof + "," + ((Convert.ToString(Member)).Split(',')[0]).Split('=')[1];
+                        foreach (String Member in AdUser.Properties["memberof"])
+                        {
+                            Memberof = Memberof + "," + ((Convert.ToString(Member)).Split(',')[0]).Split('=')[1];
+                        }
+                        Memberof = Memberof.TrimStart(',');
                     }
-                    Memberof = Memberof.TrimStart(',');
                     foreach (String SPN in AdUser.Properties["serviceprincipalname"])
                     {
                         String[] SPNArray = SPN.Split('/');
@@ -1436,6 +2324,7 @@ namespace ADRecon
                         UserSPNObj.Members.Add(new PSNoteProperty("Host", SPNArray[1]));
                         UserSPNObj.Members.Add(new PSNoteProperty("Password Last Set", PasswordLastSet));
                         UserSPNObj.Members.Add(new PSNoteProperty("Description", Description));
+                        UserSPNObj.Members.Add(new PSNoteProperty("Primary GroupID", PrimaryGroupID));
                         UserSPNObj.Members.Add(new PSNoteProperty("Memberof", Memberof));
                         SPNList.Add( UserSPNObj );
                     }
@@ -1504,12 +2393,30 @@ namespace ADRecon
                     GroupObj.Members.Add(new PSNoteProperty("ManagedBy", ManagedBy));
                     GroupObj.Members.Add(new PSNoteProperty("SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSID"][0], 0))));
                     GroupObj.Members.Add(new PSNoteProperty("SIDHistory", SIDHistory));
-                    GroupObj.Members.Add(new PSNoteProperty("Description", (AdGroup.Properties["Description"].Count != 0 ? CleanString(Convert.ToString(AdGroup.Properties["Description"][0])) : "")));
+                    GroupObj.Members.Add(new PSNoteProperty("Description", (AdGroup.Properties["Description"].Count != 0 ? CleanString(AdGroup.Properties["Description"][0]) : "")));
                     GroupObj.Members.Add(new PSNoteProperty("whenCreated", AdGroup.Properties["whencreated"][0]));
                     GroupObj.Members.Add(new PSNoteProperty("whenChanged", AdGroup.Properties["whenchanged"][0]));
-                    GroupObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(Convert.ToString(AdGroup.Properties["distinguishedname"][0]))));
+                    GroupObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(AdGroup.Properties["distinguishedname"][0])));
                     GroupObj.Members.Add(new PSNoteProperty("CanonicalName", AdGroup.Properties["canonicalname"][0]));
                     return new PSObject[] { GroupObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class GroupRecordDictionaryProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdGroup = (SearchResult) record;
+                    LDAPClass.AdGroupDictionary.Add((Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSID"][0], 0))),(Convert.ToString(AdGroup.Properties["samaccountname"][0])));
+                    return new PSObject[] { };
                 }
                 catch (Exception e)
                 {
@@ -1554,6 +2461,26 @@ namespace ADRecon
                         AccountType = "user";
                         MemberName = ((Convert.ToString(AdGroup.Properties["DistinguishedName"][0])).Split(',')[0]).Split('=')[1];
                         MemberUserName = Convert.ToString(AdGroup.Properties["sAMAccountName"][0]);
+                        String PrimaryGroupID = Convert.ToString(AdGroup.Properties["primaryGroupID"][0]);
+                        try
+                        {
+                            GroupName = LDAPClass.AdGroupDictionary[LDAPClass.DomainSID + "-" + PrimaryGroupID];
+                        }
+                        catch //(Exception e)
+                        {
+                            //Console.WriteLine("{0} Exception caught.", e);
+                            GroupName = PrimaryGroupID;
+                        }
+
+                        {
+                            PSObject GroupMemberObj = new PSObject();
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
+                            GroupsList.Add( GroupMemberObj );
+                        }
+
                         foreach (String GroupMember in AdGroup.Properties["memberof"])
                         {
                             GroupName = ((Convert.ToString(GroupMember)).Split(',')[0]).Split('=')[1];
@@ -1570,6 +2497,26 @@ namespace ADRecon
                         AccountType = "computer";
                         MemberName = ((Convert.ToString(AdGroup.Properties["DistinguishedName"][0])).Split(',')[0]).Split('=')[1];
                         MemberUserName = Convert.ToString(AdGroup.Properties["sAMAccountName"][0]);
+                        String PrimaryGroupID = Convert.ToString(AdGroup.Properties["primaryGroupID"][0]);
+                        try
+                        {
+                            GroupName = LDAPClass.AdGroupDictionary[LDAPClass.DomainSID + "-" + PrimaryGroupID];
+                        }
+                        catch //(Exception e)
+                        {
+                            //Console.WriteLine("{0} Exception caught.", e);
+                            GroupName = PrimaryGroupID;
+                        }
+
+                        {
+                            PSObject GroupMemberObj = new PSObject();
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
+                            GroupsList.Add( GroupMemberObj );
+                        }
+
                         foreach (String GroupMember in AdGroup.Properties["memberof"])
                         {
                             GroupName = ((Convert.ToString(GroupMember)).Split(',')[0]).Split('=')[1];
@@ -1586,6 +2533,187 @@ namespace ADRecon
                         // TO DO
                     }
                     return GroupsList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class OURecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdOU = (SearchResult) record;
+
+                    PSObject OUObj = new PSObject();
+                    OUObj.Members.Add(new PSNoteProperty("Name", AdOU.Properties["name"][0]));
+                    OUObj.Members.Add(new PSNoteProperty("Depth", ((Convert.ToString(AdOU.Properties["distinguishedname"][0]).Split(new string[] { "OU=" }, StringSplitOptions.None)).Length -1)));
+                    OUObj.Members.Add(new PSNoteProperty("Description", (AdOU.Properties["description"].Count != 0 ? AdOU.Properties["description"][0] : "")));
+                    OUObj.Members.Add(new PSNoteProperty("whenCreated", AdOU.Properties["whencreated"][0]));
+                    OUObj.Members.Add(new PSNoteProperty("whenChanged", AdOU.Properties["whenchanged"][0]));
+                    OUObj.Members.Add(new PSNoteProperty("DistinguishedName", AdOU.Properties["distinguishedname"][0]));
+                    return new PSObject[] { OUObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class GPORecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdGPO = (SearchResult) record;
+
+                    PSObject GPOObj = new PSObject();
+                    GPOObj.Members.Add(new PSNoteProperty("DisplayName", CleanString(AdGPO.Properties["displayname"][0])));
+                    GPOObj.Members.Add(new PSNoteProperty("GUID", CleanString(AdGPO.Properties["name"][0])));
+                    GPOObj.Members.Add(new PSNoteProperty("whenCreated", AdGPO.Properties["whenCreated"][0]));
+                    GPOObj.Members.Add(new PSNoteProperty("whenChanged", AdGPO.Properties["whenChanged"][0]));
+                    GPOObj.Members.Add(new PSNoteProperty("DistinguishedName", CleanString(AdGPO.Properties["distinguishedname"][0])));
+                    GPOObj.Members.Add(new PSNoteProperty("FilePath", AdGPO.Properties["gpcfilesyspath"][0]));
+                    return new PSObject[] { GPOObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class GPORecordDictionaryProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdGPO = (SearchResult) record;
+                    LDAPClass.AdGPODictionary.Add((Convert.ToString(AdGPO.Properties["distinguishedname"][0]).ToUpper()), (Convert.ToString(AdGPO.Properties["displayname"][0])));
+                    return new PSObject[] { };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class SOMRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdSOM = (SearchResult) record;
+
+                    List<PSObject> SOMsList = new List<PSObject>();
+                    int Depth = 0;
+                    bool BlockInheritance = false;
+                    bool? LinkEnabled = null;
+                    bool? Enforced = null;
+                    String gPLink = (AdSOM.Properties["gPLink"].Count != 0 ? Convert.ToString(AdSOM.Properties["gPLink"][0]) : "");
+                    String GPOName = null;
+
+                    Depth = ((Convert.ToString(AdSOM.Properties["distinguishedname"][0]).Split(new string[] { "OU=" }, StringSplitOptions.None)).Length -1);
+                    if (AdSOM.Properties["gPOptions"].Count != 0)
+                    {
+                        if ((int) AdSOM.Properties["gPOptions"][0] == 1)
+                        {
+                            BlockInheritance = true;
+                        }
+                    }
+                    var GPLinks = gPLink.Split(']', '[').Where(x => x.StartsWith("LDAP"));
+                    int Order = (GPLinks.ToArray()).Length;
+                    if (Order == 0)
+                    {
+                        PSObject SOMObj = new PSObject();
+                        SOMObj.Members.Add(new PSNoteProperty("Name", AdSOM.Properties["name"][0]));
+                        SOMObj.Members.Add(new PSNoteProperty("Depth", Depth));
+                        SOMObj.Members.Add(new PSNoteProperty("DistinguishedName", AdSOM.Properties["distinguishedname"][0]));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Order", null));
+                        SOMObj.Members.Add(new PSNoteProperty("GPO", GPOName));
+                        SOMObj.Members.Add(new PSNoteProperty("Enforced", Enforced));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Enabled", LinkEnabled));
+                        SOMObj.Members.Add(new PSNoteProperty("BlockInheritance", BlockInheritance));
+                        SOMObj.Members.Add(new PSNoteProperty("gPLink", gPLink));
+                        SOMObj.Members.Add(new PSNoteProperty("gPOptions", (AdSOM.Properties["gpoptions"].Count != 0 ? AdSOM.Properties["gpoptions"][0] : "")));
+                        SOMsList.Add( SOMObj );
+                    }
+                    foreach (String link in GPLinks)
+                    {
+                        String[] linksplit = link.Split('/', ';');
+                        if (!Convert.ToBoolean((Convert.ToInt32(linksplit[3]) & 1)))
+                        {
+                            LinkEnabled = true;
+                        }
+                        else
+                        {
+                            LinkEnabled = false;
+                        }
+                        if (Convert.ToBoolean((Convert.ToInt32(linksplit[3]) & 2)))
+                        {
+                            Enforced = true;
+                        }
+                        else
+                        {
+                            Enforced = false;
+                        }
+                        GPOName = LDAPClass.AdGPODictionary.ContainsKey(linksplit[2].ToUpper()) ? LDAPClass.AdGPODictionary[linksplit[2].ToUpper()] : linksplit[2].Split('=',',')[1];
+                        PSObject SOMObj = new PSObject();
+                        SOMObj.Members.Add(new PSNoteProperty("Name", AdSOM.Properties["name"][0]));
+                        SOMObj.Members.Add(new PSNoteProperty("Depth", Depth));
+                        SOMObj.Members.Add(new PSNoteProperty("DistinguishedName", AdSOM.Properties["distinguishedname"][0]));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Order", Order));
+                        SOMObj.Members.Add(new PSNoteProperty("GPO", GPOName));
+                        SOMObj.Members.Add(new PSNoteProperty("Enforced", Enforced));
+                        SOMObj.Members.Add(new PSNoteProperty("Link Enabled", LinkEnabled));
+                        SOMObj.Members.Add(new PSNoteProperty("BlockInheritance", BlockInheritance));
+                        SOMObj.Members.Add(new PSNoteProperty("gPLink", gPLink));
+                        SOMObj.Members.Add(new PSNoteProperty("gPOptions", (AdSOM.Properties["gpoptions"].Count != 0 ? AdSOM.Properties["gpoptions"][0] : "")));
+                        SOMsList.Add( SOMObj );
+                        Order--;
+                    }
+                    return SOMsList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class PrinterRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdPrinter = (SearchResult) record;
+
+                    PSObject PrinterObj = new PSObject();
+                    PrinterObj.Members.Add(new PSNoteProperty("Name", AdPrinter.Properties["Name"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("ServerName", AdPrinter.Properties["serverName"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("ShareName", AdPrinter.Properties["printShareName"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("DriverName", AdPrinter.Properties["driverName"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("DriverVersion", AdPrinter.Properties["driverVersion"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("PortName", AdPrinter.Properties["portName"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("URL", AdPrinter.Properties["url"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("whenCreated", AdPrinter.Properties["whenCreated"][0]));
+                    PrinterObj.Members.Add(new PSNoteProperty("whenChanged", AdPrinter.Properties["whenChanged"][0]));
+                    return new PSObject[] { PrinterObj };
                 }
                 catch (Exception e)
                 {
@@ -1707,8 +2835,10 @@ namespace ADRecon
                     ComputerObj.Members.Add(new PSNoteProperty("SID", Convert.ToString(new SecurityIdentifier((byte[])AdComputer.Properties["objectSID"][0], 0))));
                     ComputerObj.Members.Add(new PSNoteProperty("SIDHistory", SIDHistory));
                     ComputerObj.Members.Add(new PSNoteProperty("Description", (AdComputer.Properties["Description"].Count != 0 ? AdComputer.Properties["Description"][0] : "")));
+                    ComputerObj.Members.Add(new PSNoteProperty("ms-ds-CreatorSid", (AdComputer.Properties["ms-ds-CreatorSid"].Count != 0 ? Convert.ToString(new SecurityIdentifier((byte[])AdComputer.Properties["ms-ds-CreatorSid"][0], 0)) : "")));
                     ComputerObj.Members.Add(new PSNoteProperty("Last Logon Date", LastLogonDate));
                     ComputerObj.Members.Add(new PSNoteProperty("Password LastSet", PasswordLastSet));
+                    ComputerObj.Members.Add(new PSNoteProperty("UserAccountControl", (AdComputer.Properties["useraccountcontrol"].Count != 0 ? AdComputer.Properties["useraccountcontrol"][0] : "")));
                     ComputerObj.Members.Add(new PSNoteProperty("whenCreated", AdComputer.Properties["whencreated"][0]));
                     ComputerObj.Members.Add(new PSNoteProperty("whenChanged", AdComputer.Properties["whenchanged"][0]));
                     ComputerObj.Members.Add(new PSNoteProperty("Distinguished Name", AdComputer.Properties["distinguishedname"][0]));
@@ -1753,6 +2883,247 @@ namespace ADRecon
                         }
                     }
                     return SPNList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class LAPSRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdComputer = (SearchResult) record;
+                    bool PasswordStored = false;
+                    DateTime? CurrentExpiration = null;
+                    if (AdComputer.Properties["ms-mcs-admpwdexpirationtime"].Count != 0)
+                    {
+                        CurrentExpiration = DateTime.FromFileTime((long)(AdComputer.Properties["ms-mcs-admpwdexpirationtime"][0]));
+                        PasswordStored = true;
+                    }
+                    PSObject LAPSObj = new PSObject();
+                    LAPSObj.Members.Add(new PSNoteProperty("Hostname", (AdComputer.Properties["dnshostname"].Count != 0 ? AdComputer.Properties["dnshostname"][0] : AdComputer.Properties["cn"][0] )));
+                    LAPSObj.Members.Add(new PSNoteProperty("Stored", PasswordStored));
+                    LAPSObj.Members.Add(new PSNoteProperty("Readable", (AdComputer.Properties["ms-mcs-admpwd"].Count != 0 ? true : false)));
+                    LAPSObj.Members.Add(new PSNoteProperty("Password", (AdComputer.Properties["ms-mcs-admpwd"].Count != 0 ? AdComputer.Properties["ms-mcs-admpwd"][0] : null)));
+                    LAPSObj.Members.Add(new PSNoteProperty("Expiration", CurrentExpiration));
+                    return new PSObject[] { LAPSObj };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class SIDRecordDictionaryProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdObject = (SearchResult) record;
+                    switch (Convert.ToString(AdObject.Properties["objectclass"][AdObject.Properties["objectclass"].Count-1]))
+                    {
+                        case "user":
+                        case "computer":
+                        case "group":
+                            LDAPClass.AdSIDDictionary.Add(Convert.ToString(new SecurityIdentifier((byte[])AdObject.Properties["objectSID"][0], 0)), (Convert.ToString(AdObject.Properties["name"][0])));
+                            break;
+                    }
+                    return new PSObject[] { };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+        class DACLRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdObject = (SearchResult) record;
+                    byte[] ntSecurityDescriptor = null;
+                    String Name = null;
+                    String Type = null;
+                    List<PSObject> DACLList = new List<PSObject>();
+
+                    Name = Convert.ToString(AdObject.Properties["name"][0]);
+
+                    switch (Convert.ToString(AdObject.Properties["objectclass"][AdObject.Properties["objectclass"].Count-1]))
+                    {
+                        case "user":
+                            Type = "User";
+                            break;
+                        case "computer":
+                            Type = "Computer";
+                            break;
+                        case "group":
+                            Type = "Group";
+                            break;
+                        case "container":
+                            Type = "Container";
+                            break;
+                        case "groupPolicyContainer":
+                            Type = "GPO";
+                            Name = Convert.ToString(AdObject.Properties["displayname"][0]);
+                            break;
+                        case "organizationalUnit":
+                            Type = "OU";
+                            break;
+                        case "domainDNS":
+                            Type = "Domain";
+                            break;
+                        default:
+                            Type = Convert.ToString(AdObject.Properties["objectclass"][AdObject.Properties["objectclass"].Count-1]);
+                            break;
+                    }
+
+                    // When the user is not allowed to query the ntsecuritydescriptor attribute.
+                    if (AdObject.Properties["ntsecuritydescriptor"].Count != 0)
+                    {
+                        ntSecurityDescriptor = (byte[]) AdObject.Properties["ntsecuritydescriptor"][0];
+                    }
+                    else
+                    {
+                        DirectoryEntry AdObjectEntry = ((SearchResult)record).GetDirectoryEntry();
+                        ntSecurityDescriptor = (byte[]) AdObjectEntry.ObjectSecurity.GetSecurityDescriptorBinaryForm();
+                    }
+                    if (ntSecurityDescriptor != null)
+                    {
+                        DirectoryObjectSecurity DirObjSec = new ActiveDirectorySecurity();
+                        DirObjSec.SetSecurityDescriptorBinaryForm(ntSecurityDescriptor);
+                        AuthorizationRuleCollection AccessRules = (AuthorizationRuleCollection) DirObjSec.GetAccessRules(true,true,typeof(System.Security.Principal.NTAccount));
+                        foreach (ActiveDirectoryAccessRule Rule in AccessRules)
+                        {
+                            String IdentityReference = Convert.ToString(Rule.IdentityReference);
+                            String Owner = Convert.ToString(DirObjSec.GetOwner(typeof(System.Security.Principal.SecurityIdentifier)));
+                            PSObject ObjectObj = new PSObject();
+                            ObjectObj.Members.Add(new PSNoteProperty("Name", CleanString(Name)));
+                            ObjectObj.Members.Add(new PSNoteProperty("Type", Type));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectTypeName", LDAPClass.GUIDs[Convert.ToString(Rule.ObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectTypeName", LDAPClass.GUIDs[Convert.ToString(Rule.InheritedObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("ActiveDirectoryRights", Rule.ActiveDirectoryRights));
+                            ObjectObj.Members.Add(new PSNoteProperty("AccessControlType", Rule.AccessControlType));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReferenceName", LDAPClass.AdSIDDictionary.ContainsKey(IdentityReference) ? LDAPClass.AdSIDDictionary[IdentityReference] : IdentityReference));
+                            ObjectObj.Members.Add(new PSNoteProperty("OwnerName", LDAPClass.AdSIDDictionary.ContainsKey(Owner) ? LDAPClass.AdSIDDictionary[Owner] : Owner));
+                            ObjectObj.Members.Add(new PSNoteProperty("Inherited", Rule.IsInherited));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectFlags", Rule.ObjectFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceFlags", Rule.InheritanceFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceType", Rule.InheritanceType));
+                            ObjectObj.Members.Add(new PSNoteProperty("PropagationFlags", Rule.PropagationFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectType", Rule.ObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectType", Rule.InheritedObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReference", Rule.IdentityReference));
+                            ObjectObj.Members.Add(new PSNoteProperty("Owner", Owner));
+                            ObjectObj.Members.Add(new PSNoteProperty("DistinguishedName", AdObject.Properties["distinguishedname"][0]));
+                            DACLList.Add( ObjectObj );
+                        }
+                    }
+
+                    return DACLList.ToArray();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{0} Exception caught.", e);
+                    return new PSObject[] { };
+                }
+            }
+        }
+
+    class SACLRecordProcessor : IRecordProcessor
+        {
+            public PSObject[] processRecord(Object record)
+            {
+                try
+                {
+                    SearchResult AdObject = (SearchResult) record;
+                    byte[] ntSecurityDescriptor = null;
+                    String Name = null;
+                    String Type = null;
+                    List<PSObject> SACLList = new List<PSObject>();
+
+                    Name = Convert.ToString(AdObject.Properties["name"][0]);
+
+                    switch (Convert.ToString(AdObject.Properties["objectclass"][AdObject.Properties["objectclass"].Count-1]))
+                    {
+                        case "user":
+                            Type = "User";
+                            break;
+                        case "computer":
+                            Type = "Computer";
+                            break;
+                        case "group":
+                            Type = "Group";
+                            break;
+                        case "container":
+                            Type = "Container";
+                            break;
+                        case "groupPolicyContainer":
+                            Type = "GPO";
+                            Name = Convert.ToString(AdObject.Properties["displayname"][0]);
+                            break;
+                        case "organizationalUnit":
+                            Type = "OU";
+                            break;
+                        case "domainDNS":
+                            Type = "Domain";
+                            break;
+                        default:
+                            Type = Convert.ToString(AdObject.Properties["objectclass"][AdObject.Properties["objectclass"].Count-1]);
+                            break;
+                    }
+
+                    // When the user is not allowed to query the ntsecuritydescriptor attribute.
+                    if (AdObject.Properties["ntsecuritydescriptor"].Count != 0)
+                    {
+                        ntSecurityDescriptor = (byte[]) AdObject.Properties["ntsecuritydescriptor"][0];
+                    }
+                    else
+                    {
+                        DirectoryEntry AdObjectEntry = ((SearchResult)record).GetDirectoryEntry();
+                        ntSecurityDescriptor = (byte[]) AdObjectEntry.ObjectSecurity.GetSecurityDescriptorBinaryForm();
+                    }
+                    if (ntSecurityDescriptor != null)
+                    {
+                        DirectoryObjectSecurity DirObjSec = new ActiveDirectorySecurity();
+                        DirObjSec.SetSecurityDescriptorBinaryForm(ntSecurityDescriptor);
+                        AuthorizationRuleCollection AuditRules = (AuthorizationRuleCollection) DirObjSec.GetAuditRules(true,true,typeof(System.Security.Principal.NTAccount));
+                        foreach (ActiveDirectoryAuditRule Rule in AuditRules)
+                        {
+                            String IdentityReference = Convert.ToString(Rule.IdentityReference);
+                            PSObject ObjectObj = new PSObject();
+                            ObjectObj.Members.Add(new PSNoteProperty("Name", CleanString(Name)));
+                            ObjectObj.Members.Add(new PSNoteProperty("Type", Type));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectTypeName", LDAPClass.GUIDs[Convert.ToString(Rule.ObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectTypeName", LDAPClass.GUIDs[Convert.ToString(Rule.InheritedObjectType)]));
+                            ObjectObj.Members.Add(new PSNoteProperty("ActiveDirectoryRights", Rule.ActiveDirectoryRights));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReferenceName", LDAPClass.AdSIDDictionary.ContainsKey(IdentityReference) ? LDAPClass.AdSIDDictionary[IdentityReference] : IdentityReference));
+                            ObjectObj.Members.Add(new PSNoteProperty("AuditFlags", Rule.AuditFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectFlags", Rule.ObjectFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceFlags", Rule.InheritanceFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritanceType", Rule.InheritanceType));
+                            ObjectObj.Members.Add(new PSNoteProperty("Inherited", Rule.IsInherited));
+                            ObjectObj.Members.Add(new PSNoteProperty("PropagationFlags", Rule.PropagationFlags));
+                            ObjectObj.Members.Add(new PSNoteProperty("ObjectType", Rule.ObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("InheritedObjectType", Rule.InheritedObjectType));
+                            ObjectObj.Members.Add(new PSNoteProperty("IdentityReference", Rule.IdentityReference));
+                            SACLList.Add( ObjectObj );
+                        }
+                    }
+
+                    return SACLList.ToArray();
                 }
                 catch (Exception e)
                 {
@@ -2223,6 +3594,30 @@ namespace ADRecon
 }
 "@
 
+# Import the LogonUser, ImpersonateLoggedOnUser and RevertToSelf Functions from advapi32.dll and the CloseHandle Function from kernel32.dll
+# https://docs.microsoft.com/en-gb/powershell/module/Microsoft.PowerShell.Utility/Add-Type?view=powershell-5.1
+# https://msdn.microsoft.com/en-us/library/windows/desktop/aa378184(v=vs.85).aspx
+# https://msdn.microsoft.com/en-us/library/windows/desktop/aa378612(v=vs.85).aspx
+# https://msdn.microsoft.com/en-us/library/windows/desktop/aa379317(v=vs.85).aspx
+
+$Advapi32Def = @'
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern bool LogonUser(string lpszUsername, string lpszDomain, string lpszPassword, int dwLogonType, int dwLogonProvider, out IntPtr phToken);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern bool ImpersonateLoggedOnUser(IntPtr hToken);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    public static extern bool RevertToSelf();
+'@
+
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms724211(v=vs.85).aspx
+
+$Kernel32Def = @'
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool CloseHandle(IntPtr hObject);
+'@
+
 Function Get-DateDiff
 {
 <#
@@ -2306,6 +3701,303 @@ Function Get-DNtoFQDN
     Return $ADObjectDNDomainName
 }
 
+Function Export-ADRCSV
+{
+<#
+.SYNOPSIS
+    Exports Object to a CSV file.
+
+.DESCRIPTION
+    Exports Object to a CSV file using Export-CSV.
+
+.PARAMETER ADRObj
+    [PSObject]
+    ADRObj
+
+.PARAMETER ADFileName
+    [String]
+    Path to save the CSV File.
+
+.OUTPUTS
+    CSV file.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [PSObject] $ADRObj,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [String] $ADFileName
+    )
+
+    Try
+    {
+        $ADRObj | Export-Csv -Path $ADFileName -NoTypeInformation
+    }
+    Catch
+    {
+        Write-Warning "[Export-ADRCSV] Failed to export $($ADFileName)."
+        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+    }
+}
+
+Function Export-ADRXML
+{
+<#
+.SYNOPSIS
+    Exports Object to a XML file.
+
+.DESCRIPTION
+    Exports Object to a XML file using Export-Clixml.
+
+.PARAMETER ADRObj
+    [PSObject]
+    ADRObj
+
+.PARAMETER ADFileName
+    [String]
+    Path to save the XML File.
+
+.OUTPUTS
+    XML file.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [PSObject] $ADRObj,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [String] $ADFileName
+    )
+
+    Try
+    {
+        (ConvertTo-Xml -NoTypeInformation -InputObject $ADRObj).Save($ADFileName)
+    }
+    Catch
+    {
+        Write-Warning "[Export-ADRXML] Failed to export $($ADFileName)."
+        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+    }
+}
+
+Function Export-ADRJSON
+{
+<#
+.SYNOPSIS
+    Exports Object to a JSON file.
+
+.DESCRIPTION
+    Exports Object to a JSON file using ConvertTo-Json.
+
+.PARAMETER ADRObj
+    [PSObject]
+    ADRObj
+
+.PARAMETER ADFileName
+    [String]
+    Path to save the JSON File.
+
+.OUTPUTS
+    JSON file.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [PSObject] $ADRObj,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [String] $ADFileName
+    )
+
+    Try
+    {
+        ConvertTo-JSON -InputObject $ADRObj | Out-File -FilePath $ADFileName
+    }
+    Catch
+    {
+        Write-Warning "[Export-ADRJSON] Failed to export $($ADFileName)."
+        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+    }
+}
+
+Function Export-ADRHTML
+{
+<#
+.SYNOPSIS
+    Exports Object to a HTML file.
+
+.DESCRIPTION
+    Exports Object to a HTML file using ConvertTo-Html.
+
+.PARAMETER ADRObj
+    [PSObject]
+    ADRObj
+
+.PARAMETER ADFileName
+    [String]
+    Path to save the HTML File.
+
+.OUTPUTS
+    HTML file.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [PSObject] $ADRObj,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [String] $ADFileName,
+
+        [Parameter(Mandatory = $false)]
+        [String] $ADROutputDir = $null
+    )
+
+$Header = @"
+<style type="text/css">
+th {
+	color:white;
+	background-color:blue;
+}
+td, th {
+	border:0px solid black;
+	border-collapse:collapse;
+	white-space:pre;
+}
+tr:nth-child(2n+1) {
+    background-color: #dddddd;
+}
+tr:hover td {
+    background-color: #c1d5f8;
+}
+table, tr, td, th {
+	padding: 0px;
+	margin: 0px;
+	white-space:pre;
+}
+table {
+	margin-left:1px;
+}
+</style>
+"@
+    Try
+    {
+        If ($ADFileName.Contains("Index"))
+        {
+            $HTMLPath  = -join($ADROutputDir,'\','HTML-Files')
+            $HTMLPath = $((Convert-Path $HTMLPath).TrimEnd("\"))
+            $HTMLFiles = Get-ChildItem -Path $HTMLPath -name
+            $HTML = $HTMLFiles | ConvertTo-HTML -Title "ADRecon" -Property @{Label="Table of Contents";Expression={"<a href='$($_)'>$($_)</a>"}} -Head $Header
+
+            Add-Type -AssemblyName System.Web
+            [System.Web.HttpUtility]::HtmlDecode($HTML) | Out-File -FilePath $ADFileName
+        }
+        Else
+        {
+            If ($ADRObj -is [array])
+            {
+                $ADRObj | Select-Object * | ConvertTo-HTML -As Table -Head $Header | Out-File -FilePath $ADFileName
+            }
+            Else
+            {
+                ConvertTo-HTML -InputObject $ADRObj -As Table -Head $Header | Out-File -FilePath $ADFileName
+            }
+        }
+    }
+    Catch
+    {
+        Write-Warning "[Export-ADRHTML] Failed to export $($ADFileName)."
+        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+    }
+}
+
+Function Export-ADR
+{
+<#
+.SYNOPSIS
+    Helper function for all output types supported.
+
+.DESCRIPTION
+    Helper function for all output types supported.
+
+.PARAMETER ADObjectDN
+    [PSObject]
+    ADRObj
+
+.PARAMETER ADROutputDir
+    [String]
+    Path for ADRecon output folder.
+
+.PARAMETER OutputType
+    [array]
+    Output Type.
+
+.PARAMETER ADRModuleName
+    [String]
+    Module Name.
+
+.OUTPUTS
+    STDOUT, CSV, XML, JSON and/or HTML file, etc.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSObject] $ADRObj,
+
+        [Parameter(Mandatory = $true)]
+        [String] $ADROutputDir,
+
+        [Parameter(Mandatory = $true)]
+        [array] $OutputType,
+
+        [Parameter(Mandatory = $true)]
+        [String] $ADRModuleName
+    )
+
+    Switch ($OutputType)
+    {
+        'STDOUT'
+        {
+            If ($ADRModuleName -ne "AboutADRecon")
+            {
+                If ($ADRObj -is [array])
+                {
+                    # Fix for InvalidOperationException: The object of type "Microsoft.PowerShell.Commands.Internal.Format.FormatStartData" is not valid or not in the correct sequence.
+                    $ADRObj | Out-String -Stream
+                }
+                Else
+                {
+                    # Fix for InvalidOperationException: The object of type "Microsoft.PowerShell.Commands.Internal.Format.FormatStartData" is not valid or not in the correct sequence.
+                    $ADRObj | Format-List | Out-String -Stream
+                }
+            }
+        }
+        'CSV'
+        {
+            $ADFileName  = -join($ADROutputDir,'\','CSV-Files','\',$ADRModuleName,'.csv')
+            Export-ADRCSV -ADRObj $ADRObj -ADFileName $ADFileName
+        }
+        'XML'
+        {
+            $ADFileName  = -join($ADROutputDir,'\','XML-Files','\',$ADRModuleName,'.xml')
+            Export-ADRXML -ADRObj $ADRObj -ADFileName $ADFileName
+        }
+        'JSON'
+        {
+            $ADFileName  = -join($ADROutputDir,'\','JSON-Files','\',$ADRModuleName,'.json')
+            Export-ADRJSON -ADRObj $ADRObj -ADFileName $ADFileName
+        }
+        'HTML'
+        {
+            $ADFileName  = -join($ADROutputDir,'\','HTML-Files','\',$ADRModuleName,'.html')
+            Export-ADRHTML -ADRObj $ADRObj -ADFileName $ADFileName -ADROutputDir $ADROutputDir
+        }
+    }
+}
+
 Function Get-ADRExcelComObj
 {
 <#
@@ -2340,7 +4032,7 @@ Function Get-ADRExcelComObj
             $script:VerbosePreference = $SaveVerbosePreference
             Remove-Variable SaveVerbosePreference
         }
-        Write-Warning "[Get-ADRExcelComObj] Excel does not appear to be installed. Skipping generation of ADRecon-Report-<ddMMMyy>.xlsx. Use the -GenExcel parameter to generate the ADRecon-Report.xslx on a host with Microsoft Excel installed."
+        Write-Warning "[Get-ADRExcelComObj] Excel does not appear to be installed. Skipping generation of ADRecon-Report.xlsx. Use the -GenExcel parameter to generate the ADRecon-Report.xslx on a host with Microsoft Excel installed."
         Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         Return $null
     }
@@ -2549,6 +4241,14 @@ Function Get-ADRExcelPivotTable
 .PARAMETER PivotValues
     [array]
     Row/Column names from Source Sheet to use for Values.
+
+.PARAMETER PivotPercentage
+    [array]
+    Row/Column names from Source Sheet to use for Percentage.
+
+.PARAMETER PivotLocation
+    [array]
+    Location of the Pivot Table in Row/Column.
 #>
     param (
         [Parameter(Mandatory = $true)]
@@ -2557,7 +4257,7 @@ Function Get-ADRExcelPivotTable
         [Parameter(Mandatory = $true)]
         [string] $PivotTableName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [array] $PivotRows,
 
         [Parameter(Mandatory = $false)]
@@ -2567,7 +4267,13 @@ Function Get-ADRExcelPivotTable
         [array] $PivotFilters,
 
         [Parameter(Mandatory = $false)]
-        [array] $PivotValues
+        [array] $PivotValues,
+
+        [Parameter(Mandatory = $false)]
+        [array] $PivotPercentage,
+
+        [Parameter(Mandatory = $false)]
+        [string] $PivotLocation = "R1C1"
     )
 
     $excel.ScreenUpdating = $false
@@ -2583,8 +4289,35 @@ Function Get-ADRExcelPivotTable
 
     # xlDatabase = 1 # this just means local sheet data
     # xlPivotTableVersion12 = 3 # Excel 2007
-    $PivotCaches = $workbook.PivotCaches().Create([Microsoft.Office.Interop.Excel.XlPivotTableSourceType]::xlDatabase, $SrcWorksheet.UsedRange, [Microsoft.Office.Interop.Excel.XlPivotTableVersionList]::xlPivotTableVersion12)
-    $PivotTable = $PivotCaches.CreatePivotTable("R1C1",$PivotTableName)
+    $PivotFailed = $false
+    Try
+    {
+        $PivotCaches = $workbook.PivotCaches().Create([Microsoft.Office.Interop.Excel.XlPivotTableSourceType]::xlDatabase, $SrcWorksheet.UsedRange, [Microsoft.Office.Interop.Excel.XlPivotTableVersionList]::xlPivotTableVersion12)
+    }
+    Catch
+    {
+        $PivotFailed = $true
+        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+    }
+    If ( $PivotFailed -eq $true )
+    {
+        $rows = $SrcWorksheet.UsedRange.Rows.Count
+        If ($SrcSheetName -eq "Computer SPNs")
+        {
+            $PivotCols = "A1:B"
+        }
+        ElseIf ($SrcSheetName -eq "Users")
+        {
+            $PivotCols = "A1:AI"
+        }
+        $UsedRange = $SrcWorksheet.Range($PivotCols+$rows)
+        $PivotCaches = $workbook.PivotCaches().Create([Microsoft.Office.Interop.Excel.XlPivotTableSourceType]::xlDatabase, $UsedRange, [Microsoft.Office.Interop.Excel.XlPivotTableVersionList]::xlPivotTableVersion12)
+        Remove-Variable rows
+	Remove-Variable PivotCols
+        Remove-Variable UsedRange
+    }
+    Remove-Variable PivotFailed
+    $PivotTable = $PivotCaches.CreatePivotTable($PivotLocation,$PivotTableName)
     # $workbook.ShowPivotTableFieldList = $true
 
     If ($PivotRows)
@@ -2623,6 +4356,17 @@ Function Get-ADRExcelPivotTable
         }
     }
 
+    If ($PivotPercentage)
+    {
+        ForEach ($Val in $PivotPercentage)
+        {
+            $PivotField = $PivotTable.PivotFields($Val)
+            $PivotField.Orientation = [Microsoft.Office.Interop.Excel.XlPivotFieldOrientation]::xlDataField
+            $PivotField.Calculation = [Microsoft.Office.Interop.Excel.XlPivotFieldCalculation]::xlPercentOfTotal
+            $PivotTable.ShowValuesRow = $false
+        }
+    }
+
     # $PivotFields.Caption = ""
     $excel.ScreenUpdating = $true
 
@@ -2634,6 +4378,150 @@ Function Get-ADRExcelPivotTable
     Remove-Variable PivotCaches
     Get-ADRExcelComObjRelease -ComObjtoRelease $SrcWorksheet
     Remove-Variable SrcWorksheet
+}
+
+Function Get-ADRExcelAttributeStats
+{
+<#
+.SYNOPSIS
+    Helper to add Attribute Stats to the current WorkSheet.
+
+.DESCRIPTION
+    Helper to add Attribute Stats to the current WorkSheet.
+
+.PARAMETER SrcSheetName
+    [string]
+    Source Sheet Name.
+
+.PARAMETER Title1
+    [string]
+    Title1.
+
+.PARAMETER Title2
+    [string]
+    Title2.
+
+.PARAMETER ObjAttributes
+    [OrderedDictionary]
+    Attributes.
+#>
+    param (
+        [Parameter(Mandatory = $true)]
+        [string] $SrcSheetName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Title1,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Title2,
+
+        [Parameter(Mandatory = $true)]
+        [System.Object] $ObjAttributes
+    )
+
+    $excel.ScreenUpdating = $false
+    $worksheet = $workbook.Worksheets.Item(1)
+    $SrcWorksheet = $workbook.Sheets.Item($SrcSheetName)
+
+    $row = 1
+    $column = 1
+    $worksheet.Cells.Item($row, $column) = $Title1
+    $worksheet.Cells.Item($row,$column).Style = "Heading 2"
+    $worksheet.Cells.Item($row,$column).HorizontalAlignment = -4108
+    $MergeCells = $worksheet.Range("A1:C1")
+    $MergeCells.Select() | Out-Null
+    $MergeCells.MergeCells = $true
+    Remove-Variable MergeCells
+
+    Get-ADRExcelPivotTable -SrcSheetName $SrcSheetName -PivotTableName "User Status" -PivotRows @("Enabled") -PivotValues @("UserName") -PivotPercentage @("UserName") -PivotLocation "R2C1"
+    $excel.ScreenUpdating = $false
+
+    $row = 2
+    "Type","Count","Percentage" | ForEach-Object {
+        $worksheet.Cells.Item($row, $column) = $_
+        $worksheet.Cells.Item($row, $column).Font.Bold = $True
+        $column++
+    }
+
+    $row = 3
+    $column = 1
+    For($row = 3; $row -le 6; $row++)
+    {
+        $temptext = [string] $worksheet.Cells.Item($row, $column).Text
+        switch ($temptext.ToUpper())
+        {
+            "TRUE" { $worksheet.Cells.Item($row, $column) = "Enabled" }
+            "FALSE" { $worksheet.Cells.Item($row, $column) = "Disabled" }
+            "GRAND TOTAL" { $worksheet.Cells.Item($row, $column) = "Total" }
+        }
+    }
+
+    $row = 1
+    $column = 6
+    $worksheet.Cells.Item($row, $column) = $Title2
+    $worksheet.Cells.Item($row,$column).Style = "Heading 2"
+    $worksheet.Cells.Item($row,$column).HorizontalAlignment = -4108
+    $MergeCells = $worksheet.Range("F1:L1")
+    $MergeCells.Select() | Out-Null
+    $MergeCells.MergeCells = $true
+    Remove-Variable MergeCells
+
+    $row++
+    "Category","Enabled Count","Enabled Percentage","Disabled Count","Disabled Percentage","Total Count","Total Percentage" | ForEach-Object {
+        $worksheet.Cells.Item($row, $column) = $_
+        $worksheet.Cells.Item($row, $column).Font.Bold = $True
+        $column++
+    }
+
+    $ExcelColumn = ($SrcWorksheet.Columns.Find("Enabled"))
+    $EnabledColAddress = "$($ExcelColumn.Address($false,$false).Substring(0,$ExcelColumn.Address($false,$false).Length-1)):$($ExcelColumn.Address($false,$false).Substring(0,$ExcelColumn.Address($false,$false).Length-1))"
+
+    $column = 6
+    $i = 2
+
+    $ObjAttributes.keys | ForEach-Object {
+        $ExcelColumn = ($SrcWorksheet.Columns.Find($_))
+        $ColAddress = "$($ExcelColumn.Address($false,$false).Substring(0,$ExcelColumn.Address($false,$false).Length-1)):$($ExcelColumn.Address($false,$false).Substring(0,$ExcelColumn.Address($false,$false).Length-1))"
+        $row++
+        $i++
+        If ($_ -eq "Delegation Typ")
+        {
+            $worksheet.Cells.Item($row, $column) = "Unconstrained Delegation"
+        }
+        ElseIf ($_ -eq "Delegation Type")
+        {
+            $worksheet.Cells.Item($row, $column) = "Constrained Delegation"
+        }
+        Else
+        {
+            $worksheet.Cells.Item($row, $column).Formula = '=' + $SrcWorksheet.Name + '!' + $ExcelColumn.Address($false,$false)
+        }
+        $worksheet.Cells.Item($row, $column+1).Formula = '=COUNTIFS(' + $SrcWorksheet.Name + '!' + $EnabledColAddress + ',"TRUE",' + $SrcWorksheet.Name + '!' + $ColAddress + ',' + $ObjAttributes[$_] + ')'
+        $worksheet.Cells.Item($row, $column+2).Formula = '=IFERROR(G' + $i + '/VLOOKUP("Enabled",A3:B6,2,FALSE),0)'
+        $worksheet.Cells.Item($row, $column+3).Formula = '=COUNTIFS(' + $SrcWorksheet.Name + '!' + $EnabledColAddress + ',"FALSE",' + $SrcWorksheet.Name + '!' + $ColAddress + ',' + $ObjAttributes[$_] + ')'
+        $worksheet.Cells.Item($row, $column+4).Formula = '=IFERROR(I' + $i + '/VLOOKUP("Disabled",A3:B6,2,FALSE),0)'
+        If ( ($_ -eq "SIDHistory") -or ($_ -eq "ms-ds-CreatorSid") )
+        {
+            $worksheet.Cells.Item($row, $column+5).Formula = '=COUNTIF(' + $SrcWorksheet.Name + '!' + $ColAddress + ',' + $ObjAttributes[$_] + ')-1'
+        }
+        Else
+        {
+            $worksheet.Cells.Item($row, $column+5).Formula = '=COUNTIF(' + $SrcWorksheet.Name + '!' + $ColAddress + ',' + $ObjAttributes[$_] + ')'
+        }
+        $worksheet.Cells.Item($row, $column+6).Formula = '=IFERROR(K' + $i + '/VLOOKUP("Total",A3:B6,2,FALSE),0)'
+    }
+
+    # http://www.excelhowto.com/macros/formatting-a-range-of-cells-in-excel-vba/
+    "H", "J" , "L" | ForEach-Object {
+        $rng = $_ + $($row - $ObjAttributes.Count + 1) + ":" + $_ + $($row)
+        $worksheet.Range($rng).NumberFormat = "0.00%"
+    }
+    $excel.ScreenUpdating = $true
+
+    Get-ADRExcelComObjRelease -ComObjtoRelease $SrcWorksheet
+    Remove-Variable SrcWorksheet
+    Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
+    Remove-Variable worksheet
 }
 
 Function Get-ADRExcelChart
@@ -2731,6 +4619,8 @@ Function Get-ADRExcelChart
         Remove-Variable start
     }
     $chart.SetSourceData($ChartData)
+    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.office.interop.excel.chartclass.plotby?redirectedfrom=MSDN&view=excel-pia#Microsoft_Office_Interop_Excel_ChartClass_PlotBy
+    $chart.PlotBy = [Microsoft.Office.Interop.Excel.XlRowCol]::xlColumns
     $chart.seriesCollection(1).Select() | Out-Null
     $chart.SeriesCollection(1).ApplyDataLabels() | out-Null
     # modify the chart title
@@ -2760,6 +4650,64 @@ Function Get-ADRExcelChart
     Remove-Variable worksheet
 }
 
+Function Get-ADRExcelSort
+{
+<#
+.SYNOPSIS
+    Sorts a WorkSheet in the active Workbook.
+
+.DESCRIPTION
+    Sorts a WorkSheet in the active Workbook.
+
+.PARAMETER ColumnName
+    [string]
+    Name of the Column.
+#>
+    param (
+        [Parameter(Mandatory = $true)]
+        [string] $ColumnName
+    )
+
+    $worksheet = $workbook.Worksheets.Item(1)
+    $worksheet.Activate();
+
+    $ExcelColumn = ($worksheet.Columns.Find($ColumnName))
+    If ($ExcelColumn)
+    {
+        If ($ExcelColumn.Text -ne $ColumnName)
+        {
+            $BeginAddress = $ExcelColumn.Address(0,0,1,1)
+            $End = $False
+            Do {
+                Write-Verbose "[Get-ADRExcelSort] $($ExcelColumn.Text) selected instead of $($ColumnName) in the $($worksheet.Name) worksheet."
+                $ExcelColumn = ($worksheet.Columns.FindNext($ExcelColumn))
+                $Address = $ExcelColumn.Address(0,0,1,1)
+                If ( ($Address -eq $BeginAddress) -or ($ExcelColumn.Text -eq $ColumnName) )
+                {
+                    $End = $True
+                }
+            } Until ($End -eq $True)
+        }
+        If ($ExcelColumn.Text -eq $ColumnName)
+        {
+            # Sort by Column
+            $workSheet.ListObjects.Item(1).Sort.SortFields.Clear()
+            $workSheet.ListObjects.Item(1).Sort.SortFields.Add($ExcelColumn) | Out-Null
+            $worksheet.ListObjects.Item(1).Sort.Apply()
+        }
+        Else
+        {
+            Write-Verbose "[Get-ADRExcelSort] $($ColumnName) not found in the $($worksheet.Name) worksheet."
+        }
+    }
+    Else
+    {
+        Write-Verbose "[Get-ADRExcelSort] $($ColumnName) not found in the $($worksheet.Name) worksheet."
+    }
+    Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
+    Remove-Variable worksheet
+}
+
 Function Export-ADRExcel
 {
 <#
@@ -2771,10 +4719,10 @@ Function Export-ADRExcel
 
 .PARAMETER ExcelPath
     [string]
-    Path for ADRecon output folder containing the CSV files to generate the ADRecon-Report-<ddMMMyy>.xlsx
+    Path for ADRecon output folder containing the CSV files to generate the ADRecon-Report.xlsx
 
 .OUTPUTS
-    Creates the ADRecon-Report-<ddMMMyy>.xlsx report in the folder.
+    Creates the ADRecon-Report.xlsx report in the folder.
 #>
     param(
         [Parameter(Mandatory = $true)]
@@ -2862,6 +4810,116 @@ Function Export-ADRExcel
             Get-ADRExcelWorkbook -Name "Default Password Policy"
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
+
+            $excel.ScreenUpdating = $false
+            $worksheet = $workbook.Worksheets.Item(1)
+            # https://docs.microsoft.com/en-us/office/vba/api/excel.xlhalign
+            $worksheet.Range("B2:G10").HorizontalAlignment = -4108
+            # https://docs.microsoft.com/en-us/office/vba/api/excel.range.borderaround
+
+            "A2:B10", "C2:D10", "E2:F10", "G2:G10" | ForEach-Object {
+                $worksheet.Range($_).BorderAround(1) | Out-Null
+            }
+
+            # https://docs.microsoft.com/en-us/dotnet/api/microsoft.office.interop.excel.formatconditions.add?view=excel-pia
+            # $worksheet.Range().FormatConditions.Add
+            # http://dmcritchie.mvps.org/excel/colors.htm
+            # Values for Font.ColorIndex
+
+            $ObjValues = @(
+            # PCI Enforce password history (passwords)
+            "C2", '=IF(B2<4,TRUE, FALSE)'
+
+            # PCI Maximum password age (days)
+            "C3", '=IF(OR(B3=0,B3>90),TRUE, FALSE)'
+
+            # PCI Minimum password age (days)
+
+            # PCI Minimum password length (characters)
+            "C5", '=IF(B5<7,TRUE, FALSE)'
+
+            # PCI Password must meet complexity requirements
+            "C6", '=IF(B6<>TRUE,TRUE, FALSE)'
+
+            # PCI Store password using reversible encryption for all users in the domain
+
+            # PCI Account lockout duration (mins)
+            "C8", '=IF(AND(B8>=1,B8<30),TRUE, FALSE)'
+
+            # PCI Account lockout threshold (attempts)
+            "C9", '=IF(OR(B9=0,B9>6),TRUE, FALSE)'
+
+            # PCI Reset account lockout counter after (mins)
+
+            # ASD ISM Enforce password history (passwords)
+            "E2", '=IF(B2<8,TRUE, FALSE)'
+
+            # ASD ISM Maximum password age (days)
+            "E3", '=IF(OR(B3=0,B3>90),TRUE, FALSE)'
+
+            # ASD ISM Minimum password age (days)
+            "E4", '=IF(B4=0,TRUE, FALSE)'
+
+            # ASD ISM Minimum password length (characters)
+            "E5", '=IF(B5<13,TRUE, FALSE)'
+
+            # ASD ISM Password must meet complexity requirements
+            "E6", '=IF(B6<>TRUE,TRUE, FALSE)'
+
+            # ASD ISM Store password using reversible encryption for all users in the domain
+
+            # ASD ISM Account lockout duration (mins)
+
+            # ASD ISM Account lockout threshold (attempts)
+            "E9", '=IF(OR(B9=0,B9>5),TRUE, FALSE)'
+
+            # ASD ISM Reset account lockout counter after (mins)
+
+            # CIS Benchmark Enforce password history (passwords)
+            "G2", '=IF(B2<24,TRUE, FALSE)'
+
+            # CIS Benchmark Maximum password age (days)
+            "G3", '=IF(OR(B3=0,B3>60),TRUE, FALSE)'
+
+            # CIS Benchmark Minimum password age (days)
+            "G4", '=IF(B4=0,TRUE, FALSE)'
+
+            # CIS Benchmark Minimum password length (characters)
+            "G5", '=IF(B5<14,TRUE, FALSE)'
+
+            # CIS Benchmark Password must meet complexity requirements
+            "G6", '=IF(B6<>TRUE,TRUE, FALSE)'
+
+            # CIS Benchmark Store password using reversible encryption for all users in the domain
+            "G7", '=IF(B7<>FALSE,TRUE, FALSE)'
+
+            # CIS Benchmark Account lockout duration (mins)
+            "G8", '=IF(AND(B8>=1,B8<15),TRUE, FALSE)'
+
+            # CIS Benchmark Account lockout threshold (attempts)
+            "G9", '=IF(OR(B9=0,B9>10),TRUE, FALSE)'
+
+            # CIS Benchmark Reset account lockout counter after (mins)
+            "G10", '=IF(B10<15,TRUE, FALSE)' )
+
+            For ($i = 0; $i -lt $($ObjValues.Count); $i++)
+            {
+                $worksheet.Range($ObjValues[$i]).FormatConditions.Add([Microsoft.Office.Interop.Excel.XlFormatConditionType]::xlExpression, 0, $ObjValues[$i+1]) | Out-Null
+                $i++
+            }
+
+            "C2", "C3" , "C5", "C6", "C8", "C9", "E2", "E3" , "E4", "E5", "E6", "E9", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10" | ForEach-Object {
+                $worksheet.Range($_).FormatConditions.Item(1).StopIfTrue = $false
+                $worksheet.Range($_).FormatConditions.Item(1).Font.ColorIndex = 3
+            }
+
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,4) , "https://www.pcisecuritystandards.org/document_library?category=pcidss&document=pci_dss", "" , "", "PCI DSS v3.2.1") | Out-Null
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,6) , "https://acsc.gov.au/infosec/ism/", "" , "", "2018 ISM Controls") | Out-Null
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,7) , "https://www.cisecurity.org/benchmark/microsoft_windows_server/", "" , "", "CIS Benchmark 2016") | Out-Null
+
+            $excel.ScreenUpdating = $true
+            Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
+            Remove-Variable worksheet
         }
 
         $ADFileName = -join($ReportPath,'\','DomainControllers.csv')
@@ -2872,10 +4930,34 @@ Function Export-ADRExcel
             Remove-Variable ADFileName
         }
 
+        $ADFileName = -join($ReportPath,'\','DACLs.csv')
+        If (Test-Path $ADFileName)
+        {
+            Get-ADRExcelWorkbook -Name "DACLs"
+            Get-ADRExcelImport -ADFileName $ADFileName
+            Remove-Variable ADFileName
+        }
+
+        $ADFileName = -join($ReportPath,'\','SACLs.csv')
+        If (Test-Path $ADFileName)
+        {
+            Get-ADRExcelWorkbook -Name "SACLs"
+            Get-ADRExcelImport -ADFileName $ADFileName
+            Remove-Variable ADFileName
+        }
+
         $ADFileName = -join($ReportPath,'\','GPOs.csv')
         If (Test-Path $ADFileName)
         {
-            Get-ADRExcelWorkbook -Name "Domain GPOs"
+            Get-ADRExcelWorkbook -Name "GPOs"
+            Get-ADRExcelImport -ADFileName $ADFileName
+            Remove-Variable ADFileName
+        }
+
+        $ADFileName = -join($ReportPath,'\','gPLinks.csv')
+        If (Test-Path $ADFileName)
+        {
+            Get-ADRExcelWorkbook -Name "gPLinks"
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
         }
@@ -2926,6 +5008,8 @@ Function Export-ADRExcel
             Get-ADRExcelWorkbook -Name "Computer SPNs"
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
+
+            Get-ADRExcelSort -ColumnName "Name"
         }
 
         $ADFileName = -join($ReportPath,'\','Computers.csv')
@@ -2934,14 +5018,18 @@ Function Export-ADRExcel
             Get-ADRExcelWorkbook -Name "Computers"
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
-        }
 
-        $ADFileName = -join($ReportPath,'\','OUPermissions.csv')
-        If (Test-Path $ADFileName)
-        {
-            Get-ADRExcelWorkbook -Name "OUPerms"
-            Get-ADRExcelImport -ADFileName $ADFileName
-            Remove-Variable ADFileName
+            Get-ADRExcelSort -ColumnName "UserName"
+
+            $worksheet = $workbook.Worksheets.Item(1)
+            # Freeze First Row and Column
+            $worksheet.Select()
+            $worksheet.Application.ActiveWindow.splitcolumn = 1
+            $worksheet.Application.ActiveWindow.splitrow = 1
+            $worksheet.Application.ActiveWindow.FreezePanes = $true
+
+            Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
+            Remove-Variable worksheet
         }
 
         $ADFileName = -join($ReportPath,'\','OUs.csv')
@@ -2966,6 +5054,8 @@ Function Export-ADRExcel
             Get-ADRExcelWorkbook -Name "Groups"
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
+
+            Get-ADRExcelSort -ColumnName "DistinguishedName"
         }
 
         $ADFileName = -join($ReportPath,'\','GroupMembers.csv')
@@ -2974,6 +5064,8 @@ Function Export-ADRExcel
             Get-ADRExcelWorkbook -Name "Group Members"
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
+
+            Get-ADRExcelSort -ColumnName "Group Name"
         }
 
         $ADFileName = -join($ReportPath,'\','Users.csv')
@@ -2983,14 +5075,47 @@ Function Export-ADRExcel
             Get-ADRExcelImport -ADFileName $ADFileName
             Remove-Variable ADFileName
 
+            Get-ADRExcelSort -ColumnName "UserName"
+
             $worksheet = $workbook.Worksheets.Item(1)
-            $worksheet.Activate();
+
+            # Freeze First Row and Column
+            $worksheet.Select()
+            $worksheet.Application.ActiveWindow.splitcolumn = 1
+            $worksheet.Application.ActiveWindow.splitrow = 1
+            $worksheet.Application.ActiveWindow.FreezePanes = $true
+
             $worksheet.Cells.Item(1,3).Interior.ColorIndex = 5
             $worksheet.Cells.Item(1,3).font.ColorIndex = 2
             # Set Filter to Enabled Accounts only
             $worksheet.UsedRange.Select() | Out-Null
             $excel.Selection.AutoFilter(3,$true) | Out-Null
-            $worksheet.Range("A1").Select() | Out-Null
+            $worksheet.Cells.Item(1,1).Select() | Out-Null
+            Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
+            Remove-Variable worksheet
+        }
+
+        # Computer Role Stats
+        $ADFileName = -join($ReportPath,'\','ComputerSPNs.csv')
+        If (Test-Path $ADFileName)
+        {
+            Get-ADRExcelWorkbook -Name "Computer Role Stats"
+            Remove-Variable ADFileName
+
+            $worksheet = $workbook.Worksheets.Item(1)
+            $PivotTableName = "Computer SPNs"
+            Get-ADRExcelPivotTable -SrcSheetName "Computer SPNs" -PivotTableName $PivotTableName -PivotRows @("Service") -PivotValues @("Service")
+
+            $worksheet.Cells.Item(1,1) = "Computer Role"
+            $worksheet.Cells.Item(1,2) = "Count"
+
+            # https://msdn.microsoft.com/en-us/vba/excel-vba/articles/xlsortorder-enumeration-excel
+            $worksheet.PivotTables($PivotTableName).PivotFields("Service").AutoSort([Microsoft.Office.Interop.Excel.XlSortOrder]::xlDescending,"Count")
+
+            Get-ADRExcelChart -ChartType "xlColumnClustered" -ChartLayout 10 -ChartTitle "Computer Roles in AD" -RangetoCover "D2:U16"
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,4) , "" , "'Computer SPNs'!A1", "", "Raw Data") | Out-Null
+            $excel.Windows.Item(1).Displaygridlines = $false
+            Remove-Variable PivotTableName
 
             Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
             Remove-Variable worksheet
@@ -3015,32 +5140,6 @@ Function Export-ADRExcel
 
             Get-ADRExcelChart -ChartType "xlColumnClustered" -ChartLayout 10 -ChartTitle "Operating Systems in AD" -RangetoCover "D2:S16"
             $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,4) , "" , "Computers!A1", "", "Raw Data") | Out-Null
-            $excel.Windows.Item(1).Displaygridlines = $false
-            Remove-Variable PivotTableName
-
-            Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
-            Remove-Variable worksheet
-        }
-
-        # Computer Role Stats
-        $ADFileName = -join($ReportPath,'\','ComputerSPNs.csv')
-        If (Test-Path $ADFileName)
-        {
-            Get-ADRExcelWorkbook -Name "Computer Role Stats"
-            Remove-Variable ADFileName
-
-            $worksheet = $workbook.Worksheets.Item(1)
-            $PivotTableName = "Computer SPNs"
-            Get-ADRExcelPivotTable -SrcSheetName "Computer SPNs" -PivotTableName $PivotTableName -PivotRows @("Service") -PivotValues @("Service")
-
-            $worksheet.Cells.Item(1,1) = "Computer Role"
-            $worksheet.Cells.Item(1,2) = "Count"
-
-            # https://msdn.microsoft.com/en-us/vba/excel-vba/articles/xlsortorder-enumeration-excel
-            $worksheet.PivotTables($PivotTableName).PivotFields("Service").AutoSort([Microsoft.Office.Interop.Excel.XlSortOrder]::xlDescending,"Count")
-
-            Get-ADRExcelChart -ChartType "xlColumnClustered" -ChartLayout 10 -ChartTitle "Computer Roles in AD" -RangetoCover "D2:U16"
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,4) , "" , "'Computer SPNs'!A1", "", "Raw Data") | Out-Null
             $excel.Windows.Item(1).Displaygridlines = $false
             Remove-Variable PivotTableName
 
@@ -3124,6 +5223,10 @@ Function Export-ADRExcel
 
             # https://msdn.microsoft.com/en-us/vba/excel-vba/articles/xlsortorder-enumeration-excel
             $worksheet.PivotTables($PivotTableName).PivotFields("Group Name").AutoSort([Microsoft.Office.Interop.Excel.XlSortOrder]::xlDescending,"Count (Not-Recursive)")
+
+            $worksheet.Cells.Item(3,1).Interior.ColorIndex = 5
+            $worksheet.Cells.Item(3,1).font.ColorIndex = 2
+
             $excel.ScreenUpdating = $true
 
             Get-ADRExcelChart -ChartType "xlColumnClustered" -ChartLayout 10 -ChartTitle "Privileged Groups in AD" -RangetoCover "D2:P16" -StartRow "A3" -StartColumn "B3"
@@ -3134,105 +5237,70 @@ Function Export-ADRExcel
             Remove-Variable worksheet
         }
 
+        # Computer Stats
+        $ADFileName = -join($ReportPath,'\','Computers.csv')
+        If (Test-Path $ADFileName)
+        {
+            Get-ADRExcelWorkbook -Name "Computer Stats"
+            Remove-Variable ADFileName
+
+            $ObjAttributes = New-Object System.Collections.Specialized.OrderedDictionary
+            $ObjAttributes.Add("Delegation Typ",'"Unconstrained"')
+            $ObjAttributes.Add("Delegation Type",'"Constrained"')
+            $ObjAttributes.Add("SIDHistory",'"*"')
+            $ObjAttributes.Add("Dormant",'"TRUE"')
+            $ObjAttributes.Add("Password Age (> ",'"TRUE"')
+            $ObjAttributes.Add("ms-ds-CreatorSid",'"*"')
+
+            Get-ADRExcelAttributeStats -SrcSheetName "Computers" -Title1 "Computer Accounts in AD" -Title2 "Status of Computer Accounts" -ObjAttributes $ObjAttributes
+            Remove-Variable ObjAttributes
+
+            Get-ADRExcelChart -ChartType "xlPie" -ChartLayout 3 -ChartTitle "Computer Accounts in AD" -RangetoCover "A11:D23" -ChartData $workbook.Worksheets.Item(1).Range("A3:A4,B3:B4")
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(10,1) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+
+            Get-ADRExcelChart -ChartType "xlBarClustered" -ChartLayout 1 -ChartTitle "Status of Computer Accounts" -RangetoCover "F11:L23" -ChartData $workbook.Worksheets.Item(1).Range("F2:F8,G2:G8")
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(10,6) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+
+            $workbook.Worksheets.Item(1).UsedRange.EntireColumn.AutoFit() | Out-Null
+            $excel.Windows.Item(1).Displaygridlines = $false
+        }
+
         # User Stats
         $ADFileName = -join($ReportPath,'\','Users.csv')
         If (Test-Path $ADFileName)
         {
-            Get-ADRExcelWorkbook("User Stats")
-            $worksheet= $workbook.Worksheets.Item(1)
+            Get-ADRExcelWorkbook -Name "User Stats"
+            Remove-Variable ADFileName
 
-            $ADTemp = Import-Csv -Path $ADFileName
+            $ObjAttributes = New-Object System.Collections.Specialized.OrderedDictionary
+            $ObjAttributes.Add("Must Change Password at Logon",'"TRUE"')
+            $ObjAttributes.Add("Cannot Change Password",'"TRUE"')
+            $ObjAttributes.Add("Password Never Expires",'"TRUE"')
+            $ObjAttributes.Add("Reversible Password Encryption",'"TRUE"')
+            $ObjAttributes.Add("Smartcard Logon Required",'"TRUE"')
+            $ObjAttributes.Add("Delegation Permitted",'"TRUE"')
+            $ObjAttributes.Add("Kerberos DES Only",'"TRUE"')
+            $ObjAttributes.Add("Kerberos RC4",'"TRUE"')
+            $ObjAttributes.Add("Does Not Require Pre Auth",'"TRUE"')
+            $ObjAttributes.Add("Password Age (> ",'"TRUE"')
+            $ObjAttributes.Add("Account Locked Out",'"TRUE"')
+            $ObjAttributes.Add("Never Logged in",'"TRUE"')
+            $ObjAttributes.Add("Dormant",'"TRUE"')
+            $ObjAttributes.Add("Password Not Required",'"TRUE"')
+            $ObjAttributes.Add("Delegation Typ",'"Unconstrained"')
+            $ObjAttributes.Add("SIDHistory",'"*"')
 
-            $row = 1
-            $column = 1
-            $worksheet.Cells.Item($row, $column) = "User Accounts in AD"
-            $worksheet.Cells.Item($row,$column).Style = "Heading 2"
-            $worksheet.Cells.Item($row,$column).HorizontalAlignment = -4108
-            $MergeCells = $worksheet.Range("A1:C1")
-            $MergeCells.Select() | Out-Null
-            $MergeCells.MergeCells = $true
-            Remove-Variable MergeCells
+            Get-ADRExcelAttributeStats -SrcSheetName "Users" -Title1 "User Accounts in AD" -Title2 "Status of User Accounts" -ObjAttributes $ObjAttributes
+            Remove-Variable ObjAttributes
 
-            $row++
-            $worksheet.Cells.Item($row, $column) = "Type"
-            $worksheet.Cells.Item($row, $column).Font.Bold=$True
-            $worksheet.Cells.Item($row, $column+1) = "Count"
-            $worksheet.Cells.Item($row, $column+1).Font.Bold=$True
-            $worksheet.Cells.Item($row,$column+2) = 'Percentage'
-            $worksheet.Cells.Item($row, $column+2).Font.Bold=$True
+            Get-ADRExcelChart -ChartType "xlPie" -ChartLayout 3 -ChartTitle "User Accounts in AD" -RangetoCover "A21:D33" -ChartData $workbook.Worksheets.Item(1).Range("A3:A4,B3:B4")
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(20,1) , "" , "Users!A1", "", "Raw Data") | Out-Null
 
-            $total = ($ADTemp | Measure-Object | Select-Object -ExpandProperty Count)
-            $enabled = ($ADTemp | Where-Object ({$_.Enabled -eq $true}) | Measure-Object | Select-Object -ExpandProperty Count)
-            $disabled = ($ADTemp | Where-Object ({$_.Enabled -eq $false}) | Measure-Object | Select-Object -ExpandProperty Count)
+            Get-ADRExcelChart -ChartType "xlBarClustered" -ChartLayout 1 -ChartTitle "Status of User Accounts" -RangetoCover "F21:L43" -ChartData $workbook.Worksheets.Item(1).Range("F2:F18,G2:G18")
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(20,6) , "" , "Users!A1", "", "Raw Data") | Out-Null
 
-            $row++
-            $worksheet.Cells.Item($row, $column) = "Enabled"
-            $worksheet.Cells.Item($row, $column+1) = $enabled
-            $worksheet.Cells.Item($row, $column+2) = "{0:P2}" -f ($enabled/$total)
-
-            $row++
-            $worksheet.Cells.Item($row, $column) = "Disabled"
-            $worksheet.Cells.Item($row, $column+1) = $disabled
-            $worksheet.Cells.Item($row, $column+2) = "{0:P2}" -f ($disabled/$total)
-
-            $row++
-            $worksheet.Cells.Item($row, $column) = "Total"
-            $worksheet.Cells.Item($row, $column+1) = $total
-            If ($total -ne ($enabled + $disabled))
-            {
-                $worksheet.Cells.Item($row, $column+1).Interior.ColorIndex = 3
-                $worksheet.Cells.Item($row, $column+1).font.ColorIndex = 2
-                Write-Warning "Enabled + Disabled != Total Users, Try running ADRecon as another user."
-            }
-            $worksheet.Cells.Item($row, $column+2) = "{0:P2}" -f ($total/$total)
-
-            Get-ADRExcelChart -ChartType "xlPie" -ChartLayout 3 -ChartTitle "User Accounts in AD" -RangetoCover "A15:D27" -ChartData $worksheet.Range("A3:A4,B3:B4")
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(14,1) , "" , "Users!A1", "", "Raw Data") | Out-Null
-
-            $row = 1
-            $column = 6
-            $worksheet.Cells.Item($row, $column) = "Status of User Accounts"
-            $worksheet.Cells.Item($row,$column).Style = "Heading 2"
-            $worksheet.Cells.Item($row,$column).HorizontalAlignment = -4108
-            $MergeCells = $worksheet.Range("F1:L1")
-            $MergeCells.Select() | Out-Null
-            $MergeCells.MergeCells = $true
-            Remove-Variable MergeCells
-
-            $row++
-            $temp = @("Category","Enabled Count","Enabled Percentage","Disabled Count","Disabled Percentage","Total Count","Total Percentage")
-            $temp | ForEach-Object {
-                $worksheet.Cells.Item($row, $column) = $_
-                $worksheet.Cells.Item($row, $column).Font.Bold=$True
-                $column++
-            }
-
-            $column = 6
-            # "Attempted to divide by zero" exception
-            If ($disabled -eq 0)
-            {
-                $disabled = 1
-            }
-            $UserProperties = @("Cannot Change Password","Must Change Password at Logon","Password Not Changed after Max Age","Password Never Expires","Password Not Required","Reversible Password Encryption","Does Not Require Pre Auth","Account Locked Out","Never Logged in",$(($ADTemp | Get-Member -MemberType NoteProperty | Where-Object { $_.Name -like "Dormant*" }).Name))
-            ForEach ($property in $UserProperties)
-            {
-                $row++
-                $worksheet.Cells.Item($row, $column) = $property
-                $worksheet.Cells.Item($row, $column+1) = ($ADTemp | Where-Object ({$_.$property -eq $true -and $_.Enabled -eq $true}) | Measure-Object | Select-Object -ExpandProperty Count)
-                $worksheet.Cells.Item($row, $column+2) = "{0:P2}" -f (([int] $worksheet.Cells.Item($row,$column+1).text)/$enabled)
-                $worksheet.Cells.Item($row, $column+3) = ($ADTemp | Where-Object ({$_.$property -eq $true -and $_.Enabled -eq $false}) | Measure-Object | Select-Object -ExpandProperty Count)
-                $worksheet.Cells.Item($row, $column+4) = "{0:P2}" -f (([int] $worksheet.Cells.Item($row,$column+3).text)/$disabled)
-                $worksheet.Cells.Item($row, $column+5) = ($ADTemp | Where-Object ({$_.$property -eq $true}) | Measure-Object | Select-Object -ExpandProperty Count)
-                $worksheet.Cells.Item($row, $column+6) = "{0:P2}" -f (([int] $worksheet.Cells.Item($row,$column+5).text)/$total)
-            }
-
-            Get-ADRExcelChart -ChartType "xlColumnClustered" -ChartLayout 5 -ChartTitle "Status of User Accounts" -RangetoCover "F15:J37" -ChartData $worksheet.Range("F2:F12,G2:H12")
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(14,6) , "" , "Users!A1", "", "Raw Data") | Out-Null
-
-            Remove-Variable ADTemp
-            $usedRange = $worksheet.UsedRange
-            $usedRange.EntireColumn.AutoFit() | Out-Null
-            $excel.Windows.Item(1).Displaygridlines=$false
+            $workbook.Worksheets.Item(1).UsedRange.EntireColumn.AutoFit() | Out-Null
+            $excel.Windows.Item(1).Displaygridlines = $false
         }
 
         # Create Table of Contents
@@ -3322,283 +5390,6 @@ Function Export-ADRExcel
         Remove-Variable -Name workbook -Scope Global
         Get-ADRExcelComObjRelease -ComObjtoRelease $excel -Final $true
         Remove-Variable -Name excel -Scope Global
-    }
-}
-
-Function Export-ADRCSV
-{
-<#
-.SYNOPSIS
-    Exports Object to a CSV file.
-
-.DESCRIPTION
-    Exports Object to a CSV file using Export-CSV.
-
-.PARAMETER ADRObj
-    [PSObject]
-    ADRObj
-
-.PARAMETER ADFileName
-    [String]
-    Path to save the CSV File.
-
-.OUTPUTS
-    CSV file.
-#>
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [PSObject] $ADRObj,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [String] $ADFileName
-    )
-
-    Try
-    {
-        $ADRObj | Export-Csv -Path $ADFileName -NoTypeInformation
-    }
-    Catch
-    {
-        Write-Warning "[Export-ADRCSV] Failed to export $($ADFileName)."
-        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
-    }
-}
-
-Function Export-ADRXML
-{
-<#
-.SYNOPSIS
-    Exports Object to a XML file.
-
-.DESCRIPTION
-    Exports Object to a XML file using Export-Clixml.
-
-.PARAMETER ADRObj
-    [PSObject]
-    ADRObj
-
-.PARAMETER ADFileName
-    [String]
-    Path to save the XML File.
-
-.OUTPUTS
-    XML file.
-#>
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [PSObject] $ADRObj,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [String] $ADFileName
-    )
-
-    Try
-    {
-        (ConvertTo-Xml -NoTypeInformation -InputObject $ADRObj).Save($ADFileName)
-    }
-    Catch
-    {
-        Write-Warning "[Export-ADRXML] Failed to export $($ADFileName)."
-        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
-    }
-}
-
-Function Export-ADRJSON
-{
-<#
-.SYNOPSIS
-    Exports Object to a JSON file.
-
-.DESCRIPTION
-    Exports Object to a JSON file using ConvertTo-Json.
-
-.PARAMETER ADRObj
-    [PSObject]
-    ADRObj
-
-.PARAMETER ADFileName
-    [String]
-    Path to save the JSON File.
-
-.OUTPUTS
-    JSON file.
-#>
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [PSObject] $ADRObj,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [String] $ADFileName
-    )
-
-    Try
-    {
-        (ConvertTo-JSON -InputObject $ADRObj).Save($ADFileName)
-    }
-    Catch
-    {
-        Write-Warning "[Export-ADRJSON] Failed to export $($ADFileName)."
-        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
-    }
-}
-
-Function Export-ADRHTML
-{
-<#
-.SYNOPSIS
-    Exports Object to a HTML file.
-
-.DESCRIPTION
-    Exports Object to a HTML file using ConvertTo-Html.
-
-.PARAMETER ADRObj
-    [PSObject]
-    ADRObj
-
-.PARAMETER ADFileName
-    [String]
-    Path to save the HTML File.
-
-.OUTPUTS
-    HTML file.
-#>
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [PSObject] $ADRObj,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [String] $ADFileName
-    )
-
-$Header = @"
-<style type="text/css">
-th {
-	color:white;
-	background-color:blue;
-}
-td, th {
-	border:0px solid black;
-	border-collapse:collapse;
-	white-space:pre;
-}
-tr:nth-child(2n+1) {
-    background-color: #dddddd;
-}
-tr:hover td {
-    background-color: #c1d5f8;
-}
-table, tr, td, th {
-	padding: 0px;
-	margin: 0px;
-	white-space:pre;
-}
-table {
-	margin-left:1px;
-}
-</style>
-"@
-    Try
-    {
-        If ($ADRObj -is [array])
-        {
-            $ADRObj | Select-Object * | ConvertTo-HTML -As Table -Head $Header | Out-File -FilePath $ADFileName
-        }
-        Else
-        {
-            ConvertTo-HTML -InputObject $ADRObj -As Table -Head $Header | Out-File -FilePath $ADFileName
-        }
-    }
-    Catch
-    {
-        Write-Warning "[Export-ADRHTML] Failed to export $($ADFileName)."
-        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
-    }
-}
-
-Function Export-ADR
-{
-<#
-.SYNOPSIS
-    Helper function for all output types supported.
-
-.DESCRIPTION
-    Helper function for all output types supported.
-
-.PARAMETER ADObjectDN
-    [PSObject]
-    ADRObj
-
-.PARAMETER ADROutputDir
-    [String]
-    Path for ADRecon output folder.
-
-.PARAMETER OutputType
-    [array]
-    Output Type.
-
-.OUTPUTS
-    STDOUT, CSV, XML, JSON and/or HTML file, etc.
-#>
-    param(
-        [Parameter(Mandatory = $false)]
-        [PSObject] $ADRObj,
-
-        [Parameter(Mandatory = $true)]
-        [String] $ADROutputDir,
-
-        [Parameter(Mandatory = $true)]
-        [array] $OutputType,
-
-        [Parameter(Mandatory = $false)]
-        [string] $ADRModuleName
-    )
-
-    Switch ($OutputType)
-    {
-        'STDOUT'
-        {
-            If ($ADRModuleName -ne "AboutADRecon")
-            {
-                If ($ADRObj -is [array])
-                {
-                    # Fix for InvalidOperationException: The object of type "Microsoft.PowerShell.Commands.Internal.Format.FormatStartData" is not valid or not in the correct sequence.
-                    $ADRObj | Out-String -Stream
-                }
-                Else
-                {
-                    # Fix for InvalidOperationException: The object of type "Microsoft.PowerShell.Commands.Internal.Format.FormatStartData" is not valid or not in the correct sequence.
-                    $ADRObj | Format-List | Out-String -Stream
-                }
-            }
-        }
-        'CSV'
-        {
-            $ADFileName  = -join($ADROutputDir,'\','CSV-Files','\',$ADRModuleName,'.csv')
-            Export-ADRCSV $ADRObj $ADFileName
-        }
-        'XML'
-        {
-            $ADFileName  = -join($ADROutputDir,'\','XML-Files','\',$ADRModuleName,'.xml')
-            Export-ADRXML $ADRObj $ADFileName
-        }
-        'JSON'
-        {
-            $ADFileName  = -join($ADROutputDir,'\','JSON-Files','\',$ADRModuleName,'.json')
-            Export-ADRXML $ADRObj $ADFileName
-        }
-        'HTML'
-        {
-            $ADFileName  = -join($ADROutputDir,'\','HTML-Files','\',$ADRModuleName,'.html')
-            Export-ADRHTML $ADRObj $ADFileName
-        }
     }
 }
 
@@ -3770,6 +5561,12 @@ Function Get-ADRDomain
                 $DomainObj += $Obj
                 Remove-Variable DomainCreation
             }
+
+            $Obj = New-Object PSObject
+            $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "ms-DS-MachineAccountQuota"
+            $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $((Get-ADObject -Identity ($ADDomain.DistinguishedName) -Properties ms-DS-MachineAccountQuota).'ms-DS-MachineAccountQuota')
+            $DomainObj += $Obj
+
             If ($RIDsIssued)
             {
                 $Obj = New-Object PSObject
@@ -3861,9 +5658,14 @@ Function Get-ADRDomain
                 }
                 Catch
                 {
-                    Write-Warning "[Get-ADRDomain] Error retrieving Domain SID"
+                    Write-Warning "[Get-ADRDomain] Error retrieving Domain SID using the GlobalCatalog $($GlobalCatalog.IPAddress). Using SID from the ObjDomain."
                     Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                    $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($objDomain.objectSid[0], 0)
                 }
+            }
+            Else
+            {
+                $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($objDomain.objectSid[0], 0)
             }
         }
         Else
@@ -3880,7 +5682,7 @@ Function Get-ADRDomain
             }
             Catch
             {
-                Write-Warning "[Get-ADRDomain] Error retrieving Domain SID."
+                Write-Warning "[Get-ADRDomain] Error retrieving Domain SID using the GlobalCatalog $($GlobalCatalog.IPAddress). Using SID from the ObjDomain."
                 Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                 $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($objDomain.objectSid[0], 0)
             }
@@ -3946,6 +5748,11 @@ Function Get-ADRDomain
             $Obj = New-Object PSObject
             $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "Creation Date"
             $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $objDomain.whencreated.value
+            $DomainObj += $Obj
+
+            $Obj = New-Object PSObject
+            $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "ms-DS-MachineAccountQuota"
+            $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $objDomain.'ms-DS-MachineAccountQuota'.value
             $DomainObj += $Obj
 
             If ($RIDsIssued)
@@ -4967,18 +6774,15 @@ Function Get-ADRDefaultPasswordPolicy
 
         If ($ADpasspolicy)
         {
-            $ADPassPolObj = @()
-
-            $ObjValues = @("Enforce password history", $ADpasspolicy.PasswordHistoryCount, "Maximum password age (days)", $ADpasspolicy.MaxPasswordAge.days, "Minimum password age (days)", $ADpasspolicy.MinPasswordAge.days, "Minimum password length", $ADpasspolicy.MinPasswordLength, "Password must meet complexity requirements", $ADpasspolicy.ComplexityEnabled, "Store password using reversible encryption for all users in the domain", $ADpasspolicy.ReversibleEncryptionEnabled, "Account lockout duration (mins)", $ADpasspolicy.LockoutDuration.minutes, "Account lockout threshold", $ADpasspolicy.LockoutThreshold, "Reset account lockout counter after (mins)", $ADpasspolicy.LockoutObservationWindow.minutes)
-
-            For ($i = 0; $i -lt $($ObjValues.Count); $i++)
-            {
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name "Policy" -Value $ObjValues[$i]
-                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ObjValues[$i+1]
-                $i++
-                $ADPassPolObj += $Obj
-            }
+            $ObjValues = @( "Enforce password history (passwords)", $ADpasspolicy.PasswordHistoryCount, "4", "Req. 8.2.5", "8", "Control: 0423", "24 or more",
+            "Maximum password age (days)", $ADpasspolicy.MaxPasswordAge.days, "90", "Req. 8.2.4", "90", "Control: 0423", "1 to 60",
+            "Minimum password age (days)", $ADpasspolicy.MinPasswordAge.days, "N/A", "-", "1", "Control: 0423", "1 or more",
+            "Minimum password length (characters)", $ADpasspolicy.MinPasswordLength, "7", "Req. 8.2.3", "13", "Control: 0421", "14 or more",
+            "Password must meet complexity requirements", $ADpasspolicy.ComplexityEnabled, $true, "Req. 8.2.3", $true, "Control: 0421", $true,
+            "Store password using reversible encryption for all users in the domain", $ADpasspolicy.ReversibleEncryptionEnabled, "N/A", "-", "N/A", "-", $false,
+            "Account lockout duration (mins)", $ADpasspolicy.LockoutDuration.minutes, "0 (manual unlock) or 30", "Req. 8.1.7", "N/A", "-", "15 or more",
+            "Account lockout threshold (attempts)", $ADpasspolicy.LockoutThreshold, "1 to 6", "Req. 8.1.6", "1 to 5", "Control: 1403", "1 to 10",
+            "Reset account lockout counter after (mins)", $ADpasspolicy.LockoutObservationWindow.minutes, "N/A", "-", "N/A", "-", "15 or more" )
 
             Remove-Variable ADpasspolicy
         }
@@ -4988,8 +6792,6 @@ Function Get-ADRDefaultPasswordPolicy
     {
         If ($ObjDomain)
         {
-            $ADPassPolObj = @()
-
             #Value taken from https://msdn.microsoft.com/en-us/library/ms679431(v=vs.85).aspx
             $pwdProperties = @{
                 "DOMAIN_PASSWORD_COMPLEX" = 1;
@@ -5018,16 +6820,22 @@ Function Get-ADRDefaultPasswordPolicy
                 $ReversibleEncryption = $false
             }
 
-            $ObjValues = @("Enforce password history", $ObjDomain.PwdHistoryLength.value, "Maximum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.maxpwdage.value) /-864000000000), "Minimum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.minpwdage.value) /-864000000000), "Minimum password length", $ObjDomain.MinPwdLength.value, "Password must meet complexity requirements", $ComplexPasswords, "Store password using reversible encryption for all users in the domain", $ReversibleEncryption, "Account lockout duration (mins)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.lockoutduration.value)/-600000000), "Account lockout threshold", $ObjDomain.LockoutThreshold.value, "Reset account lockout counter after (mins)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.lockoutobservationWindow.value)/-600000000))
+            $LockoutDuration = $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.lockoutduration.value)/-600000000)
 
-            For ($i = 0; $i -lt $($ObjValues.Count); $i++)
+            If ($LockoutDuration -gt 99999)
             {
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name "Policy" -Value $ObjValues[$i]
-                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ObjValues[$i+1]
-                $i++
-                $ADPassPolObj += $Obj
+                $LockoutDuration = 0
             }
+
+            $ObjValues = @( "Enforce password history (passwords)", $ObjDomain.PwdHistoryLength.value, "4", "Req. 8.2.5", "8", "Control: 0423", "24 or more",
+            "Maximum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.maxpwdage.value) /-864000000000), "90", "Req. 8.2.4", "90", "Control: 0423", "1 to 60",
+            "Minimum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.minpwdage.value) /-864000000000), "N/A", "-", "1", "Control: 0423", "1 or more",
+            "Minimum password length (characters)", $ObjDomain.MinPwdLength.value, "7", "Req. 8.2.3", "13", "Control: 0421", "14 or more",
+            "Password must meet complexity requirements", $ComplexPasswords, $true, "Req. 8.2.3", $true, "Control: 0421", $true,
+            "Store password using reversible encryption for all users in the domain", $ReversibleEncryption, "N/A", "-", "N/A", "-", $false,
+            "Account lockout duration (mins)", $LockoutDuration, "0 (manual unlock) or 30", "Req. 8.1.7", "N/A", "-", "15 or more",
+            "Account lockout threshold (attempts)", $ObjDomain.LockoutThreshold.value, "1 to 6", "Req. 8.1.6", "1 to 5", "Control: 1403", "1 to 10",
+            "Reset account lockout counter after (mins)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.lockoutobservationWindow.value)/-600000000), "N/A", "-", "N/A", "-", "15 or more" )
 
             Remove-Variable pwdProperties
             Remove-Variable ComplexPasswords
@@ -5035,8 +6843,23 @@ Function Get-ADRDefaultPasswordPolicy
         }
     }
 
-    If ($ADPassPolObj)
+    If ($ObjValues)
     {
+        $ADPassPolObj = @()
+        For ($i = 0; $i -lt $($ObjValues.Count); $i++)
+        {
+            $Obj = New-Object PSObject
+            $Obj | Add-Member -MemberType NoteProperty -Name "Policy" -Value $ObjValues[$i]
+            $Obj | Add-Member -MemberType NoteProperty -Name "Current Value" -Value $ObjValues[$i+1]
+            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS Requirement" -Value $ObjValues[$i+2]
+            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS v3.2.1" -Value $ObjValues[$i+3]
+            $Obj | Add-Member -MemberType NoteProperty -Name "ASD ISM" -Value $ObjValues[$i+4]
+            $Obj | Add-Member -MemberType NoteProperty -Name "2018 ISM Controls" -Value $ObjValues[$i+5]
+            $Obj | Add-Member -MemberType NoteProperty -Name "CIS Benchmark 2016" -Value $ObjValues[$i+6]
+            $i += 6
+            $ADPassPolObj += $Obj
+        }
+        Remove-Variable ObjValues
         Return $ADPassPolObj
     }
     Else
@@ -5095,7 +6918,10 @@ Function Get-ADRFineGrainedPasswordPolicy
                 {
                     $AppliesTo = $AppliesTo + "," + $_.AppliesTo[$i]
                 }
-                $AppliesTo = $AppliesTo.TrimStart(",")
+                If ($null -ne $AppliesTo)
+                {
+                    $AppliesTo = $AppliesTo.TrimStart(",")
+                }
                 $ObjValues = @("Name", $($_.Name), "Applies To", $AppliesTo, "Enforce password history", $_.PasswordHistoryCount, "Maximum password age (days)", $_.MaxPasswordAge.days, "Minimum password age (days)", $_.MinPasswordAge.days, "Minimum password length", $_.MinPasswordLength, "Password must meet complexity requirements", $_.ComplexityEnabled, "Store password using reversible encryption", $_.ReversibleEncryptionEnabled, "Account lockout duration (mins)", $_.LockoutDuration.minutes, "Account lockout threshold", $_.LockoutThreshold, "Reset account lockout counter after (mins)", $_.LockoutObservationWindow.minutes, "Precedence", $($_.Precedence))
                 For ($i = 0; $i -lt $($ObjValues.Count); $i++)
                 {
@@ -5139,7 +6965,10 @@ Function Get-ADRFineGrainedPasswordPolicy
                     {
                         $AppliesTo = $AppliesTo + "," + $_.Properties.'msds-psoappliesto'[$i]
                     }
-                    $AppliesTo = $AppliesTo.TrimStart(",")
+                    If ($null -ne $AppliesTo)
+                    {
+                        $AppliesTo = $AppliesTo.TrimStart(",")
+                    }
                         $ObjValues = @("Name", $($_.Properties.name), "Applies To", $AppliesTo, "Enforce password history", $($_.Properties.'msds-passwordhistorylength'), "Maximum password age (days)", $($($_.Properties.'msds-maximumpasswordage') /-864000000000), "Minimum password age (days)", $($($_.Properties.'msds-minimumpasswordage') /-864000000000), "Minimum password length", $($_.Properties.'msds-minimumpasswordlength'), "Password must meet complexity requirements", $($_.Properties.'msds-passwordcomplexityenabled'), "Store password using reversible encryption", $($_.Properties.'msds-passwordreversibleencryptionenabled'), "Account lockout duration (mins)", $($($_.Properties.'msds-lockoutduration')/-600000000), "Account lockout threshold", $($_.Properties.'msds-lockoutthreshold'), "Reset account lockout counter after (mins)", $($($_.Properties.'msds-lockoutobservationwindow')/-600000000), "Precedence", $($_.Properties.'msds-passwordsettingsprecedence'))
                         For ($i = 0; $i -lt $($ObjValues.Count); $i++)
                         {
@@ -5231,14 +7060,6 @@ Function Get-ADRDomainController
                 $Obj | Add-Member -MemberType NoteProperty -Name "Operating System" -Value $OSVersion
                 Remove-Variable OSVersion
                 $Obj | Add-Member -MemberType NoteProperty -Name "Hostname" -Value $_.HostName
-                If ($_.OperationMasterRoles -like 'InfrastructureMaster')
-                {
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $true
-                }
-                Else
-                {
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $false
-                }
                 If ($_.OperationMasterRoles -like 'DomainNamingMaster')
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name "Naming" -Value $true
@@ -5254,6 +7075,14 @@ Function Get-ADRDomainController
                 Else
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name "Schema" -Value $false
+                }
+                If ($_.OperationMasterRoles -like 'InfrastructureMaster')
+                {
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $true
+                }
+                Else
+                {
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $false
                 }
                 If ($_.OperationMasterRoles -like 'RIDMaster')
                 {
@@ -5321,19 +7150,18 @@ Function Get-ADRDomainController
                 $Obj | Add-Member -MemberType NoteProperty -Name "Hostname" -Value $_.Name
                 If ($null -ne $_.Roles)
                 {
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $($_.Roles.Contains("InfrastructureRole"))
                     $Obj | Add-Member -MemberType NoteProperty -Name "Naming" -Value $($_.Roles.Contains("NamingRole"))
                     $Obj | Add-Member -MemberType NoteProperty -Name "Schema" -Value $($_.Roles.Contains("SchemaRole"))
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $($_.Roles.Contains("InfrastructureRole"))
                     $Obj | Add-Member -MemberType NoteProperty -Name "RID" -Value $($_.Roles.Contains("RidRole"))
                     $Obj | Add-Member -MemberType NoteProperty -Name "PDC" -Value $($_.Roles.Contains("PdcRole"))
                 }
                 Else
                 {
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Infra" -Value $false
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Naming" -Value $false
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Schema" -Value $false
-                    $Obj | Add-Member -MemberType NoteProperty -Name "RID" -Value $false
-                    $Obj | Add-Member -MemberType NoteProperty -Name "PDC" -Value $false
+
+                    "Naming", "Schema", "Infra", "RID", "PDC" | ForEach-Object {
+                        $Obj | Add-Member -MemberType NoteProperty -Name $_ -Value $false
+                    }
                 }
                 $DCSMBObj = [ADRecon.PingCastleScannersSMBScanner]::GetPSObject($_.IPAddress)
                 ForEach ($Property in $DCSMBObj.psobject.Properties)
@@ -5369,10 +7197,6 @@ Function Get-ADRUser
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER date
     [DateTime]
     Date when ADRecon was executed.
@@ -5401,9 +7225,6 @@ Function Get-ADRUser
         [string] $Protocol,
 
         [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
-        [Parameter(Mandatory = $true)]
         [DateTime] $date,
 
         [Parameter(Mandatory = $false)]
@@ -5423,11 +7244,12 @@ Function Get-ADRUser
     {
         Try
         {
-            $ADUsers = @( Get-ADUser -Filter * -ResultPageSize $PageSize -Properties AdminCount,AllowReversiblePasswordEncryption,CannotChangePassword,CanonicalName,Description,DistinguishedName,DoesNotRequirePreAuth,Enabled,LastLogonDate,LockedOut,LogonWorkstations,Name,PasswordLastSet,PasswordNeverExpires,PasswordNotRequired,primaryGroupID,pwdlastset,SamAccountName,SID,SIDHistory,TrustedForDelegation,TrustedToAuthForDelegation,whenChanged,whenCreated )
+            $ADUsers = @( Get-ADUser -Filter * -ResultPageSize $PageSize -Properties AccountExpirationDate,accountExpires,AccountNotDelegated,AdminCount,AllowReversiblePasswordEncryption,c,CannotChangePassword,CanonicalName,Company,Department,Description,DistinguishedName,DoesNotRequirePreAuth,Enabled,givenName,homeDirectory,Info,LastLogonDate,lastLogonTimestamp,LockedOut,LogonWorkstations,mail,Manager,middleName,mobile,'msDS-AllowedToDelegateTo','msDS-SupportedEncryptionTypes',Name,PasswordExpired,PasswordLastSet,PasswordNeverExpires,PasswordNotRequired,primaryGroupID,profilePath,pwdlastset,SamAccountName,ScriptPath,SID,SIDHistory,SmartcardLogonRequired,sn,Title,TrustedForDelegation,TrustedToAuthForDelegation,UseDESKeyOnly,UserAccountControl,whenChanged,whenCreated )
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRUser] Error while enumerating User Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
 
@@ -5441,12 +7263,13 @@ Function Get-ADRUser
             }
             Catch
             {
-                Write-Warning "[EXCEPTION] $($_.Exception.Message)"
+                Write-Warning "[Get-ADRUser] Error retrieving Max Password Age from the Default Password Policy. Using value as 90 days"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                 $PassMaxAge = 90
             }
 
             Write-Verbose "[*] Total Users: $([ADRecon.ADWSClass]::ObjectCount($ADUsers))"
-            $UserObj = [ADRecon.ADWSClass]::UserParser($ADUsers, $date, $PassMaxAge, $DormantTimeSpan, $Threads)
+            $UserObj = [ADRecon.ADWSClass]::UserParser($ADUsers, $date, $DormantTimeSpan, $PassMaxAge, $Threads)
             Remove-Variable ADUsers
         }
     }
@@ -5456,7 +7279,9 @@ Function Get-ADRUser
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
         $ObjSearcher.Filter = "(samAccountType=805306368)"
-        $ObjSearcher.PropertiesToLoad.AddRange(("admincount","canonicalname","description","distinguishedname","lastLogontimestamp","name","objectsid","primarygroupid","pwdLastSet","samaccountName","serviceprincipalname","sidhistory","useraccountcontrol","userworkstations","whenchanged","whencreated"))
+        # https://msdn.microsoft.com/en-us/library/system.directoryservices.securitymasks(v=vs.110).aspx
+        $ObjSearcher.SecurityMasks = [System.DirectoryServices.SecurityMasks]'Dacl'
+        $ObjSearcher.PropertiesToLoad.AddRange(("accountExpires","admincount","c","canonicalname","company","department","description","distinguishedname","givenName","homedirectory","info","lastLogontimestamp","mail","manager","middleName","mobile","msDS-AllowedToDelegateTo","msDS-SupportedEncryptionTypes","name","ntsecuritydescriptor","objectsid","primarygroupid","profilepath","pwdLastSet","samaccountName","scriptpath","sidhistory","sn","title","useraccountcontrol","userworkstations","whenchanged","whencreated"))
         $ObjSearcher.SearchScope = "Subtree"
         Try
         {
@@ -5464,7 +7289,8 @@ Function Get-ADRUser
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRUser] Error while enumerating User Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
         $ObjSearcher.dispose()
@@ -5474,57 +7300,13 @@ Function Get-ADRUser
             $PassMaxAge = $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.maxpwdage.value) /-864000000000)
             If (-Not $PassMaxAge)
             {
+                Write-Warning "[Get-ADRUser] Error retrieving Max Password Age from the Default Password Policy. Using value as 90 days"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                 $PassMaxAge = 90
             }
-            $icnt = 1
-            $cnt = $([ADRecon.LDAPClass]::ObjectCount($ADUsers))
-            Write-Verbose "[*] Calculating if the user Cannot Change Password"
-            $CannotChangePassword = New-Object 'System.Collections.Generic.Dictionary[String,bool]'
-            $StopWatch = [System.Diagnostics.StopWatch]::StartNew()
-            $ADUsers | ForEach-Object {
-                If ($StopWatch.Elapsed.TotalMilliseconds -ge 1000)
-                {
-                    Write-Progress -Activity "Calculating if the user Cannot Change Password" -Status "$("{0:N2}" -f (($icnt/$cnt*100),2)) % Complete:" -PercentComplete 100
-                    $StopWatch.Reset()
-                    $StopWatch.Start()
-                }
-                # Get ACLs to determine if the user can change their password or not
-                $data = $_.GetDirectoryEntry()
-                $aclObject = $data.Get_ObjectSecurity()
-                ForEach ($access in $aclObject.Access)
-                {
-                    If (($access.ObjectType -eq "ab721a53-1e2f-11d0-9819-00aa0040529b") -or ($access.ObjectType -eq "AB721A53-1E2F-11D0-9819-00AA0040529B"))
-                    {
-                        If ($access.AccessControlType -eq "Deny")
-                        {
-                            If ($access.IdentityReference -eq "Everyone")
-                            {
-                                $DenyEveryone = $true
-                            }
-                            Elseif ($access.IdentityReference -eq "NT AUTHORITY\SELF")
-                            {
-                                $DenySelf = $true
-                            }
-                        }
-                    }
-                }
-                If ($DenyEveryone -and $DenySelf)
-                {
-                    $CannotChangePassword.Add($($_.properties.samaccountname),$true)
-                    Remove-Variable DenyEveryone
-                    Remove-Variable DenySelf
-                }
-                Else
-                {
-                    $CannotChangePassword.Add($($_.properties.samaccountname),$false)
-                }
-                Remove-Variable data
-                Remove-Variable aclObject
-                $icnt ++
-            }
-            Write-Progress -Activity "Calculating if the user Cannot Change Password" -Completed -Status "All Done"
-            Write-Verbose "[*] Total Users: $cnt"
-            $UserObj = [ADRecon.LDAPClass]::UserParser($ADUsers, $date, $PassMaxAge, $CannotChangePassword, $DormantTimeSpan, $Threads)
+
+            Write-Verbose "[*] Total Users: $([ADRecon.LDAPClass]::ObjectCount($ADUsers))"
+            $UserObj = [ADRecon.LDAPClass]::UserParser($ADUsers, $date, $DormantTimeSpan, $PassMaxAge, $Threads)
             Remove-Variable ADUsers
         }
     }
@@ -5552,10 +7334,6 @@ Function Get-ADRUserSPN
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER objDomain
     [DirectoryServices.DirectoryEntry]
     Domain Directory Entry object.
@@ -5575,9 +7353,6 @@ Function Get-ADRUserSPN
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
 
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
@@ -5592,7 +7367,7 @@ Function Get-ADRUserSPN
     {
         Try
         {
-            $ADUsers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306368)(servicePrincipalName=*))" -Properties Name,Description,memberOf,sAMAccountName,servicePrincipalName,pwdLastSet,userAccountControl -ResultPageSize $PageSize )
+            $ADUsers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306368)(servicePrincipalName=*))" -Properties Name,Description,memberOf,sAMAccountName,servicePrincipalName,primaryGroupID,pwdLastSet,userAccountControl -ResultPageSize $PageSize )
         }
         Catch
         {
@@ -5614,7 +7389,7 @@ Function Get-ADRUserSPN
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
         $ObjSearcher.Filter = "(&(samAccountType=805306368)(servicePrincipalName=*))"
-        $ObjSearcher.PropertiesToLoad.AddRange(("name","description","memberof","samaccountname","serviceprincipalname","pwdlastset","useraccountcontrol"))
+        $ObjSearcher.PropertiesToLoad.AddRange(("name","description","memberof","samaccountname","serviceprincipalname","primarygroupid","pwdlastset","useraccountcontrol"))
         $ObjSearcher.SearchScope = "Subtree"
         Try
         {
@@ -5645,6 +7420,108 @@ Function Get-ADRUserSPN
         Return $null
     }
 
+}
+
+#TODO
+Function Get-ADRPasswordAttributes
+{
+<#
+.SYNOPSIS
+    Returns all objects with plaintext passwords in the current (or specified) domain.
+
+.DESCRIPTION
+    Returns all objects with plaintext passwords in the current (or specified) domain.
+
+.PARAMETER Protocol
+    [string]
+    Which protocol to use; ADWS (default) or LDAP.
+
+.PARAMETER objDomain
+    [DirectoryServices.DirectoryEntry]
+    Domain Directory Entry object.
+
+.PARAMETER PageSize
+    [int]
+    The PageSize to set for the LDAP searcher object. Default 200.
+
+.OUTPUTS
+    PSObject.
+
+.LINK
+    https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/com.ibm.aix.security/ad_password_attribute_selection.htm
+    https://msdn.microsoft.com/en-us/library/cc223248.aspx
+    https://msdn.microsoft.com/en-us/library/cc223249.aspx
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Protocol,
+
+        [Parameter(Mandatory = $false)]
+        [DirectoryServices.DirectoryEntry] $objDomain,
+
+        [Parameter(Mandatory = $true)]
+        [int] $PageSize
+    )
+
+    If ($Protocol -eq 'ADWS')
+    {
+        Try
+        {
+            $ADUsers = Get-ADObject -LDAPFilter '(|(UserPassword=*)(UnixUserPassword=*)(unicodePwd=*)(msSFU30Password=*))' -ResultPageSize $PageSize -Properties *
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRPasswordAttributes] Error while enumerating Password Attributes"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+
+        If ($ADUsers)
+        {
+            Write-Warning "[*] Total PasswordAttribute Objects: $([ADRecon.ADWSClass]::ObjectCount($ADUsers))"
+            $UserObj = $ADUsers
+            Remove-Variable ADUsers
+        }
+    }
+
+    If ($Protocol -eq 'LDAP')
+    {
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(|(UserPassword=*)(UnixUserPassword=*)(unicodePwd=*)(msSFU30Password=*))"
+        $ObjSearcher.SearchScope = "Subtree"
+        Try
+        {
+            $ADUsers = $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRPasswordAttributes] Error while enumerating Password Attributes"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+        $ObjSearcher.dispose()
+
+        If ($ADUsers)
+        {
+            $cnt = [ADRecon.LDAPClass]::ObjectCount($ADUsers)
+            If ($cnt -gt 0)
+            {
+                Write-Warning "[*] Total PasswordAttribute Objects: $cnt"
+            }
+            $UserObj = $ADUsers
+            Remove-Variable ADUsers
+        }
+    }
+
+    If ($UserObj)
+    {
+        Return $UserObj
+    }
+    Else
+    {
+        Return $null
+    }
 }
 
 Function Get-ADRGroup
@@ -5794,7 +7671,30 @@ Function Get-ADRGroupMember
     {
         Try
         {
-            $ADGroups = @( Get-ADObject -LDAPFilter '(memberof=*)' -Properties DistinguishedName,sAMAccountName,memberof,samaccounttype )
+            $ADDomain = Get-ADDomain
+            $ADDomainSID = $ADDomain.DomainSID.Value
+            Remove-Variable ADDomain
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGroupMember] Error getting Domain Context"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+
+        Try
+        {
+            $ADGroups = $ADGroups = @( Get-ADGroup -Filter * -ResultPageSize $PageSize -Properties SamAccountName,SID )
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGroupMember] Error while enumerating Group Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+
+        Try
+        {
+            $ADGroupMembers = @( Get-ADObject -LDAPFilter '(|(memberof=*)(primarygroupid=*))' -Properties DistinguishedName,memberof,primaryGroupID,sAMAccountName,samaccounttype )
         }
         Catch
         {
@@ -5803,25 +7703,120 @@ Function Get-ADRGroupMember
             Return $null
         }
 
-        If ($ADGroups)
+        If ( ($ADDomainSID) -and ($ADGroups) -and ($ADGroupMembers) )
         {
-            Write-Verbose "[*] Total GroupMember Objects: $([ADRecon.ADWSClass]::ObjectCount($ADGroups))"
-            $GroupMemberObj = [ADRecon.ADWSClass]::GroupMemberParser($ADGroups, $Threads)
+            Write-Verbose "[*] Total GroupMember Objects: $([ADRecon.ADWSClass]::ObjectCount($ADGroupMembers))"
+            $GroupMemberObj = [ADRecon.ADWSClass]::GroupMemberParser($ADGroups, $ADGroupMembers, $ADDomainSID, $Threads)
             Remove-Variable ADGroups
+            Remove-Variable ADGroupMembers
+            Remove-Variable ADDomainSID
         }
     }
 
     If ($Protocol -eq 'LDAP')
     {
+
+        If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+        {
+            $DomainFQDN = Get-DNtoFQDN($objDomain.distinguishedName)
+            $DomainContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Domain",$($DomainFQDN),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
+            Try
+            {
+                $ADDomain = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($DomainContext)
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRGroupMember] Error getting Domain Context"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                Return $null
+            }
+            Remove-Variable DomainContext
+            Try
+            {
+                $ForestContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Forest",$($ADDomain.Forest),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
+                $ADForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($ForestContext)
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRGroupMember] Error getting Forest Context"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+            If ($ForestContext)
+            {
+                Remove-Variable ForestContext
+            }
+            If ($ADForest)
+            {
+                $GlobalCatalog = $ADForest.FindGlobalCatalog()
+            }
+            If ($GlobalCatalog)
+            {
+                $DN = "GC://$($GlobalCatalog.IPAddress)/$($objDomain.distinguishedname)"
+                Try
+                {
+                    $ADObject = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList ($($DN),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
+                    $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($ADObject.objectSid[0], 0)
+                    $ADObject.Dispose()
+                }
+                Catch
+                {
+                    Write-Warning "[Get-ADRGroupMember] Error retrieving Domain SID using the GlobalCatalog $($GlobalCatalog.IPAddress). Using SID from the ObjDomain."
+                    Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                    $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($objDomain.objectSid[0], 0)
+                }
+            }
+            Else
+            {
+                $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($objDomain.objectSid[0], 0)
+            }
+        }
+        Else
+        {
+            $ADDomain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+            $ADForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+            Try
+            {
+                $GlobalCatalog = $ADForest.FindGlobalCatalog()
+                $DN = "GC://$($GlobalCatalog)/$($objDomain.distinguishedname)"
+                $ADObject = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList ($DN)
+                $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($ADObject.objectSid[0], 0)
+                $ADObject.dispose()
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRGroupMember] Error retrieving Domain SID using the GlobalCatalog $($GlobalCatalog.IPAddress). Using SID from the ObjDomain."
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                $ADDomainSID = New-Object System.Security.Principal.SecurityIdentifier($objDomain.objectSid[0], 0)
+            }
+        }
+
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
-        $ObjSearcher.Filter = "(memberof=*)"
-        $ObjSearcher.PropertiesToLoad.AddRange(("samaccountname", "distinguishedname", "dnshostname", "samaccounttype", "memberof"))
+        $ObjSearcher.Filter = "(objectClass=group)"
+        $ObjSearcher.PropertiesToLoad.AddRange(("samaccountname", "objectsid"))
         $ObjSearcher.SearchScope = "Subtree"
 
         Try
         {
             $ADGroups = $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGroupMember] Error while enumerating Group Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+        $ObjSearcher.dispose()
+
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(|(memberof=*)(primarygroupid=*))"
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname", "dnshostname", "primarygroupid", "memberof", "samaccountname", "samaccounttype"))
+        $ObjSearcher.SearchScope = "Subtree"
+
+        Try
+        {
+            $ADGroupMembers = $ObjSearcher.FindAll()
         }
         Catch
         {
@@ -5831,11 +7826,13 @@ Function Get-ADRGroupMember
         }
         $ObjSearcher.dispose()
 
-        If ($ADGroups)
+        If ( ($ADDomainSID) -and ($ADGroups) -and ($ADGroupMembers) )
         {
-            Write-Verbose "[*] Total GroupMember Objects: $([ADRecon.LDAPClass]::ObjectCount($ADGroups))"
-            $GroupMemberObj = [ADRecon.LDAPClass]::GroupMemberParser($ADGroups, $Threads)
+            Write-Verbose "[*] Total GroupMember Objects: $([ADRecon.LDAPClass]::ObjectCount($ADGroupMembers))"
+            $GroupMemberObj = [ADRecon.LDAPClass]::GroupMemberParser($ADGroups, $ADGroupMembers, $ADDomainSID, $Threads)
             Remove-Variable ADGroups
+            Remove-Variable ADGroupMembers
+            Remove-Variable ADDomainSID
         }
     }
 
@@ -5862,10 +7859,6 @@ Function Get-ADROU
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER objDomain
     [DirectoryServices.DirectoryEntry]
     Domain Directory Entry object.
@@ -5874,6 +7867,10 @@ Function Get-ADROU
     [int]
     The PageSize to set for the LDAP searcher object. Default 200.
 
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
+
 .OUTPUTS
     PSObject.
 #>
@@ -5881,44 +7878,33 @@ Function Get-ADROU
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
 
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
     )
 
     If ($Protocol -eq 'ADWS')
     {
         Try
         {
-            $ADOUs = Get-ADOrganizationalUnit -Filter * -Properties Created,DistinguishedName,Description,Name,gPLink,gPOptions
+            $ADOUs = @( Get-ADOrganizationalUnit -Filter * -Properties DistinguishedName,Description,Name,whenCreated,whenChanged )
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADROU] Error while enumerating OU Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
 
         If ($ADOUs)
         {
             Write-Verbose "[*] Total OUs: $([ADRecon.ADWSClass]::ObjectCount($ADOUs))"
-            $OUObj = @()
-            $ADOUs | ForEach-Object {
-                # Create the object for each instance.
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $_.Name
-                $Obj | Add-Member -MemberType NoteProperty -Name Created -Value $_.Created
-                $Obj | Add-Member -MemberType NoteProperty -Name DistinguishedName -Value $_.DistinguishedName
-                $Obj | Add-Member -MemberType NoteProperty -Name Description -Value $_.Description
-                $Obj | Add-Member -MemberType NoteProperty -Name gPLink -Value $_.gPLink
-                $Obj | Add-Member -MemberType NoteProperty -Name gPOptions -Value $_.gPOptions
-                $Obj | Add-Member -MemberType NoteProperty -Name Depth -Value $(($_.DistinguishedName -split 'OU=').Count -1)
-                $OUObj += $Obj
-            }
+            $OUObj = [ADRecon.ADWSClass]::OUParser($ADOUs, $Threads)
             Remove-Variable ADOUs
         }
     }
@@ -5927,8 +7913,8 @@ Function Get-ADROU
     {
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
-        $ObjSearcher.Filter = "(objectCategory=organizationalunit)"
-        $ObjSearcher.PropertiesToLoad.AddRange(("whencreated","distinguishedname","description","name","gplink","gpoptions"))
+        $ObjSearcher.Filter = "(objectclass=organizationalunit)"
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname","description","name","whencreated","whenchanged"))
         $ObjSearcher.SearchScope = "Subtree"
 
         Try
@@ -5937,7 +7923,8 @@ Function Get-ADROU
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADROU] Error while enumerating OU Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
         $ObjSearcher.dispose()
@@ -5945,19 +7932,7 @@ Function Get-ADROU
         If ($ADOUs)
         {
             Write-Verbose "[*] Total OUs: $([ADRecon.LDAPClass]::ObjectCount($ADOUs))"
-            $OUObj = @()
-            $ADOUs | ForEach-Object {
-                # Create the object for each instance.
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name Name -Value ([string] $($_.Properties.name))
-                $Obj | Add-Member -MemberType NoteProperty -Name Created -Value ([DateTime] $($_.Properties.whencreated))
-                $Obj | Add-Member -MemberType NoteProperty -Name DistinguishedName -Value ([string] $($_.Properties.distinguishedname))
-                $Obj | Add-Member -MemberType NoteProperty -Name Description -Value ([string] $($_.Properties.description))
-                $Obj | Add-Member -MemberType NoteProperty -Name gPLink -Value ([string] $($_.Properties.gplink))
-                $Obj | Add-Member -MemberType NoteProperty -Name gPOptions -Value ([string] $($_.Properties.gpoptions))
-                $Obj | Add-Member -MemberType NoteProperty -Name Depth -Value $(($_.Properties.distinguishedname -split 'OU=').Count -1)
-                $OUObj += $Obj
-            }
+            $OUObj = [ADRecon.LDAPClass]::OUParser($ADOUs, $Threads)
             Remove-Variable ADOUs
         }
     }
@@ -5965,268 +7940,6 @@ Function Get-ADROU
     If ($OUObj)
     {
         Return $OUObj
-    }
-    Else
-    {
-        Return $null
-    }
-}
-
-# based on https://gallery.technet.microsoft.com/Active-Directory-OU-1d09f989
-Function Get-ADROUPermission
-{
-<#
-.SYNOPSIS
-    Returns all Organizational Units (OU) permissions in the current (or specified) domain.
-
-.DESCRIPTION
-    Returns all Organizational Units (OU) permissions in the current (or specified) domain.
-
-.PARAMETER Protocol
-    [string]
-    Which protocol to use; ADWS (default) or LDAP.
-
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
-.PARAMETER objDomain
-    [DirectoryServices.DirectoryEntry]
-    Domain Directory Entry object.
-
-.PARAMETER DomainController
-    [string]
-    IP Address of the Domain Controller.
-
-.PARAMETER Credential
-    [Management.Automation.PSCredential]
-    Credentials.
-
-.PARAMETER PageSize
-    [int]
-    The PageSize to set for the LDAP searcher object. Default 200.
-
-.OUTPUTS
-    PSObject.
-
-.LINK
-    https://gallery.technet.microsoft.com/Active-Directory-OU-1d09f989
-#>
-    param(
-        [Parameter(Mandatory = $true)]
-        [string] $Protocol,
-
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
-        [Parameter(Mandatory = $false)]
-        [DirectoryServices.DirectoryEntry] $objDomain,
-
-        [Parameter(Mandatory = $false)]
-        [string] $DomainController,
-
-        [Parameter(Mandatory = $false)]
-        [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
-
-        [Parameter(Mandatory = $true)]
-        [int] $PageSize
-    )
-
-    # based on https://gallery.technet.microsoft.com/Active-Directory-OU-1d09f989
-    If ($Protocol -eq 'ADWS')
-    {
-        Try
-        {
-            If (-Not $UseAltCreds)
-            {
-                Set-Location AD:
-            }
-            $schemaIDGUID = @{}
-            $GUIDs = @{'00000000-0000-0000-0000-000000000000' = 'All'}
-
-            $schemaIDs = Get-ADObject -SearchBase (Get-ADRootDSE).schemaNamingContext -LDAPFilter '(schemaIDGUID=*)' -Properties name, schemaIDGUID
-
-            $schemaIDs | Where-Object {$_} | ForEach-Object {
-                # convert the GUID
-                $GUIDs[(New-Object Guid (,$_.schemaIDGUID)).Guid] = $_.name
-            }
-            Remove-Variable schemaIDs
-
-            $schemaIDs = Get-ADObject -SearchBase "CN=Extended-Rights,$((Get-ADRootDSE).configurationNamingContext)" -LDAPFilter '(objectClass=controlAccessRight)' -Properties name, rightsGUID
-
-            $schemaIDs | Where-Object {$_} | ForEach-Object {
-                # convert the GUID
-                $GUIDs[(New-Object Guid (,$_.rightsGUID)).Guid] = $_.name
-            }
-            Remove-Variable schemaIDs
-
-            # Get a list of all OUs.  Add in the root containers for good measure (users, computers, etc.).
-            $OUs  = @(Get-ADDomain | Select-Object -ExpandProperty DistinguishedName)
-            $OUs += Get-ADOrganizationalUnit -Filter * | Select-Object -ExpandProperty DistinguishedName
-            $OUs += Get-ADObject -SearchBase (Get-ADDomain).DistinguishedName -SearchScope OneLevel -LDAPFilter '(objectClass=container)' | Select-Object -ExpandProperty DistinguishedName
-            ForEach ($OU in $OUs)
-            {
-                $OUPermissions += Get-Acl -Path "$OU" |
-                Select-Object -ExpandProperty Access |
-                Select-Object @{name='organizationalUnit';expression={$OU}}, `
-                       @{name='objectTypeName';expression={$GUIDs[$_.objectType.ToString()]}}, `
-                       @{name='inheritedObjectTypeName';expression={$GUIDs[$_.inheritedObjectType.ToString()]}}, `
-                       *
-            }
-            Remove-Variable OUs
-            Remove-Variable GUIDs
-        }
-        Catch
-        {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
-        }
-    }
-
-    If ($Protocol -eq 'LDAP')
-    {
-        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
-        $ObjSearcher.PageSize = $PageSize
-        $ObjSearcher.Filter = "(objectCategory=organizationalunit)"
-        $ObjSearcher.SearchScope = "Subtree"
-
-        Try
-        {
-            $ADOUs = $ObjSearcher.FindAll()
-        }
-        Catch
-        {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
-        }
-        $ObjSearcher.dispose()
-
-        $OUPermissions = @()
-        If ($ADOUs)
-        {
-            $GUIDs = @{'00000000-0000-0000-0000-000000000000' = 'All'}
-
-        If ($UseAltCreds)
-        {
-            $DomainFQDN = Get-DNtoFQDN($objDomain.distinguishedName)
-            $DomainContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Domain",$($DomainFQDN),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
-            Try
-            {
-                $ADDomain = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($DomainContext)
-            }
-            Catch
-            {
-                Write-Error "[EXCEPTION] $($_.Exception.Message)"
-            }
-
-            $ForestContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Forest",$($ADDomain.Forest),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
-            Try
-            {
-                $ADForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($ForestContext)
-                $SchemaPath = $ADForest.Schema.Name
-            }
-            Catch
-            {
-                Write-Error "[EXCEPTION] $($_.Exception.Message)"
-            }
-        }
-        Else
-        {
-            $ADForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
-            $SchemaPath = $ADForest.Schema.Name
-            Remove-Variable ADForest
-        }
-
-            If ($SchemaPath)
-            {
-                If ($UseAltCreds)
-                {
-                    $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SchemaPath)", $Credential.UserName,$Credential.GetNetworkCredential().Password
-                    $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
-                }
-                Else
-                {
-                    $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher ([ADSI] "LDAP://$($SchemaPath)")
-                }
-                $objSearcherPath.PageSize = $PageSize
-                $objSearcherPath.filter = "(schemaIDGUID=*)"
-
-                Try
-                {
-                    $SchemaSearcher = $objSearcherPath.FindAll()
-                }
-                Catch
-                {
-                    Write-Error "[EXCEPTION] $($_.Exception.Message)"
-                }
-
-                If ($SchemaSearcher)
-                {
-                    $SchemaSearcher | Where-Object {$_} | ForEach-Object {
-                        # convert the GUID
-                        $GUIDs[(New-Object Guid (,$_.properties.schemaidguid[0])).Guid] = $_.properties.name[0]
-                    }
-                    $SchemaSearcher.dispose()
-                }
-                $objSearcherPath.dispose()
-
-                If ($UseAltCreds)
-                {
-                    $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SchemaPath.replace("Schema","Extended-Rights"))", $Credential.UserName,$Credential.GetNetworkCredential().Password
-                    $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
-                }
-                Else
-                {
-                    $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher ([ADSI] "LDAP://$($SchemaPath.replace("Schema","Extended-Rights"))")
-                }
-                $objSearcherPath.PageSize = $PageSize
-                $objSearcherPath.filter = "(objectClass=controlAccessRight)"
-
-                Try
-                {
-                    $RightsSearcher = $objSearcherPath.FindAll()
-                }
-                Catch
-                {
-                    Write-Error "[EXCEPTION] $($_.Exception.Message)"
-                }
-
-                If ($RightsSearcher)
-                {
-                    $RightsSearcher | Where-Object {$_} | ForEach-Object {
-                        # convert the GUID
-                        $GUIDs[$_.properties.rightsguid[0].toString()] = $_.properties.name[0]
-                    }
-                    $RightsSearcher.dispose()
-                }
-                $objSearcherPath.dispose()
-            }
-            If ($UseAltCreds)
-            {
-                ForEach ($OU in $ADOUs)
-                {
-                    $OUPermissions += (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($OU.Properties.distinguishedname)", $Credential.UserName,$Credential.GetNetworkCredential().Password).PsBase.ObjectSecurity.access | Select-Object @{name='organizationalUnit';expression={$OU.properties.distinguishedname}}, `
-                       @{name='objectTypeName';expression={$GUIDs[$_.objectType.ToString()]}}, `
-                       @{name='inheritedObjectTypeName';expression={$GUIDs[$_.inheritedObjectType.ToString()]}}, `
-                       *
-                }
-            }
-            Else
-            {
-                ForEach ($OU in $ADOUs)
-                {
-                $OUPermissions += (($OU.GetDirectoryEntry()).Get_ObjectSecurity()).Access | Select-Object @{name='organizationalUnit';expression={$OU.properties.distinguishedname}}, `
-                       @{name='objectTypeName';expression={$GUIDs[$_.objectType.ToString()]}}, `
-                       @{name='inheritedObjectTypeName';expression={$GUIDs[$_.inheritedObjectType.ToString()]}}, `
-                       *
-                }
-            }
-            Remove-Variable GUIDs
-            Remove-Variable ADOUs
-        }
-    }
-
-    If ($OUPermissions)
-    {
-        Return $OUPermissions
     }
     Else
     {
@@ -6247,10 +7960,6 @@ Function Get-ADRGPO
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER objDomain
     [DirectoryServices.DirectoryEntry]
     Domain Directory Entry object.
@@ -6263,6 +7972,10 @@ Function Get-ADRGPO
     [int]
     The PageSize to set for the LDAP searcher object. Default 200.
 
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
+
 .OUTPUTS
     PSObject.
 #>
@@ -6270,43 +7983,34 @@ Function Get-ADRGPO
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
 
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
     )
 
     If ($Protocol -eq 'ADWS')
     {
         Try
         {
-            $ADDomainGPOs = Get-ADObject -LDAPFilter '(objectCategory=groupPolicyContainer)' -Properties DisplayName,whenCreated,whenChanged,Name,gPCFileSysPath
+            $ADGPOs = @( Get-ADObject -LDAPFilter '(objectCategory=groupPolicyContainer)' -Properties DisplayName,DistinguishedName,Name,gPCFileSysPath,whenCreated,whenChanged )
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRGPO] Error while enumerating groupPolicyContainer Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
 
-        If ($ADDomainGPOs)
+        If ($ADGPOs)
         {
-            Write-Verbose "[*] Total GPOs: $([ADRecon.ADWSClass]::ObjectCount($ADDomainGPOs))"
-            $ADDomainGPOObj = @()
-            $ADDomainGPOs | ForEach-Object {
-                # Create the object for each instance.
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name DisplayName -Value $_.DisplayName
-                $Obj | Add-Member -MemberType NoteProperty -Name Created -Value $_.whenCreated
-                $Obj | Add-Member -MemberType NoteProperty -Name Changed -Value $_.whenChanged
-                $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $([ADRecon.ADWSClass]::CleanString($_.Name))
-                $Obj | Add-Member -MemberType NoteProperty -Name FilePath -Value $_.gPCFileSysPath
-                $ADDomainGPOObj += $Obj
-            }
-            Remove-Variable ADDomainGPOs
+            Write-Verbose "[*] Total GPOs: $([ADRecon.ADWSClass]::ObjectCount($ADGPOs))"
+            $GPOsObj = [ADRecon.ADWSClass]::GPOParser($ADGPOs, $Threads)
+            Remove-Variable ADGPOs
         }
     }
 
@@ -6319,36 +8023,187 @@ Function Get-ADRGPO
 
         Try
         {
-            $ADDomainGPOs = $ObjSearcher.FindAll()
+            $ADGPOs = $ObjSearcher.FindAll()
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRGPO] Error while enumerating groupPolicyContainer Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
         $ObjSearcher.dispose()
 
-        If ($ADDomainGPOs)
+        If ($ADGPOs)
         {
-            Write-Verbose "[*] Total GPOs: $([ADRecon.LDAPClass]::ObjectCount($ADDomainGPOs))"
-            $ADDomainGPOObj = @()
-            $ADDomainGPOs | ForEach-Object {
-                # Create the object for each instance.
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name DisplayName -Value ([string] $($_.Properties.displayname))
-                $Obj | Add-Member -MemberType NoteProperty -Name Created -Value ([DateTime] $($_.Properties.whencreated))
-                $Obj | Add-Member -MemberType NoteProperty -Name Changed -Value ([DateTime] $($_.Properties.whenchanged))
-                $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $([ADRecon.LDAPClass]::CleanString($_.Properties.name))
-                $Obj | Add-Member -MemberType NoteProperty -Name FilePath -Value ([string] $($_.Properties.gpcfilesyspath))
-                $ADDomainGPOObj += $Obj
-            }
-            Remove-Variable ADDomainGPOs
+            Write-Verbose "[*] Total GPOs: $([ADRecon.LDAPClass]::ObjectCount($ADGPOs))"
+            $GPOsObj = [ADRecon.LDAPClass]::GPOParser($ADGPOs, $Threads)
+            Remove-Variable ADGPOs
         }
     }
 
-    If ($ADDomainGPOObj)
+    If ($GPOsObj)
     {
-        Return $ADDomainGPOObj
+        Return $GPOsObj
+    }
+    Else
+    {
+        Return $null
+    }
+}
+
+# based on https://github.com/GoateePFE/GPLinkReport/blob/master/gPLinkReport.ps1
+Function Get-ADRGPLink
+{
+<#
+.SYNOPSIS
+    Returns all group policy links (gPLink) applied to Scope of Management (SOM) in the current (or specified) domain.
+
+.DESCRIPTION
+    Returns all group policy links (gPLink) applied to Scope of Management (SOM) in the current (or specified) domain.
+
+.PARAMETER Protocol
+    [string]
+    Which protocol to use; ADWS (default) or LDAP.
+
+.PARAMETER objDomain
+    [DirectoryServices.DirectoryEntry]
+    Domain Directory Entry object.
+
+.PARAMETER PageSize
+    [int]
+    The PageSize to set for the LDAP searcher object. Default 200.
+
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
+
+.OUTPUTS
+    PSObject.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Protocol,
+
+        [Parameter(Mandatory = $false)]
+        [DirectoryServices.DirectoryEntry] $objDomain,
+
+        [Parameter(Mandatory = $true)]
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
+    )
+
+    If ($Protocol -eq 'ADWS')
+    {
+        Try
+        {
+            $ADSOMs = @( Get-ADObject -LDAPFilter '(|(objectclass=domain)(objectclass=organizationalUnit))' -Properties DistinguishedName,Name,gPLink,gPOptions )
+            $ADSOMs += @( Get-ADObject -SearchBase "CN=Sites,$((Get-ADRootDSE).configurationNamingContext)" -LDAPFilter "(objectclass=site)" -Properties DistinguishedName,Name,gPLink,gPOptions )
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGPLink] Error while enumerating SOM Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+
+        Try
+        {
+            $ADGPOs = @( Get-ADObject -LDAPFilter '(objectCategory=groupPolicyContainer)' -Properties DisplayName,DistinguishedName )
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGPLink] Error while enumerating groupPolicyContainer Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+
+        If ( ($ADSOMs) -and ($ADGPOs) )
+        {
+            Write-Verbose "[*] Total SOMs: $([ADRecon.ADWSClass]::ObjectCount($ADSOMs))"
+            $SOMObj = [ADRecon.ADWSClass]::SOMParser($ADGPOs, $ADSOMs, $Threads)
+            Remove-Variable ADSOMs
+            Remove-Variable ADGPOs
+        }
+    }
+
+    If ($Protocol -eq 'LDAP')
+    {
+        $ADSOMs = @()
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(|(objectclass=domain)(objectclass=organizationalUnit))"
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname","name","gplink","gpoptions"))
+        $ObjSearcher.SearchScope = "Subtree"
+
+        Try
+        {
+            $ADSOMs += $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGPLink] Error while enumerating SOM Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+        $ObjSearcher.dispose()
+
+        $SearchPath = "CN=Sites"
+        If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+        {
+            $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$SearchPath,$($objDomainRootDSE.ConfigurationNamingContext)", $Credential.UserName,$Credential.GetNetworkCredential().Password
+        }
+        Else
+        {
+            $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$SearchPath,$($objDomainRootDSE.ConfigurationNamingContext)"
+        }
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
+        $ObjSearcher.Filter = "(objectclass=site)"
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname","name","gplink","gpoptions"))
+        $ObjSearcher.SearchScope = "Subtree"
+
+        Try
+        {
+            $ADSOMs += $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGPLink] Error while enumerating SOM Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+        $ObjSearcher.dispose()
+
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(objectCategory=groupPolicyContainer)"
+        $ObjSearcher.SearchScope = "Subtree"
+
+        Try
+        {
+            $ADGPOs = $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRGPLink] Error while enumerating groupPolicyContainer Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+        $ObjSearcher.dispose()
+
+        If ( ($ADSOMs) -and ($ADGPOs) )
+        {
+            Write-Verbose "[*] Total SOMs: $([ADRecon.LDAPClass]::ObjectCount($ADSOMs))"
+            $SOMObj = [ADRecon.LDAPClass]::SOMParser($ADGPOs, $ADSOMs, $Threads)
+            Remove-Variable ADSOMs
+            Remove-Variable ADGPOs
+        }
+    }
+
+    If ($SOMObj)
+    {
+        Return $SOMObj
     }
     Else
     {
@@ -6621,10 +8476,6 @@ Function Get-ADRDNSZone
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER ADROutputDir
     [string]
     Path for ADRecon output folder.
@@ -6657,9 +8508,6 @@ Function Get-ADRDNSZone
         [string] $Protocol,
 
         [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
-        [Parameter(Mandatory = $true)]
         [string] $ADROutputDir,
 
         [Parameter(Mandatory = $false)]
@@ -6686,7 +8534,8 @@ Function Get-ADRDNSZone
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRDNSZone] Error while enumerating dnsZone Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
 
         $DNSZoneArray = @()
@@ -6698,11 +8547,12 @@ Function Get-ADRDNSZone
 
         Try
         {
-            $ADDNSZones1 = Get-ADObject -LDAPFilter '(objectClass=dnsZone)' -SearchBase "CN=MicrosoftDNS,DC=DomainDnsZones,$((Get-ADDomain).DistinguishedName)" -Properties Name,whenCreated,whenChanged,usncreated,usnchanged,distinguishedname
+            $ADDNSZones1 = Get-ADObject -LDAPFilter '(objectClass=dnsZone)' -SearchBase "DC=DomainDnsZones,$((Get-ADDomain).DistinguishedName)" -Properties Name,whenCreated,whenChanged,usncreated,usnchanged,distinguishedname
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRDNSZone] Error while enumerating DomainDnsZones dnsZone Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
         If ($ADDNSZones1)
         {
@@ -6712,11 +8562,12 @@ Function Get-ADRDNSZone
 
         Try
         {
-            $ADDNSZones2 = Get-ADObject -LDAPFilter '(objectClass=dnsZone)' -SearchBase "CN=MicrosoftDNS,DC=ForestDnsZones,$((Get-ADDomain).DistinguishedName)" -Properties Name,whenCreated,whenChanged,usncreated,usnchanged,distinguishedname
+            $ADDNSZones2 = Get-ADObject -LDAPFilter '(objectClass=dnsZone)' -SearchBase "DC=ForestDnsZones,$((Get-ADDomain).DistinguishedName)" -Properties Name,whenCreated,whenChanged,usncreated,usnchanged,distinguishedname
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRDNSZone] Error while enumerating DC=ForestDnsZones,$((Get-ADDomain).DistinguishedName) dnsZone Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
         If ($ADDNSZones2)
         {
@@ -6734,17 +8585,14 @@ Function Get-ADRDNSZone
                 # Create the object for each instance.
                 $Obj = New-Object PSObject
                 $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $([ADRecon.ADWSClass]::CleanString($_.Name))
-                $Obj | Add-Member -MemberType NoteProperty -Name USNCreated -Value $_.usncreated
-                $Obj | Add-Member -MemberType NoteProperty -Name USNChanged -Value $_.usnchanged
-                $Obj | Add-Member -MemberType NoteProperty -Name Created -Value $_.whenCreated
-                $Obj | Add-Member -MemberType NoteProperty -Name Changed -Value $_.whenChanged
                 Try
                 {
                     $DNSNodes = Get-ADObject -SearchBase $($_.DistinguishedName) -LDAPFilter '(objectClass=dnsNode)' -Properties DistinguishedName,dnsrecord,dNSTombstoned,Name,ProtectedFromAccidentalDeletion,showInAdvancedViewOnly,whenChanged,whenCreated
                 }
                 Catch
                 {
-                    Write-Error "[EXCEPTION] $($_.Exception.Message)"
+                    Write-Warning "[Get-ADRDNSZone] Error while enumerating $($_.DistinguishedName) dnsNode Objects"
+                    Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                 }
                 If ($DNSNodes)
                 {
@@ -6759,7 +8607,8 @@ Function Get-ADRDNSZone
                         }
                         Catch
                         {
-                            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+                            Write-Warning "[Get-ADRDNSZone] Error while converting the DNSRecord"
+                            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                         }
                         $ObjNode | Add-Member -MemberType NoteProperty -Name RecordType -Value $DNSRecord.RecordType
                         $ObjNode | Add-Member -MemberType NoteProperty -Name Data -Value $DNSRecord.Data
@@ -6767,8 +8616,8 @@ Function Get-ADRDNSZone
                         $ObjNode | Add-Member -MemberType NoteProperty -Name Age -Value $DNSRecord.Age
                         $ObjNode | Add-Member -MemberType NoteProperty -Name TimeStamp -Value $DNSRecord.TimeStamp
                         $ObjNode | Add-Member -MemberType NoteProperty -Name UpdatedAtSerial -Value $DNSRecord.UpdatedAtSerial
-                        $ObjNode | Add-Member -MemberType NoteProperty -Name Created -Value $_.whenCreated
-                        $ObjNode | Add-Member -MemberType NoteProperty -Name Changed -Value $_.whenChanged
+                        $ObjNode | Add-Member -MemberType NoteProperty -Name whenCreated -Value $_.whenCreated
+                        $ObjNode | Add-Member -MemberType NoteProperty -Name whenChanged -Value $_.whenChanged
                         # TO DO LDAP part
                         #$ObjNode | Add-Member -MemberType NoteProperty -Name dNSTombstoned -Value $_.dNSTombstoned
                         #$ObjNode | Add-Member -MemberType NoteProperty -Name ProtectedFromAccidentalDeletion -Value $_.ProtectedFromAccidentalDeletion
@@ -6785,6 +8634,10 @@ Function Get-ADRDNSZone
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name RecordCount -Value $null
                 }
+                $Obj | Add-Member -MemberType NoteProperty -Name USNCreated -Value $_.usncreated
+                $Obj | Add-Member -MemberType NoteProperty -Name USNChanged -Value $_.usnchanged
+                $Obj | Add-Member -MemberType NoteProperty -Name whenCreated -Value $_.whenCreated
+                $Obj | Add-Member -MemberType NoteProperty -Name whenChanged -Value $_.whenChanged
                 $Obj | Add-Member -MemberType NoteProperty -Name DistinguishedName -Value $_.DistinguishedName
                 $ADDNSZonesObj += $Obj
             }
@@ -6807,7 +8660,8 @@ Function Get-ADRDNSZone
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRDNSZone] Error while enumerating dnsZone Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
         $ObjSearcher.dispose()
 
@@ -6818,8 +8672,8 @@ Function Get-ADRDNSZone
             Remove-Variable ADDNSZones
         }
 
-        $SearchPath = "CN=MicrosoftDNS,DC=DomainDnsZones"
-        If ($UseAltCreds)
+        $SearchPath = "DC=DomainDnsZones"
+        If ($Credential -ne [Management.Automation.PSCredential]::Empty)
         {
             $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SearchPath),$($objDomain.distinguishedName)", $Credential.UserName,$Credential.GetNetworkCredential().Password
         }
@@ -6839,8 +8693,8 @@ Function Get-ADRDNSZone
         }
         Catch
         {
-            Write-Warning "[*] DomainDnsZones, try running with a Privileged Account"
-            Write-Warning "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRDNSZone] Error while enumerating DomainDnsZones dnsZone Objects."
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
         $objSearcherPath.dispose()
 
@@ -6850,8 +8704,8 @@ Function Get-ADRDNSZone
             Remove-Variable ADDNSZones1
         }
 
-        $SearchPath = "CN=MicrosoftDNS,DC=ForestDnsZones"
-        If ($UseAltCreds)
+        $SearchPath = "DC=ForestDnsZones"
+        If ($Credential -ne [Management.Automation.PSCredential]::Empty)
         {
             $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SearchPath),$($objDomain.distinguishedName)", $Credential.UserName,$Credential.GetNetworkCredential().Password
         }
@@ -6871,8 +8725,8 @@ Function Get-ADRDNSZone
         }
         Catch
         {
-            Write-Warning "[*] ForestDnsZones, try running with a Privileged Account"
-            Write-Warning "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRDNSZone] Error while enumerating ForestDnsZones dnsZone Objects."
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
         $objSearcherPath.dispose()
 
@@ -6889,7 +8743,7 @@ Function Get-ADRDNSZone
             $ADDNSZonesObj = @()
             $ADDNSNodesObj = @()
             $DNSZoneArray | ForEach-Object {
-                If ($UseAltCreds)
+                If ($Credential -ne [Management.Automation.PSCredential]::Empty)
                 {
                     $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($_.Properties.distinguishedname)", $Credential.UserName,$Credential.GetNetworkCredential().Password
                 }
@@ -6907,18 +8761,15 @@ Function Get-ADRDNSZone
                 }
                 Catch
                 {
-                    Write-Error "[EXCEPTION] $($_.Exception.Message)"
+                    Write-Warning "[Get-ADRDNSZone] Error while enumerating $($_.Properties.distinguishedname) dnsNode Objects"
+                    Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                 }
                 $objSearcherPath.dispose()
                 Remove-Variable objSearchPath
 
                 # Create the object for each instance.
                 $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $([ADRecon.LDAPClass]::CleanString($_.Properties.name))
-                $Obj | Add-Member -MemberType NoteProperty -Name USNCreated -Value ([string] $($_.Properties.usncreated))
-                $Obj | Add-Member -MemberType NoteProperty -Name USNChanged -Value ([string] $($_.Properties.usnchanged))
-                $Obj | Add-Member -MemberType NoteProperty -Name Created -Value ([DateTime] $($_.Properties.whencreated))
-                $Obj | Add-Member -MemberType NoteProperty -Name Changed -Value ([DateTime] $($_.Properties.whenchanged))
+                $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $([ADRecon.LDAPClass]::CleanString($_.Properties.name[0]))
                 If ($DNSNodes)
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name RecordCount -Value $($DNSNodes | Measure-Object | Select-Object -ExpandProperty Count)
@@ -6937,7 +8788,8 @@ Function Get-ADRDNSZone
                         }
                         Catch
                         {
-                            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+                            Write-Warning "[Get-ADRDNSZone] Error while converting the DNSRecord"
+                            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                         }
                         $ObjNode | Add-Member -MemberType NoteProperty -Name RecordType -Value $DNSRecord.RecordType
                         $ObjNode | Add-Member -MemberType NoteProperty -Name Data -Value $DNSRecord.Data
@@ -6945,8 +8797,8 @@ Function Get-ADRDNSZone
                         $ObjNode | Add-Member -MemberType NoteProperty -Name Age -Value $DNSRecord.Age
                         $ObjNode | Add-Member -MemberType NoteProperty -Name TimeStamp -Value $DNSRecord.TimeStamp
                         $ObjNode | Add-Member -MemberType NoteProperty -Name UpdatedAtSerial -Value $DNSRecord.UpdatedAtSerial
-                        $ObjNode | Add-Member -MemberType NoteProperty -Name Created -Value ([DateTime] $($_.Properties.whencreated))
-                        $ObjNode | Add-Member -MemberType NoteProperty -Name Changed -Value ([DateTime] $($_.Properties.whenchanged))
+                        $ObjNode | Add-Member -MemberType NoteProperty -Name whenCreated -Value ([DateTime] $($_.Properties.whencreated))
+                        $ObjNode | Add-Member -MemberType NoteProperty -Name whenChanged -Value ([DateTime] $($_.Properties.whenchanged))
                         # TO DO
                         #$ObjNode | Add-Member -MemberType NoteProperty -Name dNSTombstoned -Value $null
                         #$ObjNode | Add-Member -MemberType NoteProperty -Name ProtectedFromAccidentalDeletion -Value $null
@@ -6963,6 +8815,10 @@ Function Get-ADRDNSZone
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name RecordCount -Value $null
                 }
+                $Obj | Add-Member -MemberType NoteProperty -Name USNCreated -Value ([string] $($_.Properties.usncreated))
+                $Obj | Add-Member -MemberType NoteProperty -Name USNChanged -Value ([string] $($_.Properties.usnchanged))
+                $Obj | Add-Member -MemberType NoteProperty -Name whenCreated -Value ([DateTime] $($_.Properties.whencreated))
+                $Obj | Add-Member -MemberType NoteProperty -Name whenChanged -Value ([DateTime] $($_.Properties.whenchanged))
                 $Obj | Add-Member -MemberType NoteProperty -Name DistinguishedName -Value ([string] $($_.Properties.distinguishedname))
                 $ADDNSZonesObj += $Obj
             }
@@ -6997,10 +8853,6 @@ Function Get-ADRPrinter
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER objDomain
     [DirectoryServices.DirectoryEntry]
     Domain Directory Entry object.
@@ -7008,6 +8860,10 @@ Function Get-ADRPrinter
 .PARAMETER PageSize
     [int]
     The PageSize to set for the LDAP searcher object. Default 200.
+
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
 
 .OUTPUTS
     PSObject.
@@ -7017,50 +8873,33 @@ Function Get-ADRPrinter
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
 
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
     )
 
     If ($Protocol -eq 'ADWS')
     {
         Try
         {
-            $ADPrinters = Get-ADObject -LDAPFilter '(objectCategory=printQueue)' -Properties serverName,printShareName,driverName,driverVersion,portName,url,whenCreated,whenChanged,Name
+            $ADPrinters = @( Get-ADObject -LDAPFilter '(objectCategory=printQueue)' -Properties driverName,driverVersion,Name,portName,printShareName,serverName,url,whenChanged,whenCreated )
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRPrinter] Error while enumerating printQueue Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
 
         If ($ADPrinters)
         {
-            $cnt = $([ADRecon.ADWSClass]::ObjectCount($ADPrinters))
-            If ($cnt -ge 1)
-            {
-                Write-Verbose "[*] Total Printers: $cnt"
-                $ADPrintersObj = @()
-                $ADPrinters | ForEach-Object {
-                    # Create the object for each instance.
-                    $Obj = New-Object PSObject
-                    $Obj | Add-Member -MemberType NoteProperty -Name Name -Value $_.Name
-                    $Obj | Add-Member -MemberType NoteProperty -Name ServerName -Value $_.serverName
-                    $Obj | Add-Member -MemberType NoteProperty -Name ShareName -Value ([string]($_.printShareName))
-                    $Obj | Add-Member -MemberType NoteProperty -Name DriverName -Value $_.driverName
-                    $Obj | Add-Member -MemberType NoteProperty -Name DriverVersion -Value $_.driverVersion
-                    $Obj | Add-Member -MemberType NoteProperty -Name PortName -Value ([string]($_.portName))
-                    $Obj | Add-Member -MemberType NoteProperty -Name URL -Value ([string]($_.url))
-                    $Obj | Add-Member -MemberType NoteProperty -Name Created -Value $_.whenCreated
-                    $Obj | Add-Member -MemberType NoteProperty -Name Changed -Value $_.whenChanged
-                    $ADPrintersObj += $Obj
-                }
-            }
+            Write-Verbose "[*] Total Printers: $([ADRecon.ADWSClass]::ObjectCount($ADPrinters))"
+            $PrintersObj = [ADRecon.ADWSClass]::PrinterParser($ADPrinters, $Threads)
             Remove-Variable ADPrinters
         }
     }
@@ -7078,7 +8917,8 @@ Function Get-ADRPrinter
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRPrinter] Error while enumerating printQueue Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
         $ObjSearcher.dispose()
@@ -7089,29 +8929,15 @@ Function Get-ADRPrinter
             If ($cnt -ge 1)
             {
                 Write-Verbose "[*] Total Printers: $cnt"
-                $ADPrintersObj = @()
-                $ADPrinters | ForEach-Object {
-                    # Create the object for each instance.
-                    $Obj = New-Object PSObject
-                    $Obj | Add-Member -MemberType NoteProperty -Name Name -Value ([string] $($_.Properties.name))
-                    $Obj | Add-Member -MemberType NoteProperty -Name ServerName -Value ([string] $($_.Properties.servername))
-                    $Obj | Add-Member -MemberType NoteProperty -Name ShareName -Value ([string] $($_.Properties.printsharename))
-                    $Obj | Add-Member -MemberType NoteProperty -Name DriverName -Value ([string] $($_.Properties.drivername))
-                    $Obj | Add-Member -MemberType NoteProperty -Name DriverVersion -Value ([string] $($_.Properties.driverversion))
-                    $Obj | Add-Member -MemberType NoteProperty -Name PortName -Value ([string] $($_.Properties.portname))
-                    $Obj | Add-Member -MemberType NoteProperty -Name URL -Value ([string] $($_.Properties.url))
-                    $Obj | Add-Member -MemberType NoteProperty -Name Created -Value ([DateTime] $($_.Properties.whencreated))
-                    $Obj | Add-Member -MemberType NoteProperty -Name Changed -Value ([DateTime] $($_.Properties.whenchanged))
-                    $ADPrintersObj += $Obj
-                }
+                $PrintersObj = [ADRecon.LDAPClass]::PrinterParser($ADPrinters, $Threads)
             }
             Remove-Variable ADPrinters
         }
     }
 
-    If ($ADPrintersObj)
+    If ($PrintersObj)
     {
-        Return $ADPrintersObj
+        Return $PrintersObj
     }
     Else
     {
@@ -7187,7 +9013,7 @@ Function Get-ADRComputer
     {
         Try
         {
-            $ADComputers = @( Get-ADComputer -Filter * -ResultPageSize $PageSize -Properties Description,DistinguishedName,DNSHostName,Enabled,IPv4Address,LastLogonDate,'msDS-AllowedToDelegateTo','msDS-SupportedEncryptionTypes',Name,OperatingSystem,OperatingSystemHotfix,OperatingSystemServicePack,OperatingSystemVersion,PasswordLastSet,primaryGroupID,SamAccountName,SID,SIDHistory,TrustedForDelegation,TrustedToAuthForDelegation,whenChanged,whenCreated )
+            $ADComputers = @( Get-ADComputer -Filter * -ResultPageSize $PageSize -Properties Description,DistinguishedName,DNSHostName,Enabled,IPv4Address,LastLogonDate,'msDS-AllowedToDelegateTo','ms-ds-CreatorSid','msDS-SupportedEncryptionTypes',Name,OperatingSystem,OperatingSystemHotfix,OperatingSystemServicePack,OperatingSystemVersion,PasswordLastSet,primaryGroupID,SamAccountName,SID,SIDHistory,TrustedForDelegation,TrustedToAuthForDelegation,UserAccountControl,whenChanged,whenCreated )
         }
         Catch
         {
@@ -7209,7 +9035,7 @@ Function Get-ADRComputer
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
         $ObjSearcher.Filter = "(samAccountType=805306369)"
-        $ObjSearcher.PropertiesToLoad.AddRange(("description","distinguishedname","dnshostname","lastlogontimestamp","msDS-AllowedToDelegateTo","msDS-SupportedEncryptionTypes","name","objectsid","operatingsystem","operatingsystemhotfix","operatingsystemservicepack","operatingsystemversion","primarygroupid","pwdlastset","samaccountname","sidhistory","useraccountcontrol","whenchanged","whencreated"))
+        $ObjSearcher.PropertiesToLoad.AddRange(("description","distinguishedname","dnshostname","lastlogontimestamp","msDS-AllowedToDelegateTo","ms-ds-CreatorSid","msDS-SupportedEncryptionTypes","name","objectsid","operatingsystem","operatingsystemhotfix","operatingsystemservicepack","operatingsystemversion","primarygroupid","pwdlastset","samaccountname","sidhistory","useraccountcontrol","whenchanged","whencreated"))
         $ObjSearcher.SearchScope = "Subtree"
 
         Try
@@ -7356,10 +9182,6 @@ Function Get-ADRLAPSCheck
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER objDomain
     [DirectoryServices.DirectoryEntry]
     Domain Directory Entry object.
@@ -7368,6 +9190,10 @@ Function Get-ADRLAPSCheck
     [int]
     The PageSize to set for the LDAP searcher object. Default 200.
 
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
+
 .OUTPUTS
     PSObject.
 #>
@@ -7375,81 +9201,38 @@ Function Get-ADRLAPSCheck
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
 
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
     )
 
     If ($Protocol -eq 'ADWS')
     {
         Try
         {
-            $ADComputers = Get-ADObject -LDAPFilter "(objectClass=computer)" -Properties cn,dnshostname,'ms-mcs-admpwd','ms-mcs-admpwdexpirationtime' -ResultPageSize $PageSize
+            $ADComputers = @( Get-ADObject -LDAPFilter "(samAccountType=805306369)" -Properties CN,DNSHostName,'ms-Mcs-AdmPwd','ms-Mcs-AdmPwdExpirationTime' -ResultPageSize $PageSize )
         }
         Catch [System.ArgumentException]
         {
             Write-Warning "[*] LAPS is not implemented."
-            $LAPS = $false
             Return $null
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRLAPSCheck] Error while enumerating LAPS Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
 
         If ($ADComputers)
         {
-            $LAPSObj = @()
-            $ADComputers | ForEach-Object {
-                [string] $CurrentPassword = $_.'ms-mcs-admpwd'
-                If ($_.'ms-mcs-admpwdexpirationtime' -ge 0)
-                {
-                    $CurrentExpiration = [dateTime]::FromFileTime("$($_.'ms-mcs-admpwdexpirationtime')")
-                }
-                Else
-                {
-                    $CurrentExpiration = "NA"
-                }
-                $PasswordAvailable = $false
-                $PasswordStored = $true
-                If ($CurrentPassword.length -ge 1)
-                {
-                    $PasswordAvailable = $true
-                }
-                If ($CurrentExpiration -eq "NA")
-                {
-                    $PasswordStored = $false
-                    $PasswordAvailable = "NA"
-                    $CurrentPassword = $null
-                }
-                If ($null -ne $_.dnshostname)
-                {
-                    $CurrentHostname = $_.dnshostname
-                }
-                Else
-                {
-                    $CurrentHostname = $_.cn
-                }
-                # Create the object for each instance.
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name Hostname -Value $CurrentHostname
-                $Obj | Add-Member -MemberType NoteProperty -Name Stored -Value $PasswordStored
-                $Obj | Add-Member -MemberType NoteProperty -Name Readable -Value $PasswordAvailable
-                $Obj | Add-Member -MemberType NoteProperty -Name Password -Value $CurrentPassword
-                $Obj | Add-Member -MemberType NoteProperty -Name Expiration -Value $CurrentExpiration
-                $LAPSObj += $Obj
-                Remove-Variable CurrentHostname
-                Remove-Variable PasswordStored
-                Remove-Variable PasswordAvailable
-                Remove-Variable CurrentPassword
-                Remove-Variable CurrentExpiration
-            }
+            Write-Verbose "[*] Total LAPS Objects: $([ADRecon.ADWSClass]::ObjectCount($ADComputers))"
+            $LAPSObj = [ADRecon.ADWSClass]::LAPSParser($ADComputers, $Threads)
             Remove-Variable ADComputers
         }
     }
@@ -7458,8 +9241,8 @@ Function Get-ADRLAPSCheck
     {
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
-        $ObjSearcher.Filter = "(objectClass=computer)"
-        $ObjSearcher.PropertiesToLoad.AddRange(("cn","dnshostname","ms-mcs-admpwdexpirationtime","ms-mcs-admpwd"))
+        $ObjSearcher.Filter = "(samAccountType=805306369)"
+        $ObjSearcher.PropertiesToLoad.AddRange(("cn","dnshostname","ms-mcs-admpwd","ms-mcs-admpwdexpirationtime"))
         $ObjSearcher.SearchScope = "Subtree"
         Try
         {
@@ -7467,64 +9250,26 @@ Function Get-ADRLAPSCheck
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRLAPSCheck] Error while enumerating LAPS Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
         $ObjSearcher.dispose()
 
-        If ($($ADComputers | ForEach-Object {$_.Properties.'ms-mcs-admpwdexpirationtime'} | Measure-Object | Select-Object -ExpandProperty Count) -eq 0)
+        If ($ADComputers)
         {
-            Write-Warning "[*] LAPS is not implemented."
-            Return $null
-        }
-        Else
-        {
-            $LAPSObj = @()
-            $ADComputers | ForEach-Object {
-                [string] $CurrentPassword = $_.properties.'ms-mcs-admpwd'
-                If ($_.properties.'ms-mcs-admpwdexpirationtime' -ge 0)
-                {
-                    $CurrentExpiration = [dateTime]::FromFileTime("$($_.properties.'ms-mcs-admpwdexpirationtime')")
-                }
-                Else
-                {
-                    $CurrentExpiration = "NA"
-                }
-                $PasswordAvailable = $false
-                $PasswordStored = $true
-                If ($CurrentPassword.length -ge 1)
-                {
-                    $PasswordAvailable = $true
-                }
-                If ($CurrentExpiration -eq "NA")
-                {
-                    $PasswordStored = $false
-                    $PasswordAvailable = "NA"
-                    $CurrentPassword = $null
-                }
-                If ($null -ne $_.properties.dnshostname)
-                {
-                    $CurrentHostname = ([string] $($_.properties.dnshostname))
-                }
-                Else
-                {
-                    $CurrentHostname = ([string] $($_.properties.cn))
-                }
-                # Create the object for each instance.
-                $Obj = New-Object PSObject
-                $Obj | Add-Member -MemberType NoteProperty -Name Hostname -Value $CurrentHostname
-                $Obj | Add-Member -MemberType NoteProperty -Name Stored -Value $PasswordStored
-                $Obj | Add-Member -MemberType NoteProperty -Name Readable -Value $PasswordAvailable
-                $Obj | Add-Member -MemberType NoteProperty -Name Password -Value $CurrentPassword
-                $Obj | Add-Member -MemberType NoteProperty -Name Expiration -Value $CurrentExpiration
-                $LAPSObj += $Obj
-                Remove-Variable CurrentHostname
-                Remove-Variable PasswordStored
-                Remove-Variable PasswordAvailable
-                Remove-Variable CurrentPassword
-                Remove-Variable CurrentExpiration
+            $LAPSCheck = [ADRecon.LDAPClass]::LAPSCheck($ADComputers)
+            If (-Not $LAPSCheck)
+            {
+                Write-Warning "[*] LAPS is not implemented."
+                Return $null
             }
-            Remove-Variable ADComputers
+            Else
+            {
+                Write-Verbose "[*] Total LAPS Objects: $([ADRecon.LDAPClass]::ObjectCount($ADComputers))"
+                $LAPSObj = [ADRecon.LDAPClass]::LAPSParser($ADComputers, $Threads)
+                Remove-Variable ADComputers
+            }
         }
     }
 
@@ -7551,10 +9296,6 @@ Function Get-ADRBitLocker
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER objDomain
     [DirectoryServices.DirectoryEntry]
     Domain Directory Entry object.
@@ -7574,9 +9315,6 @@ Function Get-ADRBitLocker
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
 
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
-
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
@@ -7595,7 +9333,8 @@ Function Get-ADRBitLocker
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRBitLocker] Error while enumerating msFVE-RecoveryInformation Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
 
@@ -7611,26 +9350,43 @@ Function Get-ADRBitLocker
                     $Obj = New-Object PSObject
                     $Obj | Add-Member -MemberType NoteProperty -Name "Distinguished Name" -Value $((($_.distinguishedName -split '}')[1]).substring(1))
                     $Obj | Add-Member -MemberType NoteProperty -Name "Name" -Value $_.Name
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Created" -Value $_.whenCreated
+                    $Obj | Add-Member -MemberType NoteProperty -Name "whenCreated" -Value $_.whenCreated
                     $Obj | Add-Member -MemberType NoteProperty -Name "Recovery Key ID" -Value $([GUID] $_.'msFVE-RecoveryGuid')
                     $Obj | Add-Member -MemberType NoteProperty -Name "Recovery Key" -Value $_.'msFVE-RecoveryPassword'
                     $Obj | Add-Member -MemberType NoteProperty -Name "Volume GUID" -Value $([GUID] $_.'msFVE-VolumeGuid')
-                    #$TempComp = Get-ADComputer -Identity $((($((($_.distinguishedName -split '}')[1]).substring(1)) -Split ("CN=")) -Split (","))[1]) -Properties msTPM-OwnerInformation,msTPM-TpmInformationForComputer
-                    $TempComp = Get-ADComputer -Identity $Obj.'Distinguished Name' -Properties msTPM-OwnerInformation,msTPM-TpmInformationForComputer
-                    # msTPM-OwnerInformation (Vista/7 or Server 2008/R2)
-                    $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-OwnerInformation" -Value $TempComp.'msTPM-OwnerInformation'
-
-                    # msTPM-TpmInformationForComputer (Windows 8/10 or Server 2012/R2)
-                    $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-TpmInformationForComputer" -Value $TempComp.'msTPM-TpmInformationForComputer'
-                    If ($TempComp.'msTPM-TpmInformationForComputer' -ne $null)
+                    Try
                     {
-                        # Grab the TPM Owner Info from the msTPM-InformationObject
-                        $TPMObject = Get-ADObject -Identity $TempComp.'msTPM-TpmInformationForComputer' -Properties msTPM-OwnerInformation
-                        $TPMRecoveryInfo = $TPMObject.'msTPM-OwnerInformation'
+                        $TempComp = Get-ADComputer -Identity $Obj.'Distinguished Name' -Properties msTPM-OwnerInformation,msTPM-TpmInformationForComputer
+                    }
+                    Catch
+                    {
+                        Write-Warning "[Get-ADRBitLocker] Error while enumerating $($Obj.'Distinguished Name') Computer Object"
+                        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                    }
+                    If ($TempComp)
+                    {
+                        # msTPM-OwnerInformation (Vista/7 or Server 2008/R2)
+                        $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-OwnerInformation" -Value $TempComp.'msTPM-OwnerInformation'
+
+                        # msTPM-TpmInformationForComputer (Windows 8/10 or Server 2012/R2)
+                        $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-TpmInformationForComputer" -Value $TempComp.'msTPM-TpmInformationForComputer'
+                        If ($null -ne $TempComp.'msTPM-TpmInformationForComputer')
+                        {
+                            # Grab the TPM Owner Info from the msTPM-InformationObject
+                            $TPMObject = Get-ADObject -Identity $TempComp.'msTPM-TpmInformationForComputer' -Properties msTPM-OwnerInformation
+                            $TPMRecoveryInfo = $TPMObject.'msTPM-OwnerInformation'
+                        }
+                        Else
+                        {
+                            $TPMRecoveryInfo = $null
+                        }
                     }
                     Else
                     {
+                        $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-OwnerInformation" -Value $null
+                        $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-TpmInformationForComputer" -Value $null
                         $TPMRecoveryInfo = $null
+
                     }
                     $Obj | Add-Member -MemberType NoteProperty -Name "TPM Owner Password" -Value $TPMRecoveryInfo
                     $BitLockerObj += $Obj
@@ -7654,7 +9410,8 @@ Function Get-ADRBitLocker
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRBitLocker] Error while enumerating msFVE-RecoveryInformation Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
         $ObjSearcher.dispose()
@@ -7671,7 +9428,7 @@ Function Get-ADRBitLocker
                     $Obj = New-Object PSObject
                     $Obj | Add-Member -MemberType NoteProperty -Name "Distinguished Name" -Value $((($_.Properties.distinguishedname -split '}')[1]).substring(1))
                     $Obj | Add-Member -MemberType NoteProperty -Name "Name" -Value ([string] ($_.Properties.name))
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Created" -Value ([DateTime] $($_.Properties.whencreated))
+                    $Obj | Add-Member -MemberType NoteProperty -Name "whenCreated" -Value ([DateTime] $($_.Properties.whencreated))
                     $Obj | Add-Member -MemberType NoteProperty -Name "Recovery Key ID" -Value $([GUID] $_.Properties.'msfve-recoveryguid'[0])
                     $Obj | Add-Member -MemberType NoteProperty -Name "Recovery Key" -Value ([string] ($_.Properties.'msfve-recoverypassword'))
                     $Obj | Add-Member -MemberType NoteProperty -Name "Volume GUID" -Value $([GUID] $_.Properties.'msfve-volumeguid'[0])
@@ -7688,7 +9445,8 @@ Function Get-ADRBitLocker
                     }
                     Catch
                     {
-                        Write-Error "[EXCEPTION] $($_.Exception.Message)"
+                        Write-Warning "[Get-ADRBitLocker] Error while enumerating $($Obj.'Distinguished Name') Computer Object"
+                        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
                     }
                     $ObjSearcher.dispose()
 
@@ -7699,21 +9457,51 @@ Function Get-ADRBitLocker
 
                         # msTPM-TpmInformationForComputer (Windows 8/10 or Server 2012/R2)
                         $Obj | Add-Member -MemberType NoteProperty -Name "msTPM-TpmInformationForComputer" -Value $([string] $TempComp.Properties.'mstpm-tpminformationforcomputer')
-                        If ($TempComp.Properties.'mstpm-tpminformationforcomputer' -ne $null)
+                        If ($null -ne $TempComp.Properties.'mstpm-tpminformationforcomputer')
                         {
                             # Grab the TPM Owner Info from the msTPM-InformationObject
-                            If ($UseAltCreds)
+                            If ($Credential -ne [Management.Automation.PSCredential]::Empty)
                             {
                                 $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($TempComp.Properties.'mstpm-tpminformationforcomputer')", $Credential.UserName,$Credential.GetNetworkCredential().Password
                                 $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
                                 $objSearcherPath.PropertiesToLoad.AddRange(("mstpm-ownerinformation"))
-                                $TPMObject = $objSearcherPath.FindAll()
-                                $TPMRecoveryInfo = $([string] $TPMObject.Properties.'mstpm-ownerinformation')
+                                Try
+                                {
+                                    $TPMObject = $objSearcherPath.FindAll()
+                                }
+                                Catch
+                                {
+                                    Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                                }
+                                $objSearcherPath.dispose()
+
+                                If ($TPMObject)
+                                {
+                                    $TPMRecoveryInfo = $([string] $TPMObject.Properties.'mstpm-ownerinformation')
+                                }
+                                Else
+                                {
+                                    $TPMRecoveryInfo = $null
+                                }
                             }
                             Else
                             {
-                                $TPMObject = ([ADSI]"LDAP://$($TempComp.Properties.'mstpm-tpminformationforcomputer')")
-                                $TPMRecoveryInfo = $([string] $TPMObject.Properties.'mstpm-ownerinformation')
+                                Try
+                                {
+                                    $TPMObject = ([ADSI]"LDAP://$($TempComp.Properties.'mstpm-tpminformationforcomputer')")
+                                }
+                                Catch
+                                {
+                                    Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                                }
+                                If ($TPMObject)
+                                {
+                                    $TPMRecoveryInfo = $([string] $TPMObject.Properties.'mstpm-ownerinformation')
+                                }
+                                Else
+                                {
+                                    $TPMRecoveryInfo = $null
+                                }
                             }
                         }
                     }
@@ -7739,6 +9527,650 @@ Function Get-ADRBitLocker
     Else
     {
         Return $null
+    }
+}
+
+# Modified ConvertFrom-SID function from https://github.com/PowerShellMafia/PowerSploit/blob/dev/Recon/PowerView.ps1
+Function ConvertFrom-SID
+{
+<#
+.SYNOPSIS
+    Converts a security identifier (SID) to a group/user name.
+
+    Author: Will Schroeder (@harmj0y)
+    License: BSD 3-Clause
+
+.DESCRIPTION
+    Converts a security identifier string (SID) to a group/user name using IADsNameTranslate interface.
+
+.PARAMETER Protocol
+    [string]
+    Which protocol to use; ADWS (default) or LDAP.
+
+.PARAMETER ObjectSid
+    Specifies one or more SIDs to convert.
+
+.PARAMETER DomainFQDN
+    Specifies the FQDN of the Domain.
+
+.PARAMETER Credential
+    Specifies an alternate credential to use for the translation.
+
+.PARAMETER ResolveSIDs
+    [bool]
+    Whether to resolve SIDs in the ACLs module. (Default False)
+
+.EXAMPLE
+
+    ConvertFrom-SID S-1-5-21-890171859-3433809279-3366196753-1108
+
+    TESTLAB\harmj0y
+
+.EXAMPLE
+
+    "S-1-5-21-890171859-3433809279-3366196753-1107", "S-1-5-21-890171859-3433809279-3366196753-1108", "S-1-5-32-562" | ConvertFrom-SID
+
+    TESTLAB\WINDOWS2$
+    TESTLAB\harmj0y
+    BUILTIN\Distributed COM Users
+
+.EXAMPLE
+
+    $SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
+    $Cred = New-Object System.Management.Automation.PSCredential('TESTLAB\dfm', $SecPassword)
+    ConvertFrom-SID S-1-5-21-890171859-3433809279-3366196753-1108 -Credential $Cred
+
+    TESTLAB\harmj0y
+
+.INPUTS
+    [String]
+    Accepts one or more SID strings on the pipeline.
+
+.OUTPUTS
+    [String]
+    The converted DOMAIN\username.
+#>
+    Param(
+        [Parameter(Mandatory = $true)]
+        [string] $Protocol,
+
+        [Parameter(Mandatory = $true)]
+        [Alias('SID')]
+        #[ValidatePattern('^S-1-.*')]
+        [String]
+        $ObjectSid,
+
+        [Parameter(Mandatory = $false)]
+        [string] $DomainFQDN,
+
+        [Parameter(Mandatory = $false)]
+        [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $ResolveSID = $false
+    )
+
+    BEGIN {
+        # Name Translator Initialization Types
+        # https://msdn.microsoft.com/en-us/library/aa772266%28v=vs.85%29.aspx
+        $ADS_NAME_INITTYPE_DOMAIN   = 1 # Initializes a NameTranslate object by setting the domain that the object binds to.
+        #$ADS_NAME_INITTYPE_SERVER   = 2 # Initializes a NameTranslate object by setting the server that the object binds to.
+        $ADS_NAME_INITTYPE_GC       = 3 # Initializes a NameTranslate object by locating the global catalog that the object binds to.
+
+        # Name Transator Name Types
+        # https://msdn.microsoft.com/en-us/library/aa772267%28v=vs.85%29.aspx
+        #$ADS_NAME_TYPE_1779                     = 1 # Name format as specified in RFC 1779. For example, "CN=Jeff Smith,CN=users,DC=Fabrikam,DC=com".
+        #$ADS_NAME_TYPE_CANONICAL                = 2 # Canonical name format. For example, "Fabrikam.com/Users/Jeff Smith".
+        $ADS_NAME_TYPE_NT4                      = 3 # Account name format used in Windows. For example, "Fabrikam\JeffSmith".
+        #$ADS_NAME_TYPE_DISPLAY                  = 4 # Display name format. For example, "Jeff Smith".
+        #$ADS_NAME_TYPE_DOMAIN_SIMPLE            = 5 # Simple domain name format. For example, "JeffSmith@Fabrikam.com".
+        #$ADS_NAME_TYPE_ENTERPRISE_SIMPLE        = 6 # Simple enterprise name format. For example, "JeffSmith@Fabrikam.com".
+        #$ADS_NAME_TYPE_GUID                     = 7 # Global Unique Identifier format. For example, "{95ee9fff-3436-11d1-b2b0-d15ae3ac8436}".
+        $ADS_NAME_TYPE_UNKNOWN                  = 8 # Unknown name type. The system will estimate the format. This element is a meaningful option only with the IADsNameTranslate.Set or the IADsNameTranslate.SetEx method, but not with the IADsNameTranslate.Get or IADsNameTranslate.GetEx method.
+        #$ADS_NAME_TYPE_USER_PRINCIPAL_NAME      = 9 # User principal name format. For example, "JeffSmith@Fabrikam.com".
+        #$ADS_NAME_TYPE_CANONICAL_EX             = 10 # Extended canonical name format. For example, "Fabrikam.com/Users Jeff Smith".
+        #$ADS_NAME_TYPE_SERVICE_PRINCIPAL_NAME   = 11 # Service principal name format. For example, "www/www.fabrikam.com@fabrikam.com".
+        #$ADS_NAME_TYPE_SID_OR_SID_HISTORY_NAME  = 12 # A SID string, as defined in the Security Descriptor Definition Language (SDDL), for either the SID of the current object or one from the object SID history. For example, "O:AOG:DAD:(A;;RPWPCCDCLCSWRCWDWOGA;;;S-1-0-0)"
+
+        # https://msdn.microsoft.com/en-us/library/aa772250.aspx
+        #$ADS_CHASE_REFERRALS_NEVER       = (0x00) # The client should never chase the referred-to server. Setting this option prevents a client from contacting other servers in a referral process.
+        #$ADS_CHASE_REFERRALS_SUBORDINATE = (0x20) # The client chases only subordinate referrals which are a subordinate naming context in a directory tree. For example, if the base search is requested for "DC=Fabrikam,DC=Com", and the server returns a result set and a referral of "DC=Sales,DC=Fabrikam,DC=Com" on the AdbSales server, the client can contact the AdbSales server to continue the search. The ADSI LDAP provider always turns off this flag for paged searches.
+        #$ADS_CHASE_REFERRALS_EXTERNAL    = (0x40) # The client chases external referrals. For example, a client requests server A to perform a search for "DC=Fabrikam,DC=Com". However, server A does not contain the object, but knows that an independent server, B, owns it. It then refers the client to server B.
+        $ADS_CHASE_REFERRALS_ALWAYS      = (0x60) # Referrals are chased for either the subordinate or external type.
+    }
+
+    PROCESS {
+        $TargetSid = $($ObjectSid.TrimStart("O:"))
+        $TargetSid = $($TargetSid.Trim('*'))
+        If ($TargetSid -match '^S-1-.*')
+        {
+            Try
+            {
+                # try to resolve any built-in SIDs first - https://support.microsoft.com/en-us/kb/243330
+                Switch ($TargetSid) {
+                    'S-1-0'         { 'Null Authority' }
+                    'S-1-0-0'       { 'Nobody' }
+                    'S-1-1'         { 'World Authority' }
+                    'S-1-1-0'       { 'Everyone' }
+                    'S-1-2'         { 'Local Authority' }
+                    'S-1-2-0'       { 'Local' }
+                    'S-1-2-1'       { 'Console Logon ' }
+                    'S-1-3'         { 'Creator Authority' }
+                    'S-1-3-0'       { 'Creator Owner' }
+                    'S-1-3-1'       { 'Creator Group' }
+                    'S-1-3-2'       { 'Creator Owner Server' }
+                    'S-1-3-3'       { 'Creator Group Server' }
+                    'S-1-3-4'       { 'Owner Rights' }
+                    'S-1-4'         { 'Non-unique Authority' }
+                    'S-1-5'         { 'NT Authority' }
+                    'S-1-5-1'       { 'Dialup' }
+                    'S-1-5-2'       { 'Network' }
+                    'S-1-5-3'       { 'Batch' }
+                    'S-1-5-4'       { 'Interactive' }
+                    'S-1-5-6'       { 'Service' }
+                    'S-1-5-7'       { 'Anonymous' }
+                    'S-1-5-8'       { 'Proxy' }
+                    'S-1-5-9'       { 'Enterprise Domain Controllers' }
+                    'S-1-5-10'      { 'Principal Self' }
+                    'S-1-5-11'      { 'Authenticated Users' }
+                    'S-1-5-12'      { 'Restricted Code' }
+                    'S-1-5-13'      { 'Terminal Server Users' }
+                    'S-1-5-14'      { 'Remote Interactive Logon' }
+                    'S-1-5-15'      { 'This Organization ' }
+                    'S-1-5-17'      { 'This Organization ' }
+                    'S-1-5-18'      { 'Local System' }
+                    'S-1-5-19'      { 'NT Authority' }
+                    'S-1-5-20'      { 'NT Authority' }
+                    'S-1-5-80-0'    { 'All Services ' }
+                    'S-1-5-32-544'  { 'BUILTIN\Administrators' }
+                    'S-1-5-32-545'  { 'BUILTIN\Users' }
+                    'S-1-5-32-546'  { 'BUILTIN\Guests' }
+                    'S-1-5-32-547'  { 'BUILTIN\Power Users' }
+                    'S-1-5-32-548'  { 'BUILTIN\Account Operators' }
+                    'S-1-5-32-549'  { 'BUILTIN\Server Operators' }
+                    'S-1-5-32-550'  { 'BUILTIN\Print Operators' }
+                    'S-1-5-32-551'  { 'BUILTIN\Backup Operators' }
+                    'S-1-5-32-552'  { 'BUILTIN\Replicators' }
+                    'S-1-5-32-554'  { 'BUILTIN\Pre-Windows 2000 Compatible Access' }
+                    'S-1-5-32-555'  { 'BUILTIN\Remote Desktop Users' }
+                    'S-1-5-32-556'  { 'BUILTIN\Network Configuration Operators' }
+                    'S-1-5-32-557'  { 'BUILTIN\Incoming Forest Trust Builders' }
+                    'S-1-5-32-558'  { 'BUILTIN\Performance Monitor Users' }
+                    'S-1-5-32-559'  { 'BUILTIN\Performance Log Users' }
+                    'S-1-5-32-560'  { 'BUILTIN\Windows Authorization Access Group' }
+                    'S-1-5-32-561'  { 'BUILTIN\Terminal Server License Servers' }
+                    'S-1-5-32-562'  { 'BUILTIN\Distributed COM Users' }
+                    'S-1-5-32-569'  { 'BUILTIN\Cryptographic Operators' }
+                    'S-1-5-32-573'  { 'BUILTIN\Event Log Readers' }
+                    'S-1-5-32-574'  { 'BUILTIN\Certificate Service DCOM Access' }
+                    'S-1-5-32-575'  { 'BUILTIN\RDS Remote Access Servers' }
+                    'S-1-5-32-576'  { 'BUILTIN\RDS Endpoint Servers' }
+                    'S-1-5-32-577'  { 'BUILTIN\RDS Management Servers' }
+                    'S-1-5-32-578'  { 'BUILTIN\Hyper-V Administrators' }
+                    'S-1-5-32-579'  { 'BUILTIN\Access Control Assistance Operators' }
+                    'S-1-5-32-580'  { 'BUILTIN\Remote Management Users' }
+                    Default {
+                        # based on Convert-ADName function from https://github.com/PowerShellMafia/PowerSploit/blob/dev/Recon/PowerView.ps1
+                        If ( ($TargetSid -match '^S-1-.*') -and ($ResolveSID) )
+                        {
+                            If ($Protocol -eq 'ADWS')
+                            {
+                                Try
+                                {
+                                    $ADObject = Get-ADObject -Filter "objectSid -eq '$TargetSid'" -Properties DistinguishedName,sAMAccountName
+                                }
+                                Catch
+                                {
+                                    Write-Warning "[ConvertFrom-SID] Error while enumerating Object using SID"
+                                    Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                                }
+                                If ($ADObject)
+                                {
+                                    $UserDomain = Get-DNtoFQDN -ADObjectDN $ADObject.DistinguishedName
+                                    $ADSOutput = $UserDomain + "\" + $ADObject.sAMAccountName
+                                    Remove-Variable UserDomain
+                                }
+                            }
+
+                            If ($Protocol -eq 'LDAP')
+                            {
+                                If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+                                {
+                                    $ADObject = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DomainFQDN/<SID=$TargetSid>",($Credential.GetNetworkCredential()).UserName,($Credential.GetNetworkCredential()).Password)
+                                }
+                                Else
+                                {
+                                    $ADObject = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DomainFQDN/<SID=$TargetSid>")
+                                }
+                                If ($ADObject)
+                                {
+                                    If (-Not ([string]::IsNullOrEmpty($ADObject.Properties.samaccountname)) )
+                                    {
+                                        $UserDomain = Get-DNtoFQDN -ADObjectDN $([string] ($ADObject.Properties.distinguishedname))
+                                        $ADSOutput = $UserDomain + "\" + $([string] ($ADObject.Properties.samaccountname))
+                                        Remove-Variable UserDomain
+                                    }
+                                }
+                            }
+
+                            If ( (-Not $ADSOutput) -or ([string]::IsNullOrEmpty($ADSOutput)) )
+                            {
+                                $ADSOutputType = $ADS_NAME_TYPE_NT4
+                                $Init = $true
+                                $Translate = New-Object -ComObject NameTranslate
+                                If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+                                {
+                                    $ADSInitType = $ADS_NAME_INITTYPE_DOMAIN
+                                    Try
+                                    {
+                                        [System.__ComObject].InvokeMember(“InitEx”,”InvokeMethod”,$null,$Translate,$(@($ADSInitType,$DomainFQDN,($Credential.GetNetworkCredential()).UserName,$DomainFQDN,($Credential.GetNetworkCredential()).Password)))
+                                    }
+                                    Catch
+                                    {
+                                        $Init = $false
+                                        #Write-Verbose "[ConvertFrom-SID] Error initializing translation for $($TargetSid) using alternate credentials"
+                                        #Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                                    }
+                                }
+                                Else
+                                {
+                                    $ADSInitType = $ADS_NAME_INITTYPE_GC
+                                    Try
+                                    {
+                                        [System.__ComObject].InvokeMember(“Init”,”InvokeMethod”,$null,$Translate,($ADSInitType,$null))
+                                    }
+                                    Catch
+                                    {
+                                        $Init = $false
+                                        #Write-Verbose "[ConvertFrom-SID] Error initializing translation for $($TargetSid)"
+                                        #Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                                    }
+                                }
+                                If ($Init)
+                                {
+                                    [System.__ComObject].InvokeMember(“ChaseReferral”,”SetProperty”,$null,$Translate,$ADS_CHASE_REFERRALS_ALWAYS)
+                                    Try
+                                    {
+                                        [System.__ComObject].InvokeMember(“Set”,”InvokeMethod”,$null,$Translate,($ADS_NAME_TYPE_UNKNOWN, $TargetSID))
+                                        $ADSOutput = [System.__ComObject].InvokeMember(“Get”,”InvokeMethod”,$null,$Translate,$ADSOutputType)
+                                    }
+                                    Catch
+                                    {
+                                        #Write-Verbose "[ConvertFrom-SID] Error translating $($TargetSid)"
+                                        #Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                                    }
+                                }
+                            }
+                        }
+                        If (-Not ([string]::IsNullOrEmpty($ADSOutput)) )
+                        {
+                            Return $ADSOutput
+                        }
+                        Else
+                        {
+                            Return $TargetSid
+                        }
+                    }
+                }
+            }
+            Catch
+            {
+                #Write-Output "[ConvertFrom-SID] Error converting SID $($TargetSid)"
+                #Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+        }
+        Else
+        {
+            Return $TargetSid
+        }
+    }
+}
+
+# based on https://gallery.technet.microsoft.com/Active-Directory-OU-1d09f989
+Function Get-ADRACL
+{
+<#
+.SYNOPSIS
+    Returns all ACLs for the Domain, OUs, Root Containers, GPO, User, Computer and Group objects in the current (or specified) domain.
+
+.DESCRIPTION
+    Returns all ACLs for the Domain, OUs, Root Containers, GPO, User, Computer and Group objects in the current (or specified) domain.
+
+.PARAMETER Protocol
+    [string]
+    Which protocol to use; ADWS (default) or LDAP.
+
+.PARAMETER objDomain
+    [DirectoryServices.DirectoryEntry]
+    Domain Directory Entry object.
+
+.PARAMETER DomainController
+    [string]
+    IP Address of the Domain Controller.
+
+.PARAMETER Credential
+    [Management.Automation.PSCredential]
+    Credentials.
+
+.PARAMETER ResolveSIDs
+    [bool]
+    Whether to resolve SIDs in the ACLs module. (Default False)
+
+.PARAMETER PageSize
+    [int]
+    The PageSize to set for the LDAP searcher object. Default 200.
+
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
+
+.OUTPUTS
+    PSObject.
+
+.LINK
+    https://gallery.technet.microsoft.com/Active-Directory-OU-1d09f989
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Protocol,
+
+        [Parameter(Mandatory = $false)]
+        [DirectoryServices.DirectoryEntry] $objDomain,
+
+        [Parameter(Mandatory = $false)]
+        [string] $DomainController,
+
+        [Parameter(Mandatory = $false)]
+        [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $ResolveSID = $false,
+
+        [Parameter(Mandatory = $true)]
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
+    )
+
+    If ($Protocol -eq 'ADWS')
+    {
+        If ($Credential -eq [Management.Automation.PSCredential]::Empty)
+        {
+            If (Test-Path AD:)
+            {
+                Set-Location AD:
+            }
+            Else
+            {
+                Write-Warning "Default AD drive not found ... Skipping ACL enumeration"
+                Return $null
+            }
+        }
+        $GUIDs = @{'00000000-0000-0000-0000-000000000000' = 'All'}
+        Try
+        {
+            Write-Verbose "[*] Enumerating schemaIDs"
+            $schemaIDs = Get-ADObject -SearchBase (Get-ADRootDSE).schemaNamingContext -LDAPFilter '(schemaIDGUID=*)' -Properties name, schemaIDGUID
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRACL] Error while enumerating schemaIDs"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+
+        If ($schemaIDs)
+        {
+            $schemaIDs | Where-Object {$_} | ForEach-Object {
+                # convert the GUID
+                $GUIDs[(New-Object Guid (,$_.schemaIDGUID)).Guid] = $_.name
+            }
+            Remove-Variable schemaIDs
+        }
+
+        Try
+        {
+            Write-Verbose "[*] Enumerating Active Directory Rights"
+            $schemaIDs = Get-ADObject -SearchBase "CN=Extended-Rights,$((Get-ADRootDSE).configurationNamingContext)" -LDAPFilter '(objectClass=controlAccessRight)' -Properties name, rightsGUID
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRACL] Error while enumerating Active Directory Rights"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+
+        If ($schemaIDs)
+        {
+            $schemaIDs | Where-Object {$_} | ForEach-Object {
+                # convert the GUID
+                $GUIDs[(New-Object Guid (,$_.rightsGUID)).Guid] = $_.name
+            }
+            Remove-Variable schemaIDs
+        }
+
+        # Get the DistinguishedNames of Domain, OUs, Root Containers and GroupPolicy objects.
+        $Objs = @()
+        Try
+        {
+            $ADDomain = Get-ADDomain
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRACL] Error getting Domain Context"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+
+        Try
+        {
+            Write-Verbose "[*] Enumerating Domain, OU, GPO, User, Computer and Group Objects"
+            $Objs += Get-ADObject -LDAPFilter '(|(objectClass=domain)(objectCategory=organizationalunit)(objectCategory=groupPolicyContainer)(samAccountType=805306368)(samAccountType=805306369)(samaccounttype=268435456)(samaccounttype=268435457)(samaccounttype=536870912)(samaccounttype=536870913))' -Properties DisplayName, DistinguishedName, Name, ntsecuritydescriptor, ObjectClass, objectsid
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRACL] Error while enumerating Domain, OU, GPO, User, Computer and Group Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+
+        If ($ADDomain)
+        {
+            Try
+            {
+                Write-Verbose "[*] Enumerating Root Container Objects"
+                $Objs += Get-ADObject -SearchBase $($ADDomain.DistinguishedName) -SearchScope OneLevel -LDAPFilter '(objectClass=container)' -Properties DistinguishedName, Name, ntsecuritydescriptor, ObjectClass
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRACL] Error while enumerating Root Container Objects"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+        }
+
+        If ($Objs)
+        {
+            $ACLObj = @()
+            Write-Verbose "[*] Total Objects: $([ADRecon.ADWSClass]::ObjectCount($Objs))"
+            Write-Verbose "[-] DACLs"
+            $DACLObj = [ADRecon.ADWSClass]::DACLParser($Objs, $GUIDs, $Threads)
+            #Write-Verbose "[-] SACLs - May need a Privileged Account"
+            Write-Warning "[*] SACLs - Currently, the module is only supported with LDAP."
+            #$SACLObj = [ADRecon.ADWSClass]::SACLParser($Objs, $GUIDs, $Threads)
+            Remove-Variable Objs
+            Remove-Variable GUIDs
+        }
+    }
+
+    If ($Protocol -eq 'LDAP')
+    {
+        $GUIDs = @{'00000000-0000-0000-0000-000000000000' = 'All'}
+
+        If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+        {
+            $DomainFQDN = Get-DNtoFQDN($objDomain.distinguishedName)
+            $DomainContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Domain",$($DomainFQDN),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
+            Try
+            {
+                $ADDomain = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($DomainContext)
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRACL] Error getting Domain Context"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+
+            Try
+            {
+                $ForestContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Forest",$($ADDomain.Forest),$($Credential.UserName),$($Credential.GetNetworkCredential().password))
+                $ADForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($ForestContext)
+                $SchemaPath = $ADForest.Schema.Name
+                Remove-Variable ADForest
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRACL] Error enumerating SchemaPath"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+        }
+        Else
+        {
+            $ADDomain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+            $ADForest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+            $SchemaPath = $ADForest.Schema.Name
+            Remove-Variable ADForest
+        }
+
+        If ($SchemaPath)
+        {
+            Write-Verbose "[*] Enumerating schemaIDs"
+            If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+            {
+                $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SchemaPath)", $Credential.UserName,$Credential.GetNetworkCredential().Password
+                $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
+            }
+            Else
+            {
+                $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher ([ADSI] "LDAP://$($SchemaPath)")
+            }
+            $objSearcherPath.PageSize = $PageSize
+            $objSearcherPath.filter = "(schemaIDGUID=*)"
+
+            Try
+            {
+                $SchemaSearcher = $objSearcherPath.FindAll()
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRACL] Error enumerating SchemaIDs"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+
+            If ($SchemaSearcher)
+            {
+                $SchemaSearcher | Where-Object {$_} | ForEach-Object {
+                    # convert the GUID
+                    $GUIDs[(New-Object Guid (,$_.properties.schemaidguid[0])).Guid] = $_.properties.name[0]
+                }
+                $SchemaSearcher.dispose()
+            }
+            $objSearcherPath.dispose()
+
+            Write-Verbose "[*] Enumerating Active Directory Rights"
+            If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+            {
+                $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SchemaPath.replace("Schema","Extended-Rights"))", $Credential.UserName,$Credential.GetNetworkCredential().Password
+                $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
+            }
+            Else
+            {
+                $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher ([ADSI] "LDAP://$($SchemaPath.replace("Schema","Extended-Rights"))")
+            }
+            $objSearcherPath.PageSize = $PageSize
+            $objSearcherPath.filter = "(objectClass=controlAccessRight)"
+
+            Try
+            {
+                $RightsSearcher = $objSearcherPath.FindAll()
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRACL] Error enumerating Active Directory Rights"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            }
+
+            If ($RightsSearcher)
+            {
+                $RightsSearcher | Where-Object {$_} | ForEach-Object {
+                    # convert the GUID
+                    $GUIDs[$_.properties.rightsguid[0].toString()] = $_.properties.name[0]
+                }
+                $RightsSearcher.dispose()
+            }
+            $objSearcherPath.dispose()
+        }
+
+        # Get the Domain, OUs, Root Containers, GPO, User, Computer and Group objects.
+        $Objs = @()
+        Write-Verbose "[*] Enumerating Domain, OU, GPO, User, Computer and Group Objects"
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(|(objectClass=domain)(objectCategory=organizationalunit)(objectCategory=groupPolicyContainer)(samAccountType=805306368)(samAccountType=805306369)(samaccounttype=268435456)(samaccounttype=268435457)(samaccounttype=536870912)(samaccounttype=536870913))"
+        # https://msdn.microsoft.com/en-us/library/system.directoryservices.securitymasks(v=vs.110).aspx
+        $ObjSearcher.SecurityMasks = [System.DirectoryServices.SecurityMasks]::Dacl -bor [System.DirectoryServices.SecurityMasks]::Group -bor [System.DirectoryServices.SecurityMasks]::Owner -bor [System.DirectoryServices.SecurityMasks]::Sacl
+        $ObjSearcher.PropertiesToLoad.AddRange(("displayname","distinguishedname","name","ntsecuritydescriptor","objectclass","objectsid"))
+        $ObjSearcher.SearchScope = "Subtree"
+
+        Try
+        {
+            $Objs += $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRACL] Error while enumerating Domain, OU, GPO, User, Computer and Group Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+        $ObjSearcher.dispose()
+
+        Write-Verbose "[*] Enumerating Root Container Objects"
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(objectClass=container)"
+        # https://msdn.microsoft.com/en-us/library/system.directoryservices.securitymasks(v=vs.110).aspx
+        $ObjSearcher.SecurityMasks = $ObjSearcher.SecurityMasks = [System.DirectoryServices.SecurityMasks]::Dacl -bor [System.DirectoryServices.SecurityMasks]::Group -bor [System.DirectoryServices.SecurityMasks]::Owner -bor [System.DirectoryServices.SecurityMasks]::Sacl
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname","name","ntsecuritydescriptor","objectclass"))
+        $ObjSearcher.SearchScope = "OneLevel"
+
+        Try
+        {
+            $Objs += $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRACL] Error while enumerating Root Container Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+        $ObjSearcher.dispose()
+
+        If ($Objs)
+        {
+            Write-Verbose "[*] Total Objects: $([ADRecon.LDAPClass]::ObjectCount($Objs))"
+            Write-Verbose "[-] DACLs"
+            $DACLObj = [ADRecon.LDAPClass]::DACLParser($Objs, $GUIDs, $Threads)
+            Write-Verbose "[-] SACLs - May need a Privileged Account"
+            $SACLObj = [ADRecon.LDAPClass]::SACLParser($Objs, $GUIDs, $Threads)
+            Remove-Variable Objs
+            Remove-Variable GUIDs
+        }
+    }
+
+    If ($DACLObj)
+    {
+        Export-ADR $DACLObj $ADROutputDir $OutputType "DACLs"
+        Remove-Variable DACLObj
+    }
+
+    If ($SACLObj)
+    {
+        Export-ADR $SACLObj $ADROutputDir $OutputType "SACLs"
+        Remove-Variable SACLObj
     }
 }
 
@@ -7788,53 +10220,757 @@ Function Get-ADRGPOReport
             If ($SaveVerbosePreference)
             {
                 $script:VerbosePreference = $SaveVerbosePreference
+                Remove-Variable SaveVerbosePreference
             }
         }
         Catch
         {
-            Write-Warning "[EXCEPTION] $($_.Exception.Message)"
+            Write-Warning "[Get-ADRGPOReport] Error importing the GroupPolicy Module. Skipping GPOReport"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             If ($SaveVerbosePreference)
             {
                 $script:VerbosePreference = $SaveVerbosePreference
+                Remove-Variable SaveVerbosePreference
             }
             Return $null
         }
         Try
         {
-            Write-Verbose "[*] Domain GPO Report XML"
+            Write-Verbose "[*] GPOReport XML"
             $ADFileName = -join($ADROutputDir,'\','GPO-Report','.xml')
             Get-GPOReport -All -ReportType XML -Path $ADFileName
         }
         Catch
         {
-            Write-Warning "[EXCEPTION] $($_.Exception.Message)"
             If ($UseAltCreds)
             {
                 Write-Warning "[*] Run the tool using RUNAS."
                 Write-Warning "[*] runas /user:<Domain FQDN>\<Username> /netonly powershell.exe"
+                Return $null
             }
-            Return $null
+            Write-Warning "[Get-ADRGPOReport] Error getting the GPOReport in XML"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
         Try
         {
-            Write-Verbose "[*] Domain GPO Report HTML"
+            Write-Verbose "[*] GPOReport HTML"
             $ADFileName = -join($ADROutputDir,'\','GPO-Report','.html')
             Get-GPOReport -All -ReportType HTML -Path $ADFileName
         }
         Catch
         {
-            Write-Error "[EXCEPTION] $($_.Exception.Message)"
             If ($UseAltCreds)
             {
                 Write-Warning "[*] Run the tool using RUNAS."
                 Write-Warning "[*] runas /user:<Domain FQDN>\<Username> /netonly powershell.exe"
+                Return $null
             }
-            Return $null
+            Write-Warning "[Get-ADRGPOReport] Error getting the GPOReport in XML"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         }
     }
     If ($Protocol -eq 'LDAP')
     {
         Write-Warning "[*] Currently, the module is only supported with ADWS."
+    }
+}
+
+# Modified Invoke-UserImpersonation function from https://github.com/PowerShellMafia/PowerSploit/blob/dev/Recon/PowerView.ps1
+Function Get-ADRUserImpersonation
+{
+<#
+.SYNOPSIS
+
+Creates a new "runas /netonly" type logon and impersonates the token.
+
+Author: Will Schroeder (@harmj0y)
+License: BSD 3-Clause
+Required Dependencies: PSReflect
+
+.DESCRIPTION
+
+This function uses LogonUser() with the LOGON32_LOGON_NEW_CREDENTIALS LogonType
+to simulate "runas /netonly". The resulting token is then impersonated with
+ImpersonateLoggedOnUser() and the token handle is returned for later usage
+with Invoke-RevertToSelf.
+
+.PARAMETER Credential
+
+A [Management.Automation.PSCredential] object with alternate credentials
+to impersonate in the current thread space.
+
+.PARAMETER TokenHandle
+
+An IntPtr TokenHandle returned by a previous Invoke-UserImpersonation.
+If this is supplied, LogonUser() is skipped and only ImpersonateLoggedOnUser()
+is executed.
+
+.PARAMETER Quiet
+
+Suppress any warnings about STA vs MTA.
+
+.EXAMPLE
+
+$SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
+$Cred = New-Object System.Management.Automation.PSCredential('TESTLAB\dfm.a', $SecPassword)
+Invoke-UserImpersonation -Credential $Cred
+
+.OUTPUTS
+
+IntPtr
+
+The TokenHandle result from LogonUser.
+#>
+
+    [OutputType([IntPtr])]
+    [CmdletBinding(DefaultParameterSetName = 'Credential')]
+    Param(
+        [Parameter(Mandatory = $True, ParameterSetName = 'Credential')]
+        [Management.Automation.PSCredential]
+        [Management.Automation.CredentialAttribute()]
+        $Credential,
+
+        [Parameter(Mandatory = $True, ParameterSetName = 'TokenHandle')]
+        [ValidateNotNull()]
+        [IntPtr]
+        $TokenHandle,
+
+        [Switch]
+        $Quiet
+    )
+
+    If (([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') -and (-not $PSBoundParameters['Quiet']))
+    {
+        Write-Warning "[Get-ADRUserImpersonation] powershell.exe is not currently in a single-threaded apartment state, token impersonation may not work."
+    }
+
+    If ($PSBoundParameters['TokenHandle'])
+    {
+        $LogonTokenHandle = $TokenHandle
+    }
+    Else
+    {
+        $LogonTokenHandle = [IntPtr]::Zero
+        $NetworkCredential = $Credential.GetNetworkCredential()
+        $UserDomain = $NetworkCredential.Domain
+        If (-Not $UserDomain)
+        {
+            Write-Warning "[Get-ADRUserImpersonation] Use credential with Domain FQDN. (<Domain FQDN>\<Username>)"
+        }
+        $UserName = $NetworkCredential.UserName
+        Write-Warning "[Get-ADRUserImpersonation] Executing LogonUser() with user: $($UserDomain)\$($UserName)"
+
+        # LOGON32_LOGON_NEW_CREDENTIALS = 9, LOGON32_PROVIDER_WINNT50 = 3
+        #   this is to simulate "runas.exe /netonly" functionality
+        $Result = $Advapi32::LogonUser($UserName, $UserDomain, $NetworkCredential.Password, 9, 3, [ref]$LogonTokenHandle)
+        $LastError = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error();
+
+        If (-not $Result)
+        {
+            throw "[Get-ADRUserImpersonation] LogonUser() Error: $(([ComponentModel.Win32Exception] $LastError).Message)"
+        }
+    }
+
+    # actually impersonate the token from LogonUser()
+    $Result = $Advapi32::ImpersonateLoggedOnUser($LogonTokenHandle)
+
+    If (-not $Result)
+    {
+        throw "[Get-ADRUserImpersonation] ImpersonateLoggedOnUser() Error: $(([ComponentModel.Win32Exception] $LastError).Message)"
+    }
+
+    Write-Verbose "[Get-ADR-UserImpersonation] Alternate credentials successfully impersonated"
+    $LogonTokenHandle
+}
+
+# Modified Invoke-RevertToSelf function from https://github.com/PowerShellMafia/PowerSploit/blob/dev/Recon/PowerView.ps1
+Function Get-ADRRevertToSelf
+{
+<#
+.SYNOPSIS
+
+Reverts any token impersonation.
+
+Author: Will Schroeder (@harmj0y)
+License: BSD 3-Clause
+Required Dependencies: PSReflect
+
+.DESCRIPTION
+
+This function uses RevertToSelf() to revert any impersonated tokens.
+If -TokenHandle is passed (the token handle returned by Invoke-UserImpersonation),
+CloseHandle() is used to close the opened handle.
+
+.PARAMETER TokenHandle
+
+An optional IntPtr TokenHandle returned by Invoke-UserImpersonation.
+
+.EXAMPLE
+
+$SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
+$Cred = New-Object System.Management.Automation.PSCredential('TESTLAB\dfm.a', $SecPassword)
+$Token = Invoke-UserImpersonation -Credential $Cred
+Invoke-RevertToSelf -TokenHandle $Token
+#>
+
+    [CmdletBinding()]
+    Param(
+        [ValidateNotNull()]
+        [IntPtr]
+        $TokenHandle
+    )
+
+    If ($PSBoundParameters['TokenHandle'])
+    {
+        Write-Warning "[Get-ADRRevertToSelf] Reverting token impersonation and closing LogonUser() token handle"
+        $Result = $Kernel32::CloseHandle($TokenHandle)
+    }
+
+    $Result = $Advapi32::RevertToSelf()
+    $LastError = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error();
+
+    If (-not $Result)
+    {
+        Write-Error "[Get-ADRRevertToSelf] RevertToSelf() Error: $(([ComponentModel.Win32Exception] $LastError).Message)"
+    }
+
+    Write-Verbose "[Get-ADRRevertToSelf] Token impersonation successfully reverted"
+}
+
+# Modified Get-DomainSPNTicket function from https://github.com/PowerShellMafia/PowerSploit/blob/dev/Recon/PowerView.ps1
+Function Get-ADRSPNTicket
+{
+<#
+<#
+.SYNOPSIS
+    Request the kerberos ticket for a specified service principal name (SPN).
+
+    Author: machosec, Will Schroeder (@harmj0y)
+    License: BSD 3-Clause
+    Required Dependencies: Invoke-UserImpersonation, Invoke-RevertToSelf
+
+.DESCRIPTION
+    This function will either take one SPN strings, and will request a kerberos ticket for the given SPN using System.IdentityModel.Tokens.KerberosRequestorSecurityToken. The encrypted portion of the ticket is then extracted and output in either crackable Hashcat format.
+
+.PARAMETER UserSPN
+    [string]
+    Service Principal Name.
+
+.OUTPUTS
+    PSObject.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $UserSPN
+    )
+
+    Try
+    {
+        $Null = [Reflection.Assembly]::LoadWithPartialName('System.IdentityModel')
+        $Ticket = New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList $UserSPN
+    }
+    Catch
+    {
+        Write-Warning "[Get-ADRSPNTicket] Error requesting ticket for SPN $UserSPN"
+        Write-Warning "[EXCEPTION] $($_.Exception.Message)"
+        Return $null
+    }
+
+    If ($Ticket)
+    {
+        $TicketByteStream = $Ticket.GetRequest()
+    }
+
+    If ($TicketByteStream)
+    {
+        $TicketHexStream = [System.BitConverter]::ToString($TicketByteStream) -replace '-'
+
+        # TicketHexStream == GSS-API Frame (see https://tools.ietf.org/html/rfc4121#section-4.1)
+        # No easy way to parse ASN1, so we'll try some janky regex to parse the embedded KRB_AP_REQ.Ticket object
+        If ($TicketHexStream -match 'a382....3082....A0030201(?<EtypeLen>..)A1.{1,4}.......A282(?<CipherTextLen>....)........(?<DataToEnd>.+)')
+        {
+            $Etype = [Convert]::ToByte( $Matches.EtypeLen, 16 )
+            $CipherTextLen = [Convert]::ToUInt32($Matches.CipherTextLen, 16)-4
+            $CipherText = $Matches.DataToEnd.Substring(0,$CipherTextLen*2)
+
+            # Make sure the next field matches the beginning of the KRB_AP_REQ.Authenticator object
+            If ($Matches.DataToEnd.Substring($CipherTextLen*2, 4) -ne 'A482')
+            {
+                Write-Warning '[Get-ADRSPNTicket] Error parsing ciphertext for the SPN  $($Ticket.ServicePrincipalName).' # Use the TicketByteHexStream field and extract the hash offline with Get-KerberoastHashFromAPReq
+                $Hash = $null
+            }
+            Else
+            {
+                $Hash = "$($CipherText.Substring(0,32))`$$($CipherText.Substring(32))"
+            }
+        }
+        Else
+        {
+            Write-Warning "[Get-ADRSPNTicket] Unable to parse ticket structure for the SPN  $($Ticket.ServicePrincipalName)." # Use the TicketByteHexStream field and extract the hash offline with Get-KerberoastHashFromAPReq
+            $Hash = $null
+        }
+    }
+    $Obj = New-Object PSObject
+    $Obj | Add-Member -MemberType NoteProperty -Name "ServicePrincipalName" -Value $Ticket.ServicePrincipalName
+    $Obj | Add-Member -MemberType NoteProperty -Name "Etype" -Value $Etype
+    $Obj | Add-Member -MemberType NoteProperty -Name "Hash" -Value $Hash
+    Return $Obj
+}
+
+Function Get-ADRKerberoast
+{
+<#
+.SYNOPSIS
+    Returns all user service principal name (SPN) hashes in the current (or specified) domain.
+
+.DESCRIPTION
+    Returns all user service principal name (SPN) hashes in the current (or specified) domain.
+
+.PARAMETER Protocol
+    [string]
+    Which protocol to use; ADWS (default) or LDAP.
+
+.PARAMETER objDomain
+    [DirectoryServices.DirectoryEntry]
+    Domain Directory Entry object.
+
+.PARAMETER Credential
+    [Management.Automation.PSCredential]
+    Credentials.
+
+.PARAMETER PageSize
+    [int]
+    The PageSize to set for the LDAP searcher object. Default 200.
+
+.OUTPUTS
+    PSObject.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Protocol,
+
+        [Parameter(Mandatory = $false)]
+        [DirectoryServices.DirectoryEntry] $objDomain,
+
+        [Parameter(Mandatory = $false)]
+        [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
+
+        [Parameter(Mandatory = $true)]
+        [int] $PageSize
+    )
+
+    If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+    {
+        $LogonToken = Get-ADRUserImpersonation -Credential $Credential
+    }
+
+    If ($Protocol -eq 'ADWS')
+    {
+        Try
+        {
+            $ADUsers = Get-ADObject -LDAPFilter "(&(!objectClass=computer)(servicePrincipalName=*)(!userAccountControl:1.2.840.113556.1.4.803:=2))" -Properties sAMAccountName,servicePrincipalName,DistinguishedName -ResultPageSize $PageSize
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRKerberoast] Error while enumerating UserSPN Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+
+        If ($ADUsers)
+        {
+            $UserSPNObj = @()
+            $ADUsers | ForEach-Object {
+                ForEach ($UserSPN in $_.servicePrincipalName)
+                {
+                    $Obj = New-Object PSObject
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Username" -Value $_.sAMAccountName
+                    $Obj | Add-Member -MemberType NoteProperty -Name "ServicePrincipalName" -Value $UserSPN
+
+                    $HashObj = Get-ADRSPNTicket $UserSPN
+                    If ($HashObj)
+                    {
+                        $UserDomain = $_.DistinguishedName.SubString($_.DistinguishedName.IndexOf('DC=')) -replace 'DC=','' -replace ',','.'
+                        # JohnTheRipper output format
+                        $JTRHash = "`$krb5tgs`$$($HashObj.ServicePrincipalName):$($HashObj.Hash)"
+                        # hashcat output format
+                        $HashcatHash = "`$krb5tgs`$$($HashObj.Etype)`$*$($_.SamAccountName)`$$UserDomain`$$($HashObj.ServicePrincipalName)*`$$($HashObj.Hash)"
+                    }
+                    Else
+                    {
+                        $JTRHash = $null
+                        $HashcatHash = $null
+                    }
+                    $Obj | Add-Member -MemberType NoteProperty -Name "John" -Value $JTRHash
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Hashcat" -Value $HashcatHash
+                    $UserSPNObj += $Obj
+                }
+            }
+            Remove-Variable ADUsers
+        }
+    }
+
+    If ($Protocol -eq 'LDAP')
+    {
+        $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+        $ObjSearcher.PageSize = $PageSize
+        $ObjSearcher.Filter = "(&(!objectClass=computer)(servicePrincipalName=*)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname","samaccountname","serviceprincipalname","useraccountcontrol"))
+        $ObjSearcher.SearchScope = "Subtree"
+        Try
+        {
+            $ADUsers = $ObjSearcher.FindAll()
+        }
+        Catch
+        {
+            Write-Warning "[Get-ADRKerberoast] Error while enumerating UserSPN Objects"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+            Return $null
+        }
+        $ObjSearcher.dispose()
+
+        If ($ADUsers)
+        {
+            $UserSPNObj = @()
+            $ADUsers | ForEach-Object {
+                ForEach ($UserSPN in $_.Properties.serviceprincipalname)
+                {
+                    $Obj = New-Object PSObject
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Username" -Value $_.Properties.samaccountname[0]
+                    $Obj | Add-Member -MemberType NoteProperty -Name "ServicePrincipalName" -Value $UserSPN
+
+                    $HashObj = Get-ADRSPNTicket $UserSPN
+                    If ($HashObj)
+                    {
+                        $UserDomain = $_.Properties.distinguishedname[0].SubString($_.Properties.distinguishedname[0].IndexOf('DC=')) -replace 'DC=','' -replace ',','.'
+                        # JohnTheRipper output format
+                        $JTRHash = "`$krb5tgs`$$($HashObj.ServicePrincipalName):$($HashObj.Hash)"
+                        # hashcat output format
+                        $HashcatHash = "`$krb5tgs`$$($HashObj.Etype)`$*$($_.Properties.samaccountname)`$$UserDomain`$$($HashObj.ServicePrincipalName)*`$$($HashObj.Hash)"
+                    }
+                    Else
+                    {
+                        $JTRHash = $null
+                        $HashcatHash = $null
+                    }
+                    $Obj | Add-Member -MemberType NoteProperty -Name "John" -Value $JTRHash
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Hashcat" -Value $HashcatHash
+                    $UserSPNObj += $Obj
+                }
+            }
+            Remove-Variable ADUsers
+        }
+    }
+
+    If ($LogonToken)
+    {
+        Get-ADRRevertToSelf -TokenHandle $LogonToken
+    }
+
+    If ($UserSPNObj)
+    {
+        Return $UserSPNObj
+    }
+    Else
+    {
+        Return $null
+    }
+}
+
+# based on https://gallery.technet.microsoft.com/scriptcenter/PowerShell-script-to-find-6fc15ecb
+Function Get-ADRDomainAccountsusedforServiceLogon
+{
+<#
+.SYNOPSIS
+    Returns all accounts used by services on computers in an Active Directory domain.
+
+.DESCRIPTION
+    Retrieves a list of all computers in the current domain and reads service configuration using Get-WmiObject.
+
+.PARAMETER Protocol
+    [string]
+    Which protocol to use; ADWS (default) or LDAP.
+
+.PARAMETER objDomain
+    [DirectoryServices.DirectoryEntry]
+    Domain Directory Entry object.
+
+.PARAMETER PageSize
+    [int]
+    The PageSize to set for the LDAP searcher object. Default 200.
+
+.PARAMETER Threads
+    [int]
+    The number of threads to use during processing of objects. Default 10.
+
+.OUTPUTS
+    PSObject.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Protocol,
+
+        [Parameter(Mandatory = $false)]
+        [DirectoryServices.DirectoryEntry] $objDomain,
+
+        [Parameter(Mandatory = $false)]
+        [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
+
+        [Parameter(Mandatory = $true)]
+        [int] $PageSize,
+
+        [Parameter(Mandatory = $false)]
+        [int] $Threads = 10
+    )
+
+    BEGIN {
+        $readServiceAccounts = [scriptblock] {
+            # scriptblock to retrieve service list form a remove machine
+            $hostname = [string] $args[0]
+            $OperatingSystem = [string] $args[1]
+            #$Credential = [Management.Automation.PSCredential] $args[2]
+            $Credential = $args[2]
+            $timeout = 250
+            $port = 135
+            Try
+            {
+                $tcpclient = New-Object System.Net.Sockets.TcpClient
+                $result = $tcpclient.BeginConnect($hostname,$port,$null,$null)
+                $success = $result.AsyncWaitHandle.WaitOne($timeout,$null)
+            }
+            Catch
+            {
+                $warning = "$hostname ($OperatingSystem) is unreachable $($_.Exception.Message)"
+                $success = $false
+                $tcpclient.Close()
+            }
+            If ($success)
+            {
+                # PowerShellv2 does not support New-CimSession
+                If ($PSVersionTable.PSVersion.Major -ne 2)
+                {
+                    If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+                    {
+                        $session = New-CimSession -ComputerName $hostname -SessionOption $(New-CimSessionOption –Protocol DCOM) -Credential $Credential
+                        If ($session)
+                        {
+                            $serviceList = @( Get-CimInstance -ClassName Win32_Service -Property Name,StartName,SystemName -CimSession $session -ErrorAction Stop)
+                        }
+                    }
+                    Else
+                    {
+                        $session = New-CimSession -ComputerName $hostname -SessionOption $(New-CimSessionOption –Protocol DCOM)
+                        If ($session)
+                        {
+                            $serviceList = @( Get-CimInstance -ClassName Win32_Service -Property Name,StartName,SystemName -CimSession $session -ErrorAction Stop )
+                        }
+                    }
+                }
+                Else
+                {
+                    If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+                    {
+                        $serviceList = @( Get-WmiObject -Class Win32_Service -ComputerName $hostname -Credential $Credential -Impersonation 3 -Property Name,StartName,SystemName -ErrorAction Stop )
+                    }
+                    Else
+                    {
+                        $serviceList = @( Get-WmiObject -Class Win32_Service -ComputerName $hostname -Property Name,StartName,SystemName -ErrorAction Stop )
+                    }
+                }
+                $serviceList
+            }
+            Try
+            {
+                If ($tcpclient) { $tcpclient.EndConnect($result) | Out-Null }
+            }
+            Catch
+            {
+                $warning = "$hostname ($OperatingSystem) : $($_.Exception.Message)"
+            }
+            $warning
+        }
+
+        Function processCompletedJobs()
+        {
+            # reads service list from completed jobs,
+            # updates $serviceAccount table and removes completed job
+
+            $jobs = Get-Job -State Completed
+            ForEach( $job in $jobs )
+            {
+                If ($null -ne $job)
+                {
+                    $data = Receive-Job $job
+                    Remove-Job $job
+                }
+
+                If ($data)
+                {
+                    If ( $data.GetType() -eq [Object[]] )
+                    {
+                        $serviceList = $data | Where-Object { if ($_.StartName) { $_ }}
+                        $serviceList | ForEach-Object {
+                            $Obj = New-Object PSObject
+                            $Obj | Add-Member -MemberType NoteProperty -Name "Account" -Value $_.StartName
+                            $Obj | Add-Member -MemberType NoteProperty -Name "Service Name" -Value $_.Name
+                            $Obj | Add-Member -MemberType NoteProperty -Name "SystemName" -Value $_.SystemName
+                            If ($_.StartName.toUpper().Contains($currentDomain))
+                            {
+                                $Obj | Add-Member -MemberType NoteProperty -Name "Running as Domain User" -Value $true
+                            }
+                            Else
+                            {
+                                $Obj | Add-Member -MemberType NoteProperty -Name "Running as Domain User" -Value $false
+                            }
+                            $script:serviceAccounts += $Obj
+                        }
+                    }
+                    ElseIf ( $data.GetType() -eq [String] )
+                    {
+                        $script:warnings += $data
+                        Write-Verbose $data
+                    }
+                }
+            }
+        }
+    }
+
+    PROCESS
+    {
+        $script:serviceAccounts = @()
+        [string[]] $warnings = @()
+        If ($Protocol -eq 'ADWS')
+        {
+            Try
+            {
+                $ADDomain = Get-ADDomain
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRDomainAccountsusedforServiceLogon] Error getting Domain Context"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                Return $null
+            }
+            If ($ADDomain)
+            {
+                $currentDomain = $ADDomain.NetBIOSName.toUpper()
+                Remove-Variable ADDomain
+            }
+            Else
+            {
+                $currentDomain = ""
+                Write-Warning "Current Domain could not be retrieved."
+            }
+
+            Try
+            {
+                $ADComputers = Get-ADComputer -Filter { Enabled -eq $true -and OperatingSystem -Like "*Windows*" } -Properties Name,DNSHostName,OperatingSystem
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRDomainAccountsusedforServiceLogon] Error while enumerating Windows Computer Objects"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                Return $null
+            }
+
+            If ($ADComputers)
+            {
+                # start data retrieval job for each server in the list
+                # use up to $Threads threads
+                $cnt = $([ADRecon.ADWSClass]::ObjectCount($ADComputers))
+                Write-Verbose "[*] Total Windows Hosts: $cnt"
+                $icnt = 0
+                $ADComputers | ForEach-Object {
+                    $StopWatch = [System.Diagnostics.StopWatch]::StartNew()
+                    If( $_.dnshostname )
+	                {
+                        $args = @($_.DNSHostName, $_.OperatingSystem, $Credential)
+		                Start-Job -ScriptBlock $readServiceAccounts -Name "read_$($_.name)" -ArgumentList $args | Out-Null
+		                ++$icnt
+		                If ($StopWatch.Elapsed.TotalMilliseconds -ge 1000)
+                        {
+                            Write-Progress -Activity "Retrieving data from servers" -Status "$("{0:N2}" -f (($icnt/$cnt*100),2)) % Complete:" -PercentComplete 100
+                            $StopWatch.Reset()
+                            $StopWatch.Start()
+		                }
+                        while ( ( Get-Job -State Running).count -ge $Threads ) { Start-Sleep -Seconds 3 }
+		                processCompletedJobs
+	                }
+                }
+
+                # process remaining jobs
+
+                Write-Progress -Activity "Retrieving data from servers" -Status "Waiting for background jobs to complete..." -PercentComplete 100
+                Wait-Job -State Running -Timeout 30  | Out-Null
+                Get-Job -State Running | Stop-Job
+                processCompletedJobs
+                Write-Progress -Activity "Retrieving data from servers" -Completed -Status "All Done"
+            }
+        }
+
+        If ($Protocol -eq 'LDAP')
+        {
+            $currentDomain = ([string]($objDomain.name)).toUpper()
+
+            $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
+            $ObjSearcher.PageSize = $PageSize
+            $ObjSearcher.Filter = "(&(samAccountType=805306369)(!userAccountControl:1.2.840.113556.1.4.803:=2)(operatingSystem=*Windows*))"
+            $ObjSearcher.PropertiesToLoad.AddRange(("name","dnshostname","operatingsystem"))
+            $ObjSearcher.SearchScope = "Subtree"
+
+            Try
+            {
+                $ADComputers = $ObjSearcher.FindAll()
+            }
+            Catch
+            {
+                Write-Warning "[Get-ADRDomainAccountsusedforServiceLogon] Error while enumerating Windows Computer Objects"
+                Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+                Return $null
+            }
+            $ObjSearcher.dispose()
+
+            If ($ADComputers)
+            {
+                # start data retrieval job for each server in the list
+                # use up to $Threads threads
+                $cnt = $([ADRecon.LDAPClass]::ObjectCount($ADComputers))
+                Write-Verbose "[*] Total Windows Hosts: $cnt"
+                $icnt = 0
+                $ADComputers | ForEach-Object {
+                    If( $_.Properties.dnshostname )
+	                {
+                        $args = @($_.Properties.dnshostname, $_.Properties.operatingsystem, $Credential)
+		                Start-Job -ScriptBlock $readServiceAccounts -Name "read_$($_.Properties.name)" -ArgumentList $args | Out-Null
+		                ++$icnt
+		                If ($StopWatch.Elapsed.TotalMilliseconds -ge 1000)
+                        {
+		                    Write-Progress -Activity "Retrieving data from servers" -Status "$("{0:N2}" -f (($icnt/$cnt*100),2)) % Complete:" -PercentComplete 100
+                            $StopWatch.Reset()
+                            $StopWatch.Start()
+		                }
+		                while ( ( Get-Job -State Running).count -ge $Threads ) { Start-Sleep -Seconds 3 }
+		                processCompletedJobs
+	                }
+                }
+
+                # process remaining jobs
+                Write-Progress -Activity "Retrieving data from servers" -Status "Waiting for background jobs to complete..." -PercentComplete 100
+                Wait-Job -State Running -Timeout 30  | Out-Null
+                Get-Job -State Running | Stop-Job
+                processCompletedJobs
+                Write-Progress -Activity "Retrieving data from servers" -Completed -Status "All Done"
+            }
+        }
+
+        If ($script:serviceAccounts)
+        {
+            Return $script:serviceAccounts
+        }
+        Else
+        {
+            Return $null
+        }
     }
 }
 
@@ -7922,10 +11058,6 @@ Function Get-ADRAbout
     [string]
     Which protocol to use; ADWS (default) or LDAP.
 
-.PARAMETER UseAltCreds
-    [bool]
-    Whether to use provided credentials or not.
-
 .PARAMETER date
     [DateTime]
     Date
@@ -7952,9 +11084,6 @@ Function Get-ADRAbout
     param(
         [Parameter(Mandatory = $true)]
         [string] $Protocol,
-
-        [Parameter(Mandatory = $true)]
-        [bool] $UseAltCreds,
 
         [Parameter(Mandatory = $true)]
         [DateTime] $date,
@@ -8020,7 +11149,7 @@ Function Invoke-ADRecon
 
 .PARAMETER Collect
     [array]
-    Which modules to run; Forest, Domain, Trusts, Sites, Subnets, PasswordPolicy, FineGrainedPasswordPolicy, DomainControllers, Users, UserSPNs, PasswordAttributes, Groups, GroupMembers, OUs, ACLs, GPOs, GPOReport, DNSZones, Printers, Computers, ComputerSPNs, LAPS, BitLocker, Kerberoast, DomainAccountsusedforServiceLogon
+    Which modules to run; Forest, Domain, Trusts, Sites, Subnets, PasswordPolicy, FineGrainedPasswordPolicy, DomainControllers, Users, UserSPNs, PasswordAttributes, Groups, GroupMembers, OUs, GPOs, gPLinks, DNSZones, Printers, Computers, ComputerSPNs, LAPS, BitLocker, ACLs, GPOReport, Kerberoast, DomainAccountsusedforServiceLogon.
 
 .PARAMETER DomainController
     [string]
@@ -8032,7 +11161,7 @@ Function Invoke-ADRecon
 
 .PARAMETER OutputDir
     [string]
-	Path for ADRecon output folder to save the CSV files and the ADRecon-Report-<ddMMMyy>.xlsx.
+	Path for ADRecon output folder to save the CSV files and the ADRecon-Report.xlsx.
 
 .PARAMETER DormantTimeSpan
     [int]
@@ -8041,10 +11170,6 @@ Function Invoke-ADRecon
 .PARAMTER PassMaxAge
     [int]
     Maximum machine account password age. Default 30 days
-
-.PARAMETER ResolveSIDs
-    [bool]
-    Whether to resolve SIDs in the ACLs module. (Default False)
 
 .PARAMETER PageSize
     [int]
@@ -8100,8 +11225,8 @@ Function Invoke-ADRecon
         [bool] $UseAltCreds = $false
     )
 
-    [string] $ADReconVersion = "v180706"
-    Write-Output "[*] ADRecon $ADReconVersion by Prashant Mahajan (@prashant3535) from Sense of Security."
+    [string] $ADReconVersion = "v1.1"
+    Write-Output "[*] ADRecon $ADReconVersion by Prashant Mahajan (@prashant3535)"
 
     If ($GenExcel)
     {
@@ -8110,7 +11235,7 @@ Function Invoke-ADRecon
             Write-Output "[Invoke-ADRecon] Invalid Path ... Exiting"
             Return $null
         }
-        Export-ADRExcel $GenExcel
+        Export-ADRExcel -ExcelPath $GenExcel
         Return $null
     }
 
@@ -8211,17 +11336,19 @@ Function Invoke-ADRecon
     $script:DebugPreference = 'SilentlyContinue'
     Try
     {
+        $Advapi32 = Add-Type -MemberDefinition $Advapi32Def -Name "Advapi32" -Namespace ADRecon -PassThru
+        $Kernel32 = Add-Type -MemberDefinition $Kernel32Def -Name "Kernel32" -Namespace ADRecon -PassThru
         Add-Type -TypeDefinition $PingCastleSMBScannerSource
         $CLR = ([System.Reflection.Assembly]::GetExecutingAssembly().ImageRuntimeVersion)[1]
         If ($Protocol -eq 'ADWS')
         {
             If ($CLR -eq "4")
             {
-                Add-Type -TypeDefinition $ADWSSource -ReferencedAssemblies ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location
+                Add-Type -TypeDefinition $ADWSSource -ReferencedAssemblies ([System.String[]]@(([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location,([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location))
             }
             Else
             {
-                Add-Type -TypeDefinition $ADWSSource -ReferencedAssemblies ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location -Language CSharpVersion3
+                Add-Type -TypeDefinition $ADWSSource -ReferencedAssemblies ([System.String[]]@(([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location,([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location)) -Language CSharpVersion3
             }
         }
 
@@ -8305,22 +11432,26 @@ Function Invoke-ADRecon
         'DomainControllers' { $ADRDomainControllers = $true }
         'Users' { $ADRUsers = $true }
         'UserSPNs' { $ADRUserSPNs = $true }
+        'PasswordAttributes' { $ADRPasswordAttributes = $true }
         'Groups' { $ADRGroups = $true }
         'GroupMembers' { $ADRGroupMembers = $true }
         'OUs' { $ADROUs = $true }
-        'OUPermissions' { $ADROUPermissions = $true }
         'GPOs' { $ADRGPOs = $true }
+        'gPLinks' { $ADRgPLinks = $true }
+        'DNSZones' { $ADRDNSZones = $true }
+        'Printers' { $ADRPrinters = $true }
+        'Computers' { $ADRComputers = $true }
+        'ComputerSPNs' { $ADRComputerSPNs = $true }
+        'LAPS' { $ADRLAPS = $true }
+        'BitLocker' { $ADRBitLocker = $true }
+        'ACLs' { $ADRACLs = $true }
         'GPOReport'
         {
             $ADRGPOReport = $true
             $ADRCreate = $true
         }
-        'DNSZones' { $ADRDNSZones = $true }
-        'Printers' { $ADRPrinters = $true }
-        'Computers' { $ADRComputers = $true }
-        'ComputerSPNs' { $ADRComputerSPNs = $true }
-        'BitLocker' { $ADRBitLocker = $true }
-        'LAPS' { $ADRLAPS = $true }
+        'Kerberoast' { $ADRKerberoast = $true }
+        'DomainAccountsusedforServiceLogon' { $ADRDomainAccountsusedforServiceLogon = $true }
         'Default'
         {
             $ADRForest = $true
@@ -8333,18 +11464,22 @@ Function Invoke-ADRecon
             $ADRDomainControllers = $true
             $ADRUsers = $true
             $ADRUserSPNs = $true
+            $ADRPasswordAttributes = $true
             $ADRGroups = $true
             $ADRGroupMembers = $true
             $ADROUs = $true
-            $ADROUPermissions = $true
             $ADRGPOs = $true
-            $ADRGPOReport = $true
+            $ADRgPLinks = $true
             $ADRDNSZones = $true
             $ADRPrinters = $true
             $ADRComputers = $true
             $ADRComputerSPNs = $true
             $ADRLAPS = $true
             $ADRBitLocker = $true
+            $ADRACLs = $true
+            $ADRGPOReport = $true
+            #$ADRKerberoast = $true
+            #$ADRDomainAccountsusedforServiceLogon = $true
             If ($OutputType -eq "Default")
             {
                 [array] $OutputType = "CSV","Excel"
@@ -8420,7 +11555,7 @@ Function Invoke-ADRecon
             }
         }
         $ADROutputDir = $((Convert-Path $ADROutputDir).TrimEnd("\"))
-        Write-Verbose $ADROutputDir
+        Write-Verbose "[*] Output Directory: $ADROutputDir"
     }
     ElseIf ($ADRCreate)
     {
@@ -8668,10 +11803,10 @@ Function Invoke-ADRecon
     If ($ADRUsers)
     {
         Write-Output "[-] Users - May take some time"
-        $ADRObject = Get-ADRUser $Protocol $UseAltCreds $date $objDomain $DormantTimeSpan $PageSize $Threads
+        $ADRObject = Get-ADRUser -Protocol $Protocol -date $date -objDomain $objDomain -DormantTimeSpan $DormantTimeSpan -PageSize $PageSize -Threads $Threads
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "Users"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "Users"
             Remove-Variable ADRObject
         }
         Remove-Variable ADRUsers
@@ -8679,13 +11814,24 @@ Function Invoke-ADRecon
     If ($ADRUserSPNs)
     {
         Write-Output "[-] User SPNs"
-        $ADRObject = Get-ADRUserSPN $Protocol $UseAltCreds $objDomain $PageSize $Threads
+        $ADRObject = Get-ADRUserSPN -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize -Threads $Threads
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "UserSPNs"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "UserSPNs"
             Remove-Variable ADRObject
         }
         Remove-Variable ADRUserSPNs
+    }
+    If ($ADRPasswordAttributes)
+    {
+        Write-Output "[-] PasswordAttributes - Experimental"
+        $ADRObject = Get-ADRPasswordAttributes -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize
+        If ($ADRObject)
+        {
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "PasswordAttributes"
+            Remove-Variable ADRObject
+        }
+        Remove-Variable ADRPasswordAttributes
     }
     If ($ADRGroups)
     {
@@ -8713,49 +11859,49 @@ Function Invoke-ADRecon
     If ($ADROUs)
     {
         Write-Output "[-] OrganizationalUnits (OUs)"
-        $ADRObject = Get-ADROU $Protocol $UseAltCreds $objDomain $PageSize
+        $ADRObject = Get-ADROU -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize -Threads $Threads
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "OUs"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "OUs"
             Remove-Variable ADRObject
         }
         Remove-Variable ADROUs
     }
-    If ($ADROUPermissions)
-    {
-        Write-Output "[-] Domain OrganizationalUnits Permissions - May take some time"
-        $ADRObject = Get-ADROUPermission $Protocol $UseAltCreds $objDomain $DomainController $Credential $PageSize
-        If ($ADRObject)
-        {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "OUPermissions"
-            Remove-Variable ADRObject
-        }
-        Remove-Variable ADROUPermissions
-    }
     If ($ADRGPOs)
     {
         Write-Output "[-] GPOs"
-        $ADRObject = Get-ADRGPO $Protocol $UseAltCreds $objDomain $PageSize
+        $ADRObject = Get-ADRGPO -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize -Threads $Threads
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "GPOs"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "GPOs"
             Remove-Variable ADRObject
         }
         Remove-Variable ADRGPOs
     }
+    If ($ADRgPLinks)
+    {
+        Write-Output "[-] gPLinks - Scope of Management (SOM)"
+        $ADRObject = Get-ADRgPLink -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize -Threads $Threads
+        If ($ADRObject)
+        {
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "gPLinks"
+            Remove-Variable ADRObject
+        }
+        Remove-Variable ADRgPLinks
+    }
     If ($ADRDNSZones)
     {
         Write-Output "[-] DNS Zones and Records"
-        Get-ADRDNSZone $Protocol $UseAltCreds $ADROutputDir $objDomain $DomainController $Credential $PageSize $OutputType
+        Get-ADRDNSZone -Protocol $Protocol -ADROutputDir $ADROutputDir -objDomain $objDomain -DomainController $DomainController -Credential $Credential -PageSize $PageSize -OutputType $OutputType
         Remove-Variable ADRDNSZones
     }
     If ($ADRPrinters)
     {
         Write-Output "[-] Printers"
-        $ADRObject = Get-ADRPrinter $Protocol $UseAltCreds $objDomain $PageSize
+        $ADRObject = Get-ADRPrinter -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize -Threads $Threads
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "Printers"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "Printers"
             Remove-Variable ADRObject
         }
         Remove-Variable ADRPrinters
@@ -8785,10 +11931,10 @@ Function Invoke-ADRecon
     If ($ADRLAPS)
     {
         Write-Output "[-] LAPS - Needs Privileged Account"
-        $ADRObject = Get-ADRLAPSCheck $Protocol $UseAltCreds $objDomain $PageSize
+        $ADRObject = Get-ADRLAPSCheck -Protocol $Protocol -objDomain $objDomain -PageSize $PageSize -Threads $Threads
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "LAPS"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "LAPS"
             Remove-Variable ADRObject
         }
         Remove-Variable ADRLAPS
@@ -8796,30 +11942,58 @@ Function Invoke-ADRecon
     If ($ADRBitLocker)
     {
         Write-Output "[-] BitLocker Recovery Keys - Needs Privileged Account"
-        $ADRObject = Get-ADRBitLocker $Protocol $UseAltCreds $objDomain $DomainController $Credential
+        $ADRObject = Get-ADRBitLocker -Protocol $Protocol -objDomain $objDomain -DomainController $DomainController -Credential $Credential
         If ($ADRObject)
         {
-            Export-ADR $ADRObject $ADROutputDir $OutputType "BitLockerRecoveryKeys"
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "BitLockerRecoveryKeys"
             Remove-Variable ADRObject
         }
         Remove-Variable ADRBitLocker
     }
+    If ($ADRACLs)
+    {
+        Write-Output "[-] ACLs - May take some time"
+        $ADRObject = Get-ADRACL -Protocol $Protocol -objDomain $objDomain -DomainController $DomainController -Credential $Credential -PageSize $PageSize -Threads $Threads
+        Remove-Variable ADRACLs
+    }
     If ($ADRGPOReport)
     {
         Write-Output "[-] GPOReport - May take some time"
-        Get-ADRGPOReport $Protocol $UseAltCreds $ADROutputDir
+        Get-ADRGPOReport -Protocol $Protocol -UseAltCreds $UseAltCreds -ADROutputDir $ADROutputDir
         Remove-Variable ADRGPOReport
     }
+    If ($ADRKerberoast)
+    {
+        Write-Output "[-] Kerberoast"
+        $ADRObject = Get-ADRKerberoast -Protocol $Protocol -objDomain $objDomain -Credential $Credential -PageSize $PageSize
+        If ($ADRObject)
+        {
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "Kerberoast"
+            Remove-Variable ADRObject
+        }
+        Remove-Variable ADRKerberoast
+    }
+    If ($ADRDomainAccountsusedforServiceLogon)
+    {
+        Write-Output "[-] Domain Accounts used for Service Logon - Needs Privileged Account"
+        $ADRObject = Get-ADRDomainAccountsusedforServiceLogon -Protocol $Protocol -objDomain $objDomain -Credential $Credential -PageSize $PageSize -Threads $Threads
+        If ($ADRObject)
+        {
+            Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "DomainAccountsusedforServiceLogon"
+            Remove-Variable ADRObject
+        }
+        Remove-Variable ADRDomainAccountsusedforServiceLogon
+    }
 
-    $TotalTime = "{0:N2}" -f ((Get-DateDiff (Get-Date) $date).TotalMinutes)
+    $TotalTime = "{0:N2}" -f ((Get-DateDiff -Date1 (Get-Date) -Date2 $date).TotalMinutes)
 
-    $AboutADRecon = Get-ADRAbout $Protocol $UseAltCreds $date $ADReconVersion $Credential $RanonComputer $TotalTime
+    $AboutADRecon = Get-ADRAbout -Protocol $Protocol -date $date -ADReconVersion $ADReconVersion -Credential $Credential -RanonComputer $RanonComputer -TotalTime $TotalTime
 
     If ( ($OutputType -Contains "CSV") -or ($OutputType -Contains "XML") -or ($OutputType -Contains "JSON") -or ($OutputType -Contains "HTML") )
     {
         If ($AboutADRecon)
         {
-            Export-ADR $AboutADRecon $ADROutputDir $OutputType "AboutADRecon"
+            Export-ADR -ADRObj $AboutADRecon -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "AboutADRecon"
         }
         Write-Output "[*] Total Execution Time (mins): $($TotalTime)"
         Write-Output "[*] Output Directory: $ADROutputDir"
@@ -8834,6 +12008,10 @@ Function Invoke-ADRecon
             {
                 Write-Output "[*] Total Execution Time (mins): $($TotalTime)"
             }
+        }
+        'HTML'
+        {
+            Export-ADR -ADRObj $(New-Object PSObject) -ADROutputDir $ADROutputDir -OutputType $([array] "HTML") -ADRModuleName "Index"
         }
         'EXCEL'
         {
