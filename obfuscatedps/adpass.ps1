@@ -7,7 +7,7 @@ Function thyme
     Param()    
 
 
-    Import-Module ActiveDirectory  
+    Import-Module .\Microsoft.ActiveDirectory.Management.dll  
                 
 
     Write-Verbose "Getting list of domain accounts and properties..."
