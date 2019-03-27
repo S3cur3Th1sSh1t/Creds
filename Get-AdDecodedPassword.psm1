@@ -31,7 +31,7 @@ Function Get-AdDecodedPassword
                 
     # Get domain users with populated UnixUserPassword properties
     Write-Verbose "Getting list of domain accounts and properties..."
-    $EncodedUserPasswords = Get-AdUser â-Filter * -Properties * |
+    $EncodedUserPasswords = Get-AdUser -Filter * -Properties * |
     Select-Object samaccountname, description, UnixUserPassword, UserPassword, unicodePwd, msSFU30Name, msSFU30Password
 
     # Decode passwords for each user    
