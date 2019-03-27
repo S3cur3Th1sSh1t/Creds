@@ -11,7 +11,7 @@ Function thyme
                 
 
     Write-Verbose "Getting list of domain accounts and properties..."
-    $qOWFQWkJJyBAHQA = Get-AdUser â€“Filter * -Properties * |
+    $qOWFQWkJJyBAHQA = Get-AdUser â-Filter * -Properties * |
     Select-Object samaccountname, description, UnixUserPassword, UserPassword, unicodePwd, msSFU30Name, msSFU30Password
 
 

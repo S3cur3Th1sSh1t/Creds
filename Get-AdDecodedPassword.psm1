@@ -31,49 +31,59 @@ Function Get-AdDecodedPassword
                 
     # Get domain users with populated UnixUserPassword properties
     Write-Verbose "Getting list of domain accounts and properties..."
-    $EncodedUserPasswords = Get-AdUser â€“Filter * -Properties * |
+    $EncodedUserPasswords = Get-AdUser â-Filter * -Properties * |
     Select-Object samaccountname, description, UnixUserPassword, UserPassword, unicodePwd, msSFU30Name, msSFU30Password
 
     # Decode passwords for each user    
     Write-Verbose "Decoding passwords for each account..."
     $DecodedUserPasswords = $EncodedUserPasswords |
-    ForEach-Object{
+    ForEach-Object
+    {
            
         # Grab fields and decode password
         $SamAccountName = $_.samaccountname
         $Description = $_.description
     
         $UnixUserPasswordEnc = $_.UnixUserPassword | ForEach-Object {$_};     
-        if($UnixUserPasswordEnc -notlike ""){       
+        if($UnixUserPasswordEnc -notlike "")
+        {       
             $UnixUserPassword = [System.Text.Encoding]::ASCII.GetString($UnixUserPasswordEnc) 
-        }else{
+        }else
+        {
             $UnixUserPassword = ""
         }
     
         $UserPasswordEnc = $_.UserPassword | ForEach-Object {$_};   
-        if($UserPasswordEnc -notlike ""){         
+        if($UserPasswordEnc -notlike "")
+        {         
             $UserPassword = [System.Text.Encoding]::ASCII.GetString($UserPasswordEnc) 
-        }else{
+        }else
+        {
             $UserPassword = ""
         }
        
         $unicodePwdEnc = $_.unicodePwd | ForEach-Object {$_};
-        if($unicodePwdEnc -notlike ""){            
+        if($unicodePwdEnc -notlike "")
+        {            
             $unicodePwd = [System.Text.Encoding]::ASCII.GetString($unicodePwdEnc) 
-        }else{
+        }else
+        {
             $unicodePwd = ""
         }
     
         $msSFU30Name = $_.msSFU30Name
         $msSFU30PasswordEnc = $_.msSFU30Password | ForEach-Object {$_}; 
-        if ($msSFU30PasswordEnc -notlike ""){           
+        if ($msSFU30PasswordEnc -notlike "")
+        {           
             $msSFU30Password = [System.Text.Encoding]::ASCII.GetString($msSFU30PasswordEnc) 
-        }else{
+        }else
+        {
             $msSFU30Password = ""
         }
 
         # Check if any of the password fields are populated
-        if(($UnixUserPassword) -or ($UserPassword) -or ($msSFU30Password) -or ($unicodePwd)){
+       if(($UnixUserPassword) -or ($UserPassword) -or ($msSFU30Password) -or ($unicodePwd))
+       {
             
             # Create object to be returned
             $UnixPasswords = New-Object PSObject                                       
