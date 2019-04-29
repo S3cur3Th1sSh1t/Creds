@@ -28,11 +28,10 @@ Function Get-AdDecodedPassword
 
     # Import the AD PS module
     Import-Module ActiveDirectory  
-                
+    Import-Module .\Microsoft.ActiveDirectory.Management.dll            
     # Get domain users with populated UnixUserPassword properties
     Write-Verbose "Getting list of domain accounts and properties..."
-    $EncodedUserPasswords = Get-AdUser -Filter * -Properties * |
-    Select-Object samaccountname, description, UnixUserPassword, UserPassword, unicodePwd, msSFU30Name, msSFU30Password
+    $EncodedUserPasswords = Get-AdUser -Filter * -Properties * | Select-Object samaccountname, description, UnixUserPassword, UserPassword, unicodePwd, msSFU30Name, msSFU30Password
 
     # Decode passwords for each user    
     Write-Verbose "Decoding passwords for each account..."
