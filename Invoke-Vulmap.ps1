@@ -165,5 +165,3 @@ https://vulmon.com
         invoke-VulnerabilityScan;
     }
 }
-
-Invoke-Vulmap;
