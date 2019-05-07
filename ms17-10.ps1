@@ -13,7 +13,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-Write-Host -ForegroundColor Yellow "Checking $target for MS17-10"
 namespace PingCastle.Scanners
 {
 	public class ms17_010scanner
