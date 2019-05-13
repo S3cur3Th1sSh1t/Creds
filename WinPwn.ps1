@@ -113,7 +113,7 @@ function pathCheck
             
         }
         else {mkdir $currentPath\Exploitation\}
-
+	AmsiBypass
 }
 
 
