@@ -1,12 +1,3 @@
-﻿<#
-    File: Invoke-EnumerateAzureBlobs.ps1
-    Author: Karl Fosaaen (@kfosaaen), NetSPI - 2018
-    Description: PowerShell function for enumerating public Azure Blob file resources.
-    Parts of the Permutations.txt file borrowed from - https://github.com/brianwarehime/inSp3ctor
-
-#>
-
-
 Function Invoke-EnumerateAzureBlobs
 {
 
@@ -63,11 +54,11 @@ Function Invoke-EnumerateAzureBlobs
 
         [Parameter(Mandatory=$false,
         HelpMessage="Specific permutations file to use.")]
-        [string]$Permutations = "$PSScriptRoot\Misc\permutations.txt",
+        [string]$Permutations = ".\Misc\permutations.txt",
 
         [Parameter(Mandatory=$false,
         HelpMessage="Specific folders file to use.")]
-        [string]$Folders = "$PSScriptRoot\Misc\permutations.txt",
+        [string]$Folders = ".\Misc\permutations.txt",
 
         [Parameter(Mandatory=$false,
         HelpMessage="Bing API Key to use")]
