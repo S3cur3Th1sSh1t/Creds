@@ -12943,3 +12943,4 @@ Set-Alias Find-ForeignUser masquerades
 Set-Alias Find-ForeignGroup Yonkers
 Set-Alias Invoke-MapDomainTrust sweetening
 Set-Alias Get-DomainPolicy forsakes
+Set-Alias Find-InterestingDomainShareFile mangers
