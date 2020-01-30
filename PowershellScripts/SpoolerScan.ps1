@@ -1,3 +1,10 @@
+function spoolscan{
+
+    param(
+        [String]
+        $target
+    )
+
 $sourceSpooler = @"
 using System;
 using System.Collections.Generic;
@@ -720,4 +727,5 @@ Add-Type -TypeDefinition $sourceSpooler
 
 $rprn = New-Object PingCastle.ExtractedCode.rprn
 
-$rprn.CheckIfTheSpoolerIsActive("192.168.0.20")
+$rprn.CheckIfTheSpoolerIsActive("$target")
+}
