@@ -1,26 +1,3 @@
-
-function Invoke-EventLogparser
-{
-<#
-    .DESCRIPTION
-        Download .NET Binary to RAM.
-        Credits to https://github.com/djhohnstein/EventLogParser/ for Sharpparser in C#
-        Author: @securethisshit
-        License: BSD 3-Clause
-    #>
-
-Param
-    (
-        [string]
-        $location,
-	    [string]
-        $lines,
-        [bool]
-        $4688,
-        [bool]
-        $4013
-)
-
 $parser = @"
 using System;
 using System.Collections.Generic;
@@ -277,18 +254,3 @@ namespace EventLogParser
 "@
 
 Add-Type -TypeDefinition $parser -Language CSharp
-
-if ($4013)
-{
-    [EventLogParser.EventLogHelpers]::Parse4103Events()
-}
-elseif($4688)
-{
-    [EventLogParser.EventLogHelpers]::Parse4688Events()
-}
-else
-{
-    [EventLogParser.EventLogHelpers]::Parse4104Events("$location","$lines")    
-}
-
-}
