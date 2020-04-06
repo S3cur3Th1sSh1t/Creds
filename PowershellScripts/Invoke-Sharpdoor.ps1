@@ -1,10 +1,6 @@
 function Invoke-Sharpdoor
 {
 
-
-$door = @"
-
-
 $door = @"
 using System;
 using System.IO;
