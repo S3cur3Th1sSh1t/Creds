@@ -1,4 +1,4 @@
-﻿function mimiload
+function loadmimi
 {
 
 
