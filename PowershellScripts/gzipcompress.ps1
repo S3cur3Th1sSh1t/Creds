@@ -88,7 +88,7 @@ else
     $StringWriter = New-Object IO.StringWriter
     [Console]::SetOut($StringWriter) 
     
-    [gzbase64.Program]::Main("$input")
+    [gzbase64.Program]::Main("$inputfile")
 
     [Console]::SetOut($OldConsoleOut)
     $Results = $StringWriter.ToString()
