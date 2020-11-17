@@ -5,20 +5,24 @@ function Invoke-SprayEmptyPassword
      [string]
      $UserList = "",
 
-     [Parameter(Position = 3, Mandatory = $false)]
+     [Parameter(Position = 1, Mandatory = $false)]
      [string]
      $OutFile,
 
-     [Parameter(Position = 5, Mandatory = $false)]
+     [Parameter(Position = 2, Mandatory = $false)]
      [string]
      $Domain = "",
 
-     [Parameter(Position = 8, Mandatory = $false)]
+     [Parameter(Position = 3, Mandatory = $false)]
      [int]
      $Delay=0,
      
-     [Parameter(Position = 9, Mandatory = $false)]
-     $Jitter=0
+     [Parameter(Position = 4, Mandatory = $false)]
+     $Jitter=0,
+
+     [Parameter(Position = 5, Mandatory = $false)]
+     [switch]
+     $RemoveDisabled
 
     )
     try
@@ -51,7 +55,17 @@ function Invoke-SprayEmptyPassword
         $UserSearcher.SearchRoot = $DirEntry
 
         $UserSearcher.PropertiesToLoad.Add("samaccountname") > $Null
-        $UserSearcher.filter = "(&(objectCategory=person)(objectClass=user))"
+
+        if ($RemoveDisabled)
+        {
+            Write-Host -ForegroundColor "yellow" "[*] Removing disabled users from list."
+            $UserSearcher.filter =
+            "(&(objectCategory=person)(objectClass=user)(!userAccountControl:1.2.840.113556.1.4.803:=16)(!userAccountControl:1.2.840.113556.1.4.803:=2)$Filter)"
+        }
+        else
+        {
+            $UserSearcher.filter = "(&(objectCategory=person)(objectClass=user))"
+        }
         $UserSearcher.PageSize = 1000
         $AllUserObjects = $UserSearcher.FindAll()
         $UserListArray = @()
