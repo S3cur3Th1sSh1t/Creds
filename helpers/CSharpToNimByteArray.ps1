@@ -20,7 +20,8 @@ Param
     
             [byte[]] $hex = get-content -encoding byte -path $File
             $hexString = ($hex|ForEach-Object ToString X2) -join ',0x'
-            $Results = $hexString.Insert(0,"var buf: array[" + $hex.Length + ", byte] = [byte 0x")         
+            $Results = $hexString.Insert(0,"var buf: array[" + $hex.Length + ", byte] = [byte 0x")
+            $Results += $Results + "]"         
             $Results | out-file $outfile
          
         }
@@ -33,7 +34,8 @@ Param
         
         [byte[]] $hex = get-content -encoding byte -path $inputfile
         $hexString = ($hex|ForEach-Object ToString X2) -join ',0x'
-        $Results = $hexString.Insert(0,"var buf: array[" + $hex.Length + ", byte] = [byte 0x")         
+        $Results = $hexString.Insert(0,"var buf: array[" + $hex.Length + ", byte] = [byte 0x")
+        $Results += $Results + "]"         
         $Results | out-file $outfile
         Write-Host "Result Written to $outfile"
     }
