@@ -44,8 +44,6 @@ var
 # Set static IV
 iv = [byte 183, 142, 238, 156, 42, 43, 248, 100, 125, 249, 192, 254, 217, 222, 133, 149]
 
-copyMem(addr plaintext[0], addr plaintext[0], len(plaintext))
-
 # Expand key to 32 bytes using SHA256 as the KDF
 var expandedKey = sha256.digest(password)
 copyMem(addr key[0], addr expandedKey.data[0], len(expandedKey.data))

