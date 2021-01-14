@@ -21,7 +21,7 @@ import strformat
 import base64
 import nimcrypto
 import nimcrypto/sysrand
-
+import zippy
 
 func toByteSeq*(str: string): seq[byte] {.inline.} =
     # Converts a string to the corresponding byte sequence
@@ -34,7 +34,7 @@ let
     outFile: string = paramStr(3)
 
 var
-    inFileContents: string = readFile(inFile)
+    inFileContents: string = compress(readFile(inFile),9,dfGzip)
     plaintext: seq[byte] = toByteSeq(inFileContents)
     ectx: CTR[aes256]
     key: array[aes256.sizeKey, byte]
