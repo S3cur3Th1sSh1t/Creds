@@ -1,6 +1,6 @@
 # Some of my experiments with [OffensiveNim](https://github.com/byt3bl33d3r/OffensiveNim) templates
 
-To not popup the Nim binaries console window compile them with the `-app:gui` parameter.
+To not popup the Nim binaries console window compile them with the `--app:gui` parameter.
 
 For the best size:
 
