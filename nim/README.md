@@ -14,6 +14,11 @@ To compile the DLL:
 nim c -d=mingw --app=lib --nomain --cpu=amd64 DLLHijack.nim
 ```
 
+For unhook.nim:
+```
+nim cpp -d:release --passL:"-L. -lPsapi" unhook.nim
+```
+
 For syscall_shellcode.nim:
 ```
 git clone https://github.com/ajpc500/NimlineWhispers.git
