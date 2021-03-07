@@ -1,3 +1,5 @@
+# This ist a copy of https://github.com/S4R1N/AlternativeShellcodeExec
+
 # Alternative Code Execution 
 
 This is gaining more popularity than expected, so I just wanted to give a shoutout to [alfarom256](https://github.com/alfarom256) for informing me about callback functions and showing me the CreateThreadPoolWait technique. I also wanted to give a shoutout to [ch3rn0byl](https://github.com/ch3rn0byl) for encouraging me to get this project going.
