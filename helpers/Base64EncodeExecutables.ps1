@@ -1,7 +1,7 @@
 function base64encodeExecutables
 {
 param (
-   [string]$directory  = $(throw "-directory is required."),
+   [string]$directory  = $(throw "-directory is required.")
 )
 function base64
 {
