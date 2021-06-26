@@ -1,0 +1,7 @@
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\bin\Netstat.exe.config
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\bin\Netstat.exe
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\bin\Netstat.pdb
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\Netstat\obj\Debug\Netstat.csprojAssemblyReference.cache
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\Netstat\obj\Debug\Netstat.csproj.CoreCompileInputs.cache
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\Netstat\obj\Debug\Netstat.exe
+C:\Users\localadmin\source\repos\WindowsBinaryReplacements\Netstat\obj\Debug\Netstat.pdb
