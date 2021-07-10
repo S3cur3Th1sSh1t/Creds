@@ -56,7 +56,7 @@ function EnableAnonymousSMBServer($Path)
 
     Write-Host "[2] Create the net share for the target path: " $Path
     $ShareName = "smb"
-    $CommandNetshare = "net share smb=" + $Path + " /grant:everyone,full"
+    $CommandNetshare = "net share sharename=" + $Path + " /grant:everyone,full"
     CMD.EXE /C $CommandNetshare
 
     Write-Host "[3] Enable the Guest account"
