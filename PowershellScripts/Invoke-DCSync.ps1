@@ -2,7 +2,7 @@ function Invoke-DCSync
 {
 <#
     .DESCRIPTION
-        Stolen from https://github.com/vletoux/MakeMeEnterpriseAdmin/blob/master/MakeMeEnterpriseAdmin.ps1 and slightly modified to export ticket to disk.
+        Stolen from https://github.com/vletoux/MakeMeEnterpriseAdmin/blob/master/MakeMeEnterpriseAdmin.ps1 and slightly modified to choose username and DC for the sync.
         License: BSD 3-Clause
     #>
 
