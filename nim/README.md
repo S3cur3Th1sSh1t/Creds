@@ -19,6 +19,12 @@ For unhook.nim:
 nim cpp -d:release --passL:"-L. -lPsapi" unhook.nim
 ```
 
+For reflective loading:
+
+```
+--dynamicbase,--export-all-symbols
+```
+
 For syscall_shellcode.nim:
 ```
 git clone https://github.com/ajpc500/NimlineWhispers.git
