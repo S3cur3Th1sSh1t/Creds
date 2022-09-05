@@ -96,8 +96,15 @@
 .PARAMETER Threads
     The number of threads to use during processing objects. (Default 10)
 
+.PARAMETER OnlyEnabled
+    Only collect details for enabled objects. (Default $false)
+
 .PARAMETER Log
     Create ADRecon Log using Start-Transcript
+
+.PARAMETER Logo
+    Which Logo to use in the excel file? (Default ADRecon)
+    Values include ADRecon, CyberCX, Payatu.
 
 .EXAMPLE
 
@@ -110,7 +117,7 @@
 
 	.\ADRecon.ps1 -DomainController <IP or FQDN> -Credential <domain\username>
     [*] ADRecon <version> by Prashant Mahajan (@prashant3535)
-	[*] Running on <domain>\<hostname> - Member Workstation
+	[*] Running on <domain>\<hostname> - Member Workstation as <user>
     <snip>
 
     Example output from Domain Member with Alternate Credentials.
@@ -119,7 +126,7 @@
 
 	.\ADRecon.ps1 -DomainController <IP or FQDN> -Credential <domain\username> -Collect DomainControllers -OutputType Excel
     [*] ADRecon <version> by Prashant Mahajan (@prashant3535)
-    [*] Running on WORKGROUP\<hostname> - Standalone Workstation
+    [*] Running on WORKGROUP\<hostname> - Standalone Workstation as <user>
     [*] Commencing - <timestamp>
     [-] Domain Controllers
     [*] Total Execution Time (mins): <minutes>
@@ -134,7 +141,7 @@
 
     .\ADRecon.ps1 -Method ADWS -DomainController <IP or FQDN> -Credential <domain\username>
     [*] ADRecon <version> by Prashant Mahajan (@prashant3535)
-    [*] Running on WORKGROUP\<hostname> - Standalone Workstation
+    [*] Running on WORKGROUP\<hostname> - Standalone Workstation as <user>
     [*] Commencing - <timestamp>
     [-] Domain
     [-] Forest
@@ -172,7 +179,7 @@
 
     .\ADRecon.ps1 -Method LDAP -DomainController <IP or FQDN> -Credential <domain\username>
     [*] ADRecon <version> by Prashant Mahajan (@prashant3535)
-    [*] Running on WORKGROUP\<hostname> - Standalone Workstation
+    [*] Running on WORKGROUP\<hostname> - Standalone Workstation as <user>
     [*] LDAP bind Successful
     [*] Commencing - <timestamp>
     [-] Domain
@@ -254,8 +261,15 @@ param
     [ValidateRange(1,100)]
     [int] $Threads = 10,
 
-    [Parameter(Mandatory = $false, HelpMessage = "Create ADRecon Log using Start-Transcript")]
-    [switch] $Log
+    [Parameter(Mandatory = $false, HelpMessage = "Only collect details for enabled objects. Default `$false")]
+    [bool] $OnlyEnabled = $false,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Create ADRecon Log using Start-Transcript.")]
+    [switch] $Log,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Which Logo to use in the excel file? Default ADRecon")]
+    [ValidateSet('ADRecon', 'CyberCX', 'Payatu')]
+    [string] $Logo = "ADRecon"
 )
 
 $ADWSSource = @"
@@ -1132,6 +1146,7 @@ namespace ADRecon
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                                GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                                 GroupsList.Add( GroupMemberObj );
                             }
@@ -1151,6 +1166,7 @@ namespace ADRecon
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                                GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                                 GroupsList.Add( GroupMemberObj );
                             }
@@ -1176,6 +1192,7 @@ namespace ADRecon
                         GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                        GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                         GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                         GroupsList.Add( GroupMemberObj );
 
@@ -1189,6 +1206,7 @@ namespace ADRecon
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                                GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                                 GroupsList.Add( GroupMemberObj );
                             }
@@ -1214,6 +1232,7 @@ namespace ADRecon
                         GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                        GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                         GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                         GroupsList.Add( GroupMemberObj );
 
@@ -1227,6 +1246,7 @@ namespace ADRecon
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                                GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                                 GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                                 GroupsList.Add( GroupMemberObj );
                             }
@@ -1252,6 +1272,7 @@ namespace ADRecon
                         GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                        GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", AdGroup.Members["objectSid"].Value));
                         GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                         GroupsList.Add( GroupMemberObj );
                     }
@@ -1604,8 +1625,15 @@ namespace ADRecon
                 try
                 {
                     PSObject AdComputer = (PSObject) record;
+                    bool? Enabled = null;
                     bool PasswordStored = false;
                     DateTime? CurrentExpiration = null;
+                    // When the user is not allowed to query the UserAccountControl attribute.
+                    if (AdComputer.Members["userAccountControl"].Value != null)
+                    {
+                        var userFlags = (UACFlags) AdComputer.Members["userAccountControl"].Value;
+                        Enabled = !((userFlags & UACFlags.ACCOUNTDISABLE) == UACFlags.ACCOUNTDISABLE);
+                    }
                     try
                     {
                         CurrentExpiration = DateTime.FromFileTime((long)(AdComputer.Members["ms-Mcs-AdmPwdExpirationTime"].Value));
@@ -1617,6 +1645,7 @@ namespace ADRecon
                     }
                     PSObject LAPSObj = new PSObject();
                     LAPSObj.Members.Add(new PSNoteProperty("Hostname", (AdComputer.Members["DNSHostName"].Value != null ? AdComputer.Members["DNSHostName"].Value : AdComputer.Members["CN"].Value )));
+                    LAPSObj.Members.Add(new PSNoteProperty("Enabled", Enabled));
                     LAPSObj.Members.Add(new PSNoteProperty("Stored", PasswordStored));
                     LAPSObj.Members.Add(new PSNoteProperty("Readable", (AdComputer.Members["ms-Mcs-AdmPwd"].Value != null ? true : false)));
                     LAPSObj.Members.Add(new PSNoteProperty("Password", AdComputer.Members["ms-Mcs-AdmPwd"].Value));
@@ -1966,20 +1995,6 @@ namespace ADRecon
         public static int ObjectCount(Object[] ADRObject)
         {
             return ADRObject.Length;
-        }
-
-        public static bool LAPSCheck(Object[] AdComputers)
-        {
-            bool LAPS = false;
-            foreach (SearchResult AdComputer in AdComputers)
-            {
-                if (AdComputer.Properties["ms-mcs-admpwdexpirationtime"].Count == 1)
-                {
-                    LAPS = true;
-                    return LAPS;
-                }
-            }
-            return LAPS;
         }
 
         public static Object[] DomainControllerParser(Object[] AdDomainControllers, int numOfThreads)
@@ -2858,6 +2873,7 @@ namespace ADRecon
                             GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                             GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                             GroupsList.Add( GroupMemberObj );
                         }
@@ -2874,6 +2890,7 @@ namespace ADRecon
                             GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                             GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                             GroupsList.Add( GroupMemberObj );
                         }
@@ -2898,6 +2915,7 @@ namespace ADRecon
                         GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                        GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                         GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                         GroupsList.Add( GroupMemberObj );
 
@@ -2908,6 +2926,7 @@ namespace ADRecon
                             GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                             GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                             GroupsList.Add( GroupMemberObj );
                         }
@@ -2932,6 +2951,7 @@ namespace ADRecon
                         GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                        GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                         GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                         GroupsList.Add( GroupMemberObj );
 
@@ -2942,6 +2962,7 @@ namespace ADRecon
                             GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                             GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                            GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                             GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                             GroupsList.Add( GroupMemberObj );
                         }
@@ -2966,6 +2987,7 @@ namespace ADRecon
                         GroupMemberObj.Members.Add(new PSNoteProperty("Group Name", GroupName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member UserName", MemberUserName));
                         GroupMemberObj.Members.Add(new PSNoteProperty("Member Name", MemberName));
+                        GroupMemberObj.Members.Add(new PSNoteProperty("Member SID", Convert.ToString(new SecurityIdentifier((byte[])AdGroup.Properties["objectSid"][0], 0))));
                         GroupMemberObj.Members.Add(new PSNoteProperty("AccountType", AccountType));
                         GroupsList.Add( GroupMemberObj );
                     }
@@ -3341,8 +3363,15 @@ namespace ADRecon
                 try
                 {
                     SearchResult AdComputer = (SearchResult) record;
+                    bool? Enabled = null;
                     bool PasswordStored = false;
                     DateTime? CurrentExpiration = null;
+                    // When the user is not allowed to query the UserAccountControl attribute.
+                    if (AdComputer.Properties["useraccountcontrol"].Count != 0)
+                    {
+                        var userFlags = (UACFlags) AdComputer.Properties["useraccountcontrol"][0];
+                        Enabled = !((userFlags & UACFlags.ACCOUNTDISABLE) == UACFlags.ACCOUNTDISABLE);
+                    }
                     if (AdComputer.Properties["ms-mcs-admpwdexpirationtime"].Count != 0)
                     {
                         CurrentExpiration = DateTime.FromFileTime((long)(AdComputer.Properties["ms-mcs-admpwdexpirationtime"][0]));
@@ -3350,6 +3379,7 @@ namespace ADRecon
                     }
                     PSObject LAPSObj = new PSObject();
                     LAPSObj.Members.Add(new PSNoteProperty("Hostname", (AdComputer.Properties["dnshostname"].Count != 0 ? AdComputer.Properties["dnshostname"][0] : AdComputer.Properties["cn"][0] )));
+                    LAPSObj.Members.Add(new PSNoteProperty("Enabled", Enabled));
                     LAPSObj.Members.Add(new PSNoteProperty("Stored", PasswordStored));
                     LAPSObj.Members.Add(new PSNoteProperty("Readable", (AdComputer.Properties["ms-mcs-admpwd"].Count != 0 ? true : false)));
                     LAPSObj.Members.Add(new PSNoteProperty("Password", (AdComputer.Properties["ms-mcs-admpwd"].Count != 0 ? AdComputer.Properties["ms-mcs-admpwd"][0] : null)));
@@ -4550,6 +4580,7 @@ Function Get-ADRExcelImport
 .PARAMETER method
     [int]
     Method to use for the import.
+    3 - Prints data horizontally. Headers column 1, then first data row in column 2, etc.
 
 .PARAMETER row
     [int]
@@ -4627,6 +4658,47 @@ Function Get-ADRExcelImport
             $worksheet.Cells.Item($row, $column) = "Error!"
         }
         Remove-Variable ADFileName
+    }
+    Elseif ($Method -eq 3)
+    {
+        $worksheet = $workbook.Worksheets.Item(1)
+        If (Test-Path $ADFileName)
+        {
+            $CsvData = Import-Csv -Path $ADFileName
+
+            $row_output = $row
+            $CsvData[0].PsObject.Properties.Name | ForEach {
+                $worksheet.Cells.Item($row_output, $column) = $_
+                $row_output++
+            }
+            Remove-Variable row_output
+
+            $column_output = $column + 1
+            $CsvData | ForEach-Object {
+                $row_output = $row
+                ForEach ($prop_value in $_.PSObject.Properties.Value)
+                {
+                    $worksheet.Cells.Item($row_output, $column_output) = $prop_value
+                    $row_output++
+                }
+                $column_output++
+            }
+            Remove-Variable column_output
+            Remove-Variable row_output
+
+            Remove-Variable CsvData
+
+            $listObject = $worksheet.ListObjects.Add([Microsoft.Office.Interop.Excel.XlListObjectSourceType]::xlSrcRange, $worksheet.UsedRange, $null, [Microsoft.Office.Interop.Excel.XlYesNoGuess]::xlYes, $null)
+            $listObject.TableStyle = "TableStyleLight2" # Style Cheat Sheet: https://msdn.microsoft.com/en-au/library/documentformat.openxml.spreadsheet.tablestyle.aspx
+            $usedRange = $worksheet.UsedRange
+            $usedRange.EntireColumn.AutoFit() | Out-Null
+        }
+        Else
+        {
+            $worksheet.Cells.Item($row, $column) = "Error!"
+        }
+        Remove-Variable ADFileName
+
     }
     $excel.ScreenUpdating = $true
 
@@ -5182,13 +5254,35 @@ Function Export-ADRExcel
     [string]
     Path for ADRecon output folder containing the CSV files to generate the ADRecon-Report.xlsx
 
+.PARAMETER Logo
+    [string]
+    Which Logo to use in the excel file? (Default ADRecon)
+
 .OUTPUTS
     Creates the ADRecon-Report.xlsx report in the folder.
 #>
     param(
         [Parameter(Mandatory = $true)]
-        [string] $ExcelPath
+        [string] $ExcelPath,
+
+        [Parameter(Mandatory = $false)]
+        [string] $Logo = "ADRecon"
     )
+
+    If ($PSVersionTable.PSEdition -eq "Core")
+    {
+        If ($PSVersionTable.Platform -eq "Win32NT")
+        {
+            $returndir = Get-Location
+            Set-Location C:\Windows\assembly\
+            $refFolder = (Get-ChildItem -Recurse  Microsoft.Office.Interop.Excel.dll).Directory
+            Set-Location $refFolder
+            Add-Type -AssemblyName "Microsoft.Office.Interop.Excel"
+            Set-Location $returndir
+            Remove-Variable returndir
+            Remove-Variable refFolder
+        }
+    }
 
     $ExcelPath = $((Convert-Path $ExcelPath).TrimEnd("\"))
     $ReportPath = -join($ExcelPath,'\','CSV-Files')
@@ -5269,8 +5363,19 @@ Function Export-ADRExcel
         If (Test-Path $ADFileName)
         {
             Get-ADRExcelWorkbook -Name "Fine Grained Password Policy"
-            Get-ADRExcelImport -ADFileName $ADFileName
+            Get-ADRExcelImport -ADFileName $ADFileName -Method 3
             Remove-Variable ADFileName
+
+            $worksheet = $workbook.Worksheets.Item(1)
+            $usedRange = $worksheet.UsedRange
+
+            $usedRange.Rows(2).WrapText = $True
+
+            $usedRange.Columns | ForEach-Object {
+                $_.ColumnWidth = 60
+            }
+            $usedRange.Rows(2).AutoFit() | Out-Null
+            $usedRange.Columns["A"].AutoFit() | Out-Null
         }
 
         $ADFileName = -join($ReportPath,'\','DefaultPasswordPolicy.csv')
@@ -5282,11 +5387,15 @@ Function Export-ADRExcel
 
             $excel.ScreenUpdating = $false
             $worksheet = $workbook.Worksheets.Item(1)
+
             # https://docs.microsoft.com/en-us/office/vba/api/excel.xlhalign
-            $worksheet.Range("B2:G10").HorizontalAlignment = -4108
+            $worksheet.Range("C1:D1").HorizontalAlignment = -4108
+            $workbook.Worksheets.Item(1).Cells.Item(1,7).HorizontalAlignment = -4108
+            $worksheet.Range("B2:H10").HorizontalAlignment = -4108
+
             # https://docs.microsoft.com/en-us/office/vba/api/excel.range.borderaround
 
-            "A2:B10", "C2:D10", "E2:F10", "G2:G10" | ForEach-Object {
+            "A2:B10", "C2:E10", "F2:G10", "H2:H10" | ForEach-Object {
                 $worksheet.Range($_).BorderAround(1) | Out-Null
             }
 
@@ -5296,80 +5405,104 @@ Function Export-ADRExcel
             # Values for Font.ColorIndex
 
             $ObjValues = @(
-            # PCI Enforce password history (passwords)
+            # PCI v3.2.1 Enforce password history (passwords)
             "C2", '=IF(B2<4,TRUE, FALSE)'
 
-            # PCI Maximum password age (days)
+            # PCI v3.2.1 Maximum password age (days)
             "C3", '=IF(OR(B3=0,B3>90),TRUE, FALSE)'
 
-            # PCI Minimum password age (days)
+            # PCI v3.2.1 Minimum password age (days)
 
-            # PCI Minimum password length (characters)
+            # PCI v3.2.1 Minimum password length (characters)
             "C5", '=IF(B5<7,TRUE, FALSE)'
 
-            # PCI Password must meet complexity requirements
+            # PCI v3.2.1 Password must meet complexity requirements
             "C6", '=IF(B6<>TRUE,TRUE, FALSE)'
 
-            # PCI Store password using reversible encryption for all users in the domain
+            # PCI v3.2.1 Store password using reversible encryption for all users in the domain
 
-            # PCI Account lockout duration (mins)
+            # PCI v3.2.1 Account lockout duration (mins)
             "C8", '=IF(AND(B8>=1,B8<30),TRUE, FALSE)'
 
-            # PCI Account lockout threshold (attempts)
+            # PCI v3.2.1 Account lockout threshold (attempts)
             "C9", '=IF(OR(B9=0,B9>6),TRUE, FALSE)'
 
-            # PCI Reset account lockout counter after (mins)
+            # PCI v3.2.1 Reset account lockout counter after (mins)
 
-            # ASD ISM Enforce password history (passwords)
-            "E2", '=IF(B2<8,TRUE, FALSE)'
+            # PCI v4.0 Enforce password history (passwords)
+            "D2", '=IF(B2<4,TRUE, FALSE)'
 
-            # ASD ISM Maximum password age (days)
-            "E3", '=IF(OR(B3=0,B3>90),TRUE, FALSE)'
+            # PCI v4.0 Maximum password age (days)
+            "D3", '=IF(OR(B3=0,B3>90),TRUE, FALSE)'
 
-            # ASD ISM Minimum password age (days)
-            "E4", '=IF(B4=0,TRUE, FALSE)'
+            # PCI v4.0 Minimum password age (days)
 
-            # ASD ISM Minimum password length (characters)
-            "E5", '=IF(B5<13,TRUE, FALSE)'
+            # PCI v4.0 Minimum password length (characters)
+            "D5", '=IF(B5<12,TRUE, FALSE)'
 
-            # ASD ISM Password must meet complexity requirements
-            "E6", '=IF(B6<>TRUE,TRUE, FALSE)'
+            # PCI v4.0 Password must meet complexity requirements
+            "D6", '=IF(B6<>TRUE,TRUE, FALSE)'
 
-            # ASD ISM Store password using reversible encryption for all users in the domain
+            # PCI v4.0 Store password using reversible encryption for all users in the domain
 
-            # ASD ISM Account lockout duration (mins)
+            # PCI v4.0 Account lockout duration (mins)
+            "D8", '=IF(AND(B8>=1,B8<30),TRUE, FALSE)'
 
-            # ASD ISM Account lockout threshold (attempts)
-            "E9", '=IF(OR(B9=0,B9>5),TRUE, FALSE)'
+            # PCI v4.0 Account lockout threshold (attempts)
+            "D9", '=IF(OR(B9=0,B9>10),TRUE, FALSE)'
 
-            # ASD ISM Reset account lockout counter after (mins)
+            # PCI v4.0 Reset account lockout counter after (mins)
+
+            # ACSC ISM Enforce password history (passwords)
+            #"F2", '=IF(B2<8,TRUE, FALSE)'
+
+            # ACSC ISM Maximum password age (days)
+            "F3", '=IF(OR(B3=0,B3>365),TRUE, FALSE)'
+
+            # ACSC ISM Minimum password age (days)
+            #"F4", '=IF(B4=0,TRUE, FALSE)'
+
+            # ACSC ISM Minimum password length (characters)
+            "F5", '=IF(B5<14,TRUE, FALSE)'
+
+            # ACSC ISM Password must meet complexity requirements
+            #"F6", '=IF(B6<>TRUE,TRUE, FALSE)'
+
+            # ACSC ISM Store password using reversible encryption for all users in the domain
+
+            # ACSC ISM Account lockout duration (mins)
+
+            # ACSC ISM Account lockout threshold (attempts)
+            "F9", '=IF(OR(B9=0,B9>5),TRUE, FALSE)'
+
+            # ACSC ISM Reset account lockout counter after (mins)
 
             # CIS Benchmark Enforce password history (passwords)
-            "G2", '=IF(B2<24,TRUE, FALSE)'
+            "H2", '=IF(B2<24,TRUE, FALSE)'
 
             # CIS Benchmark Maximum password age (days)
-            "G3", '=IF(OR(B3=0,B3>60),TRUE, FALSE)'
+            "H3", '=IF(OR(B3=0,B3>365),TRUE, FALSE)'
 
             # CIS Benchmark Minimum password age (days)
-            "G4", '=IF(B4=0,TRUE, FALSE)'
+            "H4", '=IF(B4=0,TRUE, FALSE)'
 
             # CIS Benchmark Minimum password length (characters)
-            "G5", '=IF(B5<14,TRUE, FALSE)'
+            "H5", '=IF(B5<14,TRUE, FALSE)'
 
             # CIS Benchmark Password must meet complexity requirements
-            "G6", '=IF(B6<>TRUE,TRUE, FALSE)'
+            "H6", '=IF(B6<>TRUE,TRUE, FALSE)'
 
             # CIS Benchmark Store password using reversible encryption for all users in the domain
-            "G7", '=IF(B7<>FALSE,TRUE, FALSE)'
+            "H7", '=IF(B7<>FALSE,TRUE, FALSE)'
 
             # CIS Benchmark Account lockout duration (mins)
-            "G8", '=IF(AND(B8>=1,B8<15),TRUE, FALSE)'
+            "H8", '=IF(AND(B8>=1,B8<15),TRUE, FALSE)'
 
             # CIS Benchmark Account lockout threshold (attempts)
-            "G9", '=IF(OR(B9=0,B9>10),TRUE, FALSE)'
+            "H9", '=IF(OR(B9=0,B9>5),TRUE, FALSE)'
 
             # CIS Benchmark Reset account lockout counter after (mins)
-            "G10", '=IF(B10<15,TRUE, FALSE)' )
+            "H10", '=IF(B10<15,TRUE, FALSE)' )
 
             For ($i = 0; $i -lt $($ObjValues.Count); $i++)
             {
@@ -5377,14 +5510,14 @@ Function Export-ADRExcel
                 $i++
             }
 
-            "C2", "C3" , "C5", "C6", "C8", "C9", "E2", "E3" , "E4", "E5", "E6", "E9", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10" | ForEach-Object {
+            "C2", "C3" , "C5", "C6", "C8", "C9", "D2", "D3" , "D5", "D6", "D8", "D9", "F5", "F9", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10" | ForEach-Object {
                 $worksheet.Range($_).FormatConditions.Item(1).StopIfTrue = $false
                 $worksheet.Range($_).FormatConditions.Item(1).Font.ColorIndex = 3
             }
 
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,4) , "https://www.pcisecuritystandards.org/document_library?category=pcidss&document=pci_dss", "" , "", "PCI DSS v3.2.1") | Out-Null
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,6) , "https://acsc.gov.au/infosec/ism/", "" , "", "2018 ISM Controls") | Out-Null
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,7) , "https://www.cisecurity.org/benchmark/microsoft_windows_server/", "" , "", "CIS Benchmark 2016") | Out-Null
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,5) , "https://www.pcisecuritystandards.org/document_library?category=pcidss&document=pci_dss", "" , "", "PCI DSS Requirement") | Out-Null
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1, 7) , "https://www.cyber.gov.au/acsc/view-all-content/ism", "" , "", "ISM Controls 16Jun2022") | Out-Null
+            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(1,8) , "https://www.cisecurity.org/benchmark/microsoft_windows_server/", "" , "", "CIS Benchmark 2022") | Out-Null
 
             $excel.ScreenUpdating = $true
             Get-ADRExcelComObjRelease -ComObjtoRelease $worksheet
@@ -5734,11 +5867,56 @@ Function Export-ADRExcel
             Get-ADRExcelAttributeStats -SrcSheetName "Computers" -Title1 "Computer Accounts in AD" -PivotTableName "Computer Accounts Status" -PivotRows "Enabled" -PivotValues "UserName" -PivotPercentage "UserName" -Title2 "Status of Computer Accounts" -ObjAttributes $ObjAttributes
             Remove-Variable ObjAttributes
 
-            Get-ADRExcelChart -ChartType "xlPie" -ChartLayout 3 -ChartTitle "Computer Accounts in AD" -RangetoCover "A11:D23" -ChartData $workbook.Worksheets.Item(1).Range("A3:A4,B3:B4")
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(10,1) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+            #Todo: Replace with a better way to include the LAPS Stats
+            For($i = 1 ; $i -le $workbook.Sheets.count ; $i++)
+            {
+                $SrcSheetName = "LAPS"
+                If ($workbook.Worksheets.item($i).name -eq $SrcSheetName)
+                {
+                    $ADRLAPSCheck = $true
+                    break
+                }
+                Else
+                {
+                   $ADRLAPSCheck = $false
+                }
+            }
+            If ($ADRLAPSCheck)
+            {
+                $worksheet = $workbook.Worksheets.Item(1)
+                $ExcelColumn = $workbook.Sheets.Item("LAPS").Columns.Find("Stored")
+                $ColAddress = "$($ExcelColumn.Address($false,$false).Substring(0,$ExcelColumn.Address($false,$false).Length-1)):$($ExcelColumn.Address($false,$false).Substring(0,$ExcelColumn.Address($false,$false).Length-1))"
+                $i = 9
+                $row = 9
+                $column = 6
+                $worksheet.Cells.Item($row, $column) = "LAPS"
+                $worksheet.Cells.Item($row, $column+1).Formula = "=COUNTIFS('" + $SrcSheetName + "'!" + "B:B" + ',"TRUE",' + "'" + $SrcSheetName + "'!" + $ColAddress + ',' + "TRUE" + ')'
+                $worksheet.Cells.Item($row, $column+2).Formula = '=IFERROR(G' + $i + '/VLOOKUP("Enabled",A3:B6,2,FALSE),0)'
+                $worksheet.Cells.Item($row, $column+3).Formula = "=COUNTIFS('" + $SrcSheetName + "'!" + "B:B" + ',"FALSE",' + "'" + $SrcSheetName + "'!" + $ColAddress + ',' + "TRUE" + ')'
+                $worksheet.Cells.Item($row, $column+4).Formula = '=IFERROR(I' + $i + '/VLOOKUP("Disabled",A3:B6,2,FALSE),0)'
+                $worksheet.Cells.Item($row, $column+5).Formula = "=COUNTIF('" + $SrcSheetName + "'!" + $ColAddress + ',' + "TRUE" + ')'
+                $worksheet.Cells.Item($row, $column+6).Formula = '=IFERROR(K' + $i + '/VLOOKUP("Total",A3:B6,2,FALSE),0)'
 
-            Get-ADRExcelChart -ChartType "xlBarClustered" -ChartLayout 1 -ChartTitle "Status of Computer Accounts" -RangetoCover "F11:L23" -ChartData $workbook.Worksheets.Item(1).Range("F2:F8,G2:G8")
-            $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(10,6) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+                # http://www.excelhowto.com/macros/formatting-a-range-of-cells-in-excel-vba/
+                "H", "J" , "L" | ForEach-Object {
+                    $rng = $_ + "9" + ":" + $_ + $($row)
+                    $worksheet.Range($rng).NumberFormat = "0.00%"
+                }
+
+                Get-ADRExcelChart -ChartType "xlPie" -ChartLayout 3 -ChartTitle "Computer Accounts in AD" -RangetoCover "A12:D24" -ChartData $workbook.Worksheets.Item(1).Range("A3:A4,B3:B4")
+                $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(11,1) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+
+                Get-ADRExcelChart -ChartType "xlBarClustered" -ChartLayout 1 -ChartTitle "Status of Computer Accounts" -RangetoCover "F12:L24" -ChartData $workbook.Worksheets.Item(1).Range("F2:F9,G2:G9")
+                $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(11,6) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+            }
+            Else
+            {
+                Get-ADRExcelChart -ChartType "xlPie" -ChartLayout 3 -ChartTitle "Computer Accounts in AD" -RangetoCover "A11:D23" -ChartData $workbook.Worksheets.Item(1).Range("A3:A4,B3:B4")
+                $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(10,1) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+
+                Get-ADRExcelChart -ChartType "xlBarClustered" -ChartLayout 1 -ChartTitle "Status of Computer Accounts" -RangetoCover "F11:L23" -ChartData $workbook.Worksheets.Item(1).Range("F2:F8,G2:G8")
+                $workbook.Worksheets.Item(1).Hyperlinks.Add($workbook.Worksheets.Item(1).Cells.Item(10,6) , "" , "Computers!A1", "", "Raw Data") | Out-Null
+            }
 
             $workbook.Worksheets.Item(1).UsedRange.EntireColumn.AutoFit() | Out-Null
             $excel.Windows.Item(1).Displaygridlines = $false
@@ -5791,8 +5969,18 @@ Function Export-ADRExcel
         # $path = "C:\ADRecon_Logo.jpg"
         # $base64adrecon = [convert]::ToBase64String((Get-Content $path -Encoding byte))
 
-		$base64adrecon = "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"
-
+        If ($Logo -eq "CyberCX")
+        {
+            $base64adrecon = "/9j/4AAQSkZJRgABAQAASABIAAD/4QCGRXhpZgAATU0AKgAAAAgAAwESAAMAAAABAAEAAAExAAIAAAAhAAAAModpAAQAAAABAAAAVAAAAABBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKQAAAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAligAwAEAAAAAQAAAKcAAAAA/+EK/2h0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8APD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpCNTlFNjgwMDAxRTYxMUVCQUFDM0E1NzA4MDFFN0FENyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpCNTlFNjgwMTAxRTYxMUVCQUFDM0E1NzA4MDFFN0FENyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjlFMDI3ODg5MDFFNjExRUJBQUMzQTU3MDgwMUU3QUQ3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjlFMDI3ODhBMDFFNjExRUJBQUMzQTU3MDgwMUU3QUQ3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDw/eHBhY2tldCBlbmQ9InciPz4A/+0AOFBob3Rvc2hvcCAzLjAAOEJJTQQEAAAAAAAAOEJJTQQlAAAAAAAQ1B2M2Y8AsgTpgAmY7PhCfv/AABEIAKcCWAMBIgACEQEDEQH/xAAfAAABBQEBAQEBAQAAAAAAAAAAAQIDBAUGBwgJCgv/xAC1EAACAQMDAgQDBQUEBAAAAX0BAgMABBEFEiExQQYTUWEHInEUMoGRoQgjQrHBFVLR8CQzYnKCCQoWFxgZGiUmJygpKjQ1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vHy8/T19vf4+fr/xAAfAQADAQEBAQEBAQEBAAAAAAAAAQIDBAUGBwgJCgv/xAC1EQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEKFiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo6ery8/T19vf4+fr/2wBDABwcHBwcHDAcHDBEMDAwRFxEREREXHRcXFxcXHSMdHR0dHR0jIyMjIyMjIyoqKioqKjExMTExNzc3Nzc3Nzc3Nz/2wBDASIkJDg0OGA0NGDmnICc5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm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UCRyK2aypQFkYD1rak+hnNdR0C7pB7c1p1VtVwpf1q1UVHdlQWgUUUVBRSu+q/jVQAnOO1aE8TSY244psEDxsS2MYxW8ZJRMnG7IIZzGNrcirYuIj/FUUlqCcxnHtVc28o7UrRlqO8kWXulA+Tk1RJLHJ5JqYW0p6jFW4rdY+Tyad4x2FZvcLeLy1yepqeiisW7u5olYKoXMRVvMXoetX6CAeDTjKzuDVzLimaI8cj0q4tzEevFMe1B5jOPaq5t5R2zWr5ZGfvIum4iHfNVZbguNq8CmCCU/w1Mlqern8BStFajvJleKMyNgdO5rVAAGB2pFVUG1RgUtROVyoxsNf7jfQ1kVsMMqR6iqH2WT2qqbS3Jmrl9fuj6UtIBgAUtZGgUUUUAFVby1S7hMTcHqD6GrVFNOwHAzwS28hilGCP1+lQ1309vDcpsmUMO3qPpWDPobA5t3BHo3+NdEaqe4rGNHc3EQxHIyj0Bpz3d1IMPKxHpmrLaVfL/yzz9CKaul3zH/AFePqR/jVXiIz6cqM7BEBJPQCtuHQ5mOZnCj25NblrY29oP3Q+bux61MqiWw7EGm2P2OPc/MjdfYelaVFFc7d3djM3U7v7Lb4Q/O/C+3qa42ujvdOvbu4aXK7ei89vyqp/Yt56p+f/1q3g4pbiZBptp9ruBuHyJy3+H412dVLK1FnAI+rHlj6mrdZTldjQUUUVAHK6xaeTL9oQfLJ19m/wDr1i131xAlxC0L9GH5e9cydEvM8FPz/wDrV0QmrWYmjR0a782P7M5+ZOnuP/rVt1zEGlX8EyyoUBU+v/1q2P8AiZf9Mv1qJJN3TA//0OkooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKYZIx1YUWAV2CKWPasnlj7mrE8/mfKvSi2j3PvPRf51vFcquzKTu7IvIuxQvpTqKKwNQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//9HpKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAGv9xvoayQCelaz/AHD9KzE61tT2ZnMkS2duTwKvqqou1elCfdFOqJSbKUUgoooqCgooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//9k="
+        }
+        ElseIf ($Logo -eq "Payatu")
+        {
+            $base64adrecon = "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"
+        }
+        Else
+        {
+		    $base64adrecon = "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"
+        }
         $bytes = [System.Convert]::FromBase64String($base64adrecon)
         Remove-Variable base64adrecon
 
@@ -6367,11 +6555,11 @@ Function Get-ADRForest
             }
 
             # Check Recycle Bin Feature Status
-            If ([convert]::ToInt32($ADForest.ForestMode) -ge 6)
+            If ([convert]::ToInt32($ADForest.ForestMode) -ge 4)
             {
                 Try
                 {
-                    $ADRecycleBin = Get-ADOptionalFeature -Identity "Recycle Bin Feature"
+                    $ADRecycleBin = Get-ADOptionalFeature -Identity "Recycle Bin Feature" -Properties whenCreated
                 }
                 Catch
                 {
@@ -6414,6 +6602,9 @@ Function Get-ADRForest
             {
                 $ForestMode = $ADForest.ForestMode
             }
+
+            # LAPS Check
+            $ADRLAPSCheck = Get-ADRLAPSCheck -Method ADWS
 
             $ObjValues = @("Name", $ADForest.Name, "Functional Level", $ForestMode, "Domain Naming Master", $ADForest.DomainNamingMaster, "Schema Master", $ADForest.SchemaMaster, "RootDomain", $ADForest.RootDomain, "Domain Count", $ADForest.Domains.Count, "Site Count", $ADForest.Sites.Count, "Global Catalog Count", $ADForest.GlobalCatalogs.Count)
 
@@ -6470,6 +6661,12 @@ Function Get-ADRForest
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Enabled"
                     $ForestObj += $Obj
+
+                    $Obj = New-Object PSObject
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "Recycle Bin Enabled Date"
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ADRecycleBin.whenCreated
+                    $ForestObj += $Obj
+
                     For($i=0; $i -lt $($ADRecycleBin.EnabledScopes.Count); $i++)
                     {
                         $Obj = New-Object PSObject
@@ -6519,6 +6716,25 @@ Function Get-ADRForest
                 $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Disabled"
                 $ForestObj += $Obj
             }
+
+            $Obj = New-Object PSObject
+            $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "LAPS"
+            If ($ADRLAPSCheck)
+            {
+                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Enabled"
+                $ForestObj += $Obj
+
+                $Obj = New-Object PSObject
+                $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "LAPS Installed Date"
+                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $((Get-ADObject "CN=ms-Mcs-AdmPwd,$((Get-ADRootDSE).schemaNamingContext)" -Properties whenCreated).whenCreated)
+                $ForestObj += $Obj
+            }
+            Else
+            {
+                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Disabled"
+                $ForestObj += $Obj
+            }
+
             Remove-Variable ADForest
         }
     }
@@ -6575,17 +6791,13 @@ Function Get-ADRForest
                 Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             }
             # Check Recycle Bin Feature Status
-            If ([convert]::ToInt32($objDomainRootDSE.forestFunctionality,10) -ge 6)
+            If ([convert]::ToInt32($objDomainRootDSE.forestFunctionality,10) -ge 4)
             {
                 Try
                 {
                     $SearchPath = "CN=Recycle Bin Feature,CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration"
-                    $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SearchPath),$($objDomain.distinguishedName)", $Credential.UserName,$Credential.GetNetworkCredential().Password
-                    $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
-                    $ADRecycleBin = $objSearcherPath.FindAll()
+                    $ADRecycleBin = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SearchPath),$($objDomain.distinguishedName)", $Credential.UserName, $Credential.GetNetworkCredential().Password
                     Remove-Variable SearchPath
-                    $objSearchPath.Dispose()
-                    $objSearcherPath.Dispose()
                 }
                 Catch
                 {
@@ -6599,12 +6811,8 @@ Function Get-ADRForest
                 Try
                 {
                     $SearchPath = "CN=Privileged Access Management Feature,CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration"
-                    $objSearchPath = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SearchPath),$($objDomain.distinguishedName)", $Credential.UserName,$Credential.GetNetworkCredential().Password
-                    $objSearcherPath = New-Object System.DirectoryServices.DirectorySearcher $objSearchPath
-                    $PrivilegedAccessManagement = $objSearcherPath.FindAll()
+                    $PrivilegedAccessManagement = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/$($SearchPath),$($objDomain.distinguishedName)", $Credential.UserName, $Credential.GetNetworkCredential().Password
                     Remove-Variable SearchPath
-                    $objSearchPath.Dispose()
-                    $objSearcherPath.Dispose()
                 }
                 Catch
                 {
@@ -6622,7 +6830,7 @@ Function Get-ADRForest
             $ADForestTombstoneLifetime = ([ADSI]"LDAP://CN=Directory Service,CN=Windows NT,CN=Services,$($objDomainRootDSE.configurationNamingContext)").tombstoneLifetime.value
 
             # Check Recycle Bin Feature Status
-            If ([convert]::ToInt32($objDomainRootDSE.forestFunctionality,10) -ge 6)
+            If ([convert]::ToInt32($objDomainRootDSE.forestFunctionality,10) -ge 4)
             {
                 $ADRecycleBin = ([ADSI]"LDAP://CN=Recycle Bin Feature,CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,$($objDomain.distinguishedName)")
             }
@@ -6632,6 +6840,9 @@ Function Get-ADRForest
                 $PrivilegedAccessManagement = ([ADSI]"LDAP://CN=Privileged Access Management Feature,CN=Optional Features,CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,$($objDomain.distinguishedName)")
             }
         }
+
+        # LAPS Check
+        $ADRLAPSCheck = Get-ADRLAPSCheck -Method LDAP -objDomainRootDSE $objDomainRootDSE -DomainController $DomainController -Credential $Credential
 
         If ($ADForest)
         {
@@ -6702,15 +6913,21 @@ Function Get-ADRForest
             $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "Recycle Bin (2008 R2 onwards)"
             If ($ADRecycleBin)
             {
-                If ($ADRecycleBin.Properties.'msDS-EnabledFeatureBL'.Count -gt 0)
+                If ($ADRecycleBin.Properties.'msds-enabledfeaturebl'.Count -gt 0)
                 {
                     $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Enabled"
                     $ForestObj += $Obj
-                    For($i=0; $i -lt $($ADRecycleBin.Properties.'msDS-EnabledFeatureBL'.Count); $i++)
+
+                    $Obj = New-Object PSObject
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "Recycle Bin Enabled Date"
+                    $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ADRecycleBin.whencreated.value
+                    $ForestObj += $Obj
+
+                    For($i=0; $i -lt $($ADRecycleBin.Properties.'msds-enabledfeaturebl'.Count); $i++)
                     {
                         $Obj = New-Object PSObject
                         $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "Enabled Scope"
-                        $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ADRecycleBin.Properties.'msDS-EnabledFeatureBL'[$i]
+                        $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ADRecycleBin.Properties.'msds-enabledfeaturebl'[$i]
                         $ForestObj += $Obj
                     }
                 }
@@ -6719,7 +6936,7 @@ Function Get-ADRForest
                     $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Disabled"
                     $ForestObj += $Obj
                 }
-                Remove-Variable ADRecycleBin
+                $ADRecycleBin.Dispose()
             }
             Else
             {
@@ -6748,12 +6965,34 @@ Function Get-ADRForest
                     $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Disabled"
                     $ForestObj += $Obj
                 }
-                Remove-Variable PrivilegedAccessManagement
+                $PrivilegedAccessManagement.dispose()
             }
             Else
             {
                 $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Disabled"
                 $ForestObj += $Obj
+            }
+
+            $Obj = New-Object PSObject
+            $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "LAPS"
+            If ($ADRLAPSCheck)
+            {
+                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value "Enabled"
+                $ForestObj += $Obj
+
+                $Obj = New-Object PSObject
+                $Obj | Add-Member -MemberType NoteProperty -Name "Category" -Value "LAPS Installed Date"
+                If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+                {
+                    $ADRLAPSInstalledDate = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/CN=ms-Mcs-AdmPwd,$($objDomainRootDSE.schemaNamingContext)", $Credential.UserName, $Credential.GetNetworkCredential().Password).whencreated.value
+                }
+                Else
+                {
+                    $ADRLAPSInstalledDate = ([ADSI]("LDAP://CN=ms-Mcs-AdmPwd,$($objDomainRootDSE.schemaNamingContext)")).whencreated.value
+                }
+                $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ADRLAPSInstalledDate
+                $ForestObj += $Obj
+                Remove-Variable ADRLAPSInstalledDate
             }
 
             Remove-Variable ADForest
@@ -7368,15 +7607,15 @@ Function Get-ADRDefaultPasswordPolicy
 
         If ($ADpasspolicy)
         {
-            $ObjValues = @( "Enforce password history (passwords)", $ADpasspolicy.PasswordHistoryCount, "4", "Req. 8.2.5", "8", "Control: 0423", "24 or more",
-            "Maximum password age (days)", $ADpasspolicy.MaxPasswordAge.days, "90", "Req. 8.2.4", "90", "Control: 0423", "1 to 60",
-            "Minimum password age (days)", $ADpasspolicy.MinPasswordAge.days, "N/A", "-", "1", "Control: 0423", "1 or more",
-            "Minimum password length (characters)", $ADpasspolicy.MinPasswordLength, "7", "Req. 8.2.3", "13", "Control: 0421", "14 or more",
-            "Password must meet complexity requirements", $ADpasspolicy.ComplexityEnabled, $true, "Req. 8.2.3", $true, "Control: 0421", $true,
-            "Store password using reversible encryption for all users in the domain", $ADpasspolicy.ReversibleEncryptionEnabled, "N/A", "-", "N/A", "-", $false,
-            "Account lockout duration (mins)", $ADpasspolicy.LockoutDuration.minutes, "0 (manual unlock) or 30", "Req. 8.1.7", "N/A", "-", "15 or more",
-            "Account lockout threshold (attempts)", $ADpasspolicy.LockoutThreshold, "1 to 6", "Req. 8.1.6", "1 to 5", "Control: 1403", "1 to 10",
-            "Reset account lockout counter after (mins)", $ADpasspolicy.LockoutObservationWindow.minutes, "N/A", "-", "N/A", "-", "15 or more" )
+            $ObjValues = @( "Enforce password history (passwords)", $ADpasspolicy.PasswordHistoryCount, "4", "4", "Req. 8.2.5 / 8.3.7", "N/A", "-", "24 or more",
+            "Maximum password age (days)", $ADpasspolicy.MaxPasswordAge.days, "90", "90", "Req. 8.2.4 / 8.3.9", "365", "ISM-1590 Rev:1 Mar22", "1 to 365",
+            "Minimum password age (days)", $ADpasspolicy.MinPasswordAge.days, "N/A", "N/A", "-", "N/A", "-", "1 or more",
+            "Minimum password length (characters)", $ADpasspolicy.MinPasswordLength, "7", "12", "Req. 8.2.3 / 8.3.6", "14", "Control: ISM-0421 Rev:8 Dec21", "14 or more",
+            "Password must meet complexity requirements", $ADpasspolicy.ComplexityEnabled, $true, $true, "Req. 8.2.3 / 8.3.6", "N/A", "-", $true,
+            "Store password using reversible encryption for all users in the domain", $ADpasspolicy.ReversibleEncryptionEnabled, "N/A", "N/A", "-", "N/A", "-", $false,
+            "Account lockout duration (mins)", $ADpasspolicy.LockoutDuration.minutes, "0 (manual unlock) or 30", "0 (manual unlock) or 30", "Req. 8.1.7 / 8.3.4", "N/A", "-", "15 or more",
+            "Account lockout threshold (attempts)", $ADpasspolicy.LockoutThreshold, "1 to 6", "1 to 10", "Req. 8.1.6 / 8.3.4", "1 to 5", "Control: ISM-1403 Rev:2 Oct19", "1 to 5",
+            "Reset account lockout counter after (mins)", $ADpasspolicy.LockoutObservationWindow.minutes, "N/A", "N/A", "-", "N/A", "-", "15 or more" )
 
             Remove-Variable ADpasspolicy
         }
@@ -7421,15 +7660,15 @@ Function Get-ADRDefaultPasswordPolicy
                 $LockoutDuration = 0
             }
 
-            $ObjValues = @( "Enforce password history (passwords)", $ObjDomain.PwdHistoryLength.value, "4", "Req. 8.2.5", "8", "Control: 0423", "24 or more",
-            "Maximum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.maxpwdage.value) /-864000000000), "90", "Req. 8.2.4", "90", "Control: 0423", "1 to 60",
-            "Minimum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.minpwdage.value) /-864000000000), "N/A", "-", "1", "Control: 0423", "1 or more",
-            "Minimum password length (characters)", $ObjDomain.MinPwdLength.value, "7", "Req. 8.2.3", "13", "Control: 0421", "14 or more",
-            "Password must meet complexity requirements", $ComplexPasswords, $true, "Req. 8.2.3", $true, "Control: 0421", $true,
-            "Store password using reversible encryption for all users in the domain", $ReversibleEncryption, "N/A", "-", "N/A", "-", $false,
-            "Account lockout duration (mins)", $LockoutDuration, "0 (manual unlock) or 30", "Req. 8.1.7", "N/A", "-", "15 or more",
-            "Account lockout threshold (attempts)", $ObjDomain.LockoutThreshold.value, "1 to 6", "Req. 8.1.6", "1 to 5", "Control: 1403", "1 to 10",
-            "Reset account lockout counter after (mins)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.lockoutobservationWindow.value)/-600000000), "N/A", "-", "N/A", "-", "15 or more" )
+            $ObjValues = @( "Enforce password history (passwords)", $ObjDomain.PwdHistoryLength.value, "4", "4", "Req. 8.2.5 / 8.3.7", "N/A", "-", "24 or more",
+                "Maximum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.maxpwdage.value) / -864000000000), "90", "90", "Req. 8.2.4 / 8.3.9", "365", "ISM-1590 Rev:1 Mar22", "1 to 365",
+            "Minimum password age (days)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.minpwdage.value) /-864000000000), "N/A", "N/A", "-", "N/A", "-", "1 or more",
+            "Minimum password length (characters)", $ObjDomain.MinPwdLength.value, "7", "12", "Req. 8.2.3 / 8.3.6", "14", "Control: ISM-0421 Rev:8 Dec21", "14 or more",
+            "Password must meet complexity requirements", $ComplexPasswords, $true, $true, "Req. 8.2.3 / 8.3.6", "N/A", "-", $true,
+            "Store password using reversible encryption for all users in the domain", $ReversibleEncryption, "N/A", "N/A", "-", "N/A", "-", $false,
+            "Account lockout duration (mins)", $LockoutDuration, "0 (manual unlock) or 30", "0 (manual unlock) or 30", "Req. 8.1.7 / 8.3.4", "N/A", "-", "15 or more",
+            "Account lockout threshold (attempts)", $ObjDomain.LockoutThreshold.value, "1 to 6", "1 to 10", "Req. 8.1.6 / 8.3.4", "1 to 5", "Control: ISM-1403 Rev:2 Oct19", "1 to 5",
+            "Reset account lockout counter after (mins)", $($ObjDomain.ConvertLargeIntegerToInt64($ObjDomain.lockoutobservationWindow.value)/-600000000), "N/A", "N/A", "-", "N/A", "-", "15 or more" )
 
             Remove-Variable pwdProperties
             Remove-Variable ComplexPasswords
@@ -7445,12 +7684,13 @@ Function Get-ADRDefaultPasswordPolicy
             $Obj = New-Object PSObject
             $Obj | Add-Member -MemberType NoteProperty -Name "Policy" -Value $ObjValues[$i]
             $Obj | Add-Member -MemberType NoteProperty -Name "Current Value" -Value $ObjValues[$i+1]
-            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS Requirement" -Value $ObjValues[$i+2]
-            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS v3.2.1" -Value $ObjValues[$i+3]
-            $Obj | Add-Member -MemberType NoteProperty -Name "ASD ISM" -Value $ObjValues[$i+4]
-            $Obj | Add-Member -MemberType NoteProperty -Name "2018 ISM Controls" -Value $ObjValues[$i+5]
-            $Obj | Add-Member -MemberType NoteProperty -Name "CIS Benchmark 2016" -Value $ObjValues[$i+6]
-            $i += 6
+            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS v3.2.1" -Value $ObjValues[$i+2]
+            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS v4.0" -Value $ObjValues[$i+3]
+            $Obj | Add-Member -MemberType NoteProperty -Name "PCI DSS Requirement" -Value $ObjValues[$i+4]
+            $Obj | Add-Member -MemberType NoteProperty -Name "ACSC ISM" -Value $ObjValues[$i+5]
+            $Obj | Add-Member -MemberType NoteProperty -Name "ISM Controls 16Jun2022" -Value $ObjValues[$i+6]
+            $Obj | Add-Member -MemberType NoteProperty -Name "CIS Benchmark 2022" -Value $ObjValues[$i+7]
+            $i += 7
             $ADPassPolObj += $Obj
         }
         Remove-Variable ObjValues
@@ -7505,26 +7745,29 @@ Function Get-ADRFineGrainedPasswordPolicy
 
         If ($ADFinepasspolicy)
         {
-            $ADPassPolObj = @()
+            $FgppPassPolObj = @()
 
             $ADFinepasspolicy | ForEach-Object {
-                For($i=0; $i -lt $($_.AppliesTo.Count); $i++)
-                {
-                    $AppliesTo = $AppliesTo + "," + $_.AppliesTo[$i]
+                $AppliesTo = ""
+                $AppliesTo = $_.AppliesTo -join ", "
+
+                $FgppValues = [ordered]@{
+                    "Name"                                       = $($_.Name)
+                    "Applies To"                                 = $AppliesTo
+                    "Enforce password history"                   = $_.PasswordHistoryCount
+                    "Maximum password age (days)"                = $_.MaxPasswordAge.days
+                    "Minimum password age (days)"                = $_.MinPasswordAge.days
+                    "Minimum password length"                    = $_.MinPasswordLength
+                    "Password must meet complexity requirements" = $_.ComplexityEnabled
+                    "Store password using reversible encryption" = $_.ReversibleEncryptionEnabled
+                    "Account lockout duration (mins)"            = $_.LockoutDuration.minutes
+                    "Account lockout threshold"                  = $_.LockoutThreshold
+                    "Reset account lockout counter after (mins)" = $_.LockoutObservationWindow.minutes
+                    "Precedence"                                 = $($_.Precedence)
                 }
-                If ($null -ne $AppliesTo)
-                {
-                    $AppliesTo = $AppliesTo.TrimStart(",")
-                }
-                $ObjValues = @("Name", $($_.Name), "Applies To", $AppliesTo, "Enforce password history", $_.PasswordHistoryCount, "Maximum password age (days)", $_.MaxPasswordAge.days, "Minimum password age (days)", $_.MinPasswordAge.days, "Minimum password length", $_.MinPasswordLength, "Password must meet complexity requirements", $_.ComplexityEnabled, "Store password using reversible encryption", $_.ReversibleEncryptionEnabled, "Account lockout duration (mins)", $_.LockoutDuration.minutes, "Account lockout threshold", $_.LockoutThreshold, "Reset account lockout counter after (mins)", $_.LockoutObservationWindow.minutes, "Precedence", $($_.Precedence))
-                For ($i = 0; $i -lt $($ObjValues.Count); $i++)
-                {
-                    $Obj = New-Object PSObject
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Policy" -Value $ObjValues[$i]
-                    $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ObjValues[$i+1]
-                    $i++
-                    $ADPassPolObj += $Obj
-                }
+
+                $FgppObj = New-Object -TypeName PsObject -Property $FgppValues
+                $FgppPassPolObj += $FgppObj
             }
             Remove-Variable ADFinepasspolicy
         }
@@ -7553,25 +7796,28 @@ Function Get-ADRFineGrainedPasswordPolicy
             {
                 If ([ADRecon.LDAPClass]::ObjectCount($ADFinepasspolicy) -ge 1)
                 {
-                    $ADPassPolObj = @()
+                    $FgppPassPolObj = @()
                     $ADFinepasspolicy | ForEach-Object {
-                    For($i=0; $i -lt $($_.Properties.'msds-psoappliesto'.Count); $i++)
-                    {
-                        $AppliesTo = $AppliesTo + "," + $_.Properties.'msds-psoappliesto'[$i]
-                    }
-                    If ($null -ne $AppliesTo)
-                    {
-                        $AppliesTo = $AppliesTo.TrimStart(",")
-                    }
-                        $ObjValues = @("Name", $($_.Properties.name), "Applies To", $AppliesTo, "Enforce password history", $($_.Properties.'msds-passwordhistorylength'), "Maximum password age (days)", $($($_.Properties.'msds-maximumpasswordage') /-864000000000), "Minimum password age (days)", $($($_.Properties.'msds-minimumpasswordage') /-864000000000), "Minimum password length", $($_.Properties.'msds-minimumpasswordlength'), "Password must meet complexity requirements", $($_.Properties.'msds-passwordcomplexityenabled'), "Store password using reversible encryption", $($_.Properties.'msds-passwordreversibleencryptionenabled'), "Account lockout duration (mins)", $($($_.Properties.'msds-lockoutduration')/-600000000), "Account lockout threshold", $($_.Properties.'msds-lockoutthreshold'), "Reset account lockout counter after (mins)", $($($_.Properties.'msds-lockoutobservationwindow')/-600000000), "Precedence", $($_.Properties.'msds-passwordsettingsprecedence'))
-                        For ($i = 0; $i -lt $($ObjValues.Count); $i++)
-                        {
-                            $Obj = New-Object PSObject
-                            $Obj | Add-Member -MemberType NoteProperty -Name "Policy" -Value $ObjValues[$i]
-                            $Obj | Add-Member -MemberType NoteProperty -Name "Value" -Value $ObjValues[$i+1]
-                            $i++
-                            $ADPassPolObj += $Obj
+                        $AppliesTo = ""
+                        $AppliesTo = $_.Properties.'msds-psoappliesto' -join ", "
+
+                        $FgppValues = [ordered]@{
+                            "Name"                                       = $($_.Properties.name)
+                            "Applies To"                                 = $AppliesTo
+                            "Enforce password history"                   = $($_.Properties.'msds-passwordhistorylength')
+                            "Maximum password age (days)"                = $($($_.Properties.'msds-maximumpasswordage') /-864000000000)
+                            "Minimum password age (days)"                = $($($_.Properties.'msds-minimumpasswordage') /-864000000000)
+                            "Minimum password length"                    = $($_.Properties.'msds-minimumpasswordlength')
+                            "Password must meet complexity requirements" = $($_.Properties.'msds-passwordcomplexityenabled')
+                            "Store password using reversible encryption" = $($_.Properties.'msds-passwordreversibleencryptionenabled')
+                            "Account lockout duration (mins)"            = $($($_.Properties.'msds-lockoutduration')/-600000000)
+                            "Account lockout threshold"                  = $($_.Properties.'msds-lockoutthreshold')
+                            "Reset account lockout counter after (mins)" = $($($_.Properties.'msds-lockoutobservationwindow')/-600000000)
+                            "Precedence"                                 = $($_.Properties.'msds-passwordsettingsprecedence')
                         }
+
+                        $FgppObj = New-Object -TypeName PsObject -Property $FgppValues
+                        $FgppPassPolObj += $FgppObj
                     }
                 }
                 Remove-Variable ADFinepasspolicy
@@ -7579,9 +7825,9 @@ Function Get-ADRFineGrainedPasswordPolicy
         }
     }
 
-    If ($ADPassPolObj)
+    If ($FgppPassPolObj)
     {
-        Return $ADPassPolObj
+        Return $FgppPassPolObj
     }
     Else
     {
@@ -7726,6 +7972,9 @@ Function Get-ADRUser
 .PARAMETER ADRUserSPNs
     [bool]
 
+.PARAMETER OnlyEnabled
+    [bool]
+
 .OUTPUTS
     PSObject.
 #>
@@ -7743,7 +7992,7 @@ Function Get-ADRUser
         [int] $DormantTimeSpan = 90,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10,
@@ -7752,7 +8001,10 @@ Function Get-ADRUser
         [int] $ADRUsers = $true,
 
         [Parameter(Mandatory = $false)]
-        [int] $ADRUserSPNs = $false
+        [int] $ADRUserSPNs = $false,
+
+        [Parameter(Mandatory = $false)]
+        [int] $OnlyEnabled = $false
     )
 
     If ($Method -eq 'ADWS')
@@ -7761,7 +8013,14 @@ Function Get-ADRUser
         {
             Try
             {
-                $ADUsers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306368)(servicePrincipalName=*))" -ResultPageSize $PageSize -Properties Name,Description,memberOf,sAMAccountName,servicePrincipalName,primaryGroupID,pwdLastSet,userAccountControl )
+                If ($OnlyEnabled)
+                {
+                    $ADUsers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306368)(servicePrincipalName=*)(!userAccountControl:1.2.840.113556.1.4.803:=2))" -ResultPageSize $PageSize -Properties Name,Description,memberOf,sAMAccountName,servicePrincipalName,primaryGroupID,pwdLastSet,userAccountControl )
+                }
+                Else
+                {
+                    $ADUsers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306368)(servicePrincipalName=*))" -ResultPageSize $PageSize -Properties Name,Description,memberOf,sAMAccountName,servicePrincipalName,primaryGroupID,pwdLastSet,userAccountControl )
+                }
             }
             Catch
             {
@@ -7774,7 +8033,14 @@ Function Get-ADRUser
         {
             Try
             {
-                $ADUsers = @( Get-ADUser -Filter * -ResultPageSize $PageSize -Properties AccountExpirationDate,accountExpires,AccountNotDelegated,AdminCount,AllowReversiblePasswordEncryption,c,CannotChangePassword,CanonicalName,Company,Department,Description,DistinguishedName,DoesNotRequirePreAuth,Enabled,givenName,homeDirectory,Info,LastLogonDate,lastLogonTimestamp,LockedOut,LogonWorkstations,mail,Manager,memberOf,middleName,mobile,'msDS-AllowedToDelegateTo','msDS-SupportedEncryptionTypes',Name,PasswordExpired,PasswordLastSet,PasswordNeverExpires,PasswordNotRequired,primaryGroupID,profilePath,pwdlastset,SamAccountName,ScriptPath,servicePrincipalName,SID,SIDHistory,SmartcardLogonRequired,sn,Title,TrustedForDelegation,TrustedToAuthForDelegation,UseDESKeyOnly,UserAccountControl,whenChanged,whenCreated )
+                If ($OnlyEnabled)
+                {
+                    $ADUsers = @( Get-ADUser -Filter 'enabled -eq $true' -ResultPageSize $PageSize -Properties AccountExpirationDate,accountExpires,AccountNotDelegated,AdminCount,AllowReversiblePasswordEncryption,c,CannotChangePassword,CanonicalName,Company,Department,Description,DistinguishedName,DoesNotRequirePreAuth,Enabled,givenName,homeDirectory,Info,LastLogonDate,lastLogonTimestamp,LockedOut,LogonWorkstations,mail,Manager,memberOf,middleName,mobile,'msDS-AllowedToDelegateTo','msDS-SupportedEncryptionTypes',Name,PasswordExpired,PasswordLastSet,PasswordNeverExpires,PasswordNotRequired,primaryGroupID,profilePath,pwdlastset,SamAccountName,ScriptPath,servicePrincipalName,SID,SIDHistory,SmartcardLogonRequired,sn,Title,TrustedForDelegation,TrustedToAuthForDelegation,UseDESKeyOnly,UserAccountControl,whenChanged,whenCreated )
+                }
+                Else
+                {
+                    $ADUsers = @( Get-ADUser -Filter * -ResultPageSize $PageSize -Properties AccountExpirationDate,accountExpires,AccountNotDelegated,AdminCount,AllowReversiblePasswordEncryption,c,CannotChangePassword,CanonicalName,Company,Department,Description,DistinguishedName,DoesNotRequirePreAuth,Enabled,givenName,homeDirectory,Info,LastLogonDate,lastLogonTimestamp,LockedOut,LogonWorkstations,mail,Manager,memberOf,middleName,mobile,'msDS-AllowedToDelegateTo','msDS-SupportedEncryptionTypes',Name,PasswordExpired,PasswordLastSet,PasswordNeverExpires,PasswordNotRequired,primaryGroupID,profilePath,pwdlastset,SamAccountName,ScriptPath,servicePrincipalName,SID,SIDHistory,SmartcardLogonRequired,sn,Title,TrustedForDelegation,TrustedToAuthForDelegation,UseDESKeyOnly,UserAccountControl,whenChanged,whenCreated )
+                }
             }
             Catch
             {
@@ -7816,7 +8082,14 @@ Function Get-ADRUser
         {
             $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
             $ObjSearcher.PageSize = $PageSize
-            $ObjSearcher.Filter = "(&(samAccountType=805306368)(servicePrincipalName=*))"
+            If ($OnlyEnabled)
+            {
+                $ObjSearcher.Filter = "(&(samAccountType=805306368)(servicePrincipalName=*)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
+            }
+            Else
+            {
+                $ObjSearcher.Filter = "(&(samAccountType=805306368)(servicePrincipalName=*))"
+            }
             $ObjSearcher.PropertiesToLoad.AddRange(("name","description","memberof","samaccountname","serviceprincipalname","primarygroupid","pwdlastset","useraccountcontrol"))
             $ObjSearcher.SearchScope = "Subtree"
             Try
@@ -7835,8 +8108,15 @@ Function Get-ADRUser
         {
             $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
             $ObjSearcher.PageSize = $PageSize
-            $ObjSearcher.Filter = "(samAccountType=805306368)"
-            # https://msdn.microsoft.com/en-us/library/system.directoryservices.securitymasks(v=vs.110).aspx
+            If ($OnlyEnabled)
+            {
+                $ObjSearcher.Filter = "(&(samAccountType=805306368)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
+            }
+            Else
+            {
+                $ObjSearcher.Filter = "(samAccountType=805306368)"
+            }
+                # https://msdn.microsoft.com/en-us/library/system.directoryservices.securitymasks(v=vs.110).aspx
             $ObjSearcher.SecurityMasks = [System.DirectoryServices.SecurityMasks]'Dacl'
             $ObjSearcher.PropertiesToLoad.AddRange(("accountExpires","admincount","c","canonicalname","company","department","description","distinguishedname","givenName","homedirectory","info","lastLogontimestamp","mail","manager","memberof","middleName","mobile","msDS-AllowedToDelegateTo","msDS-SupportedEncryptionTypes","name","ntsecuritydescriptor","objectsid","primarygroupid","profilepath","pwdLastSet","samaccountName","scriptpath","serviceprincipalname","sidhistory","sn","title","useraccountcontrol","userworkstations","whenchanged","whencreated"))
             $ObjSearcher.SearchScope = "Subtree"
@@ -8045,7 +8325,7 @@ Function Get-ADRGroup
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10,
@@ -8179,7 +8459,7 @@ Function Get-ADRGroupMember
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -8212,7 +8492,7 @@ Function Get-ADRGroupMember
 
         Try
         {
-            $ADGroupMembers = @( Get-ADObject -LDAPFilter '(|(memberof=*)(primarygroupid=*))' -Properties DistinguishedName,ObjectClass,memberof,primaryGroupID,sAMAccountName,samaccounttype )
+            $ADGroupMembers = @( Get-ADObject -LDAPFilter '(|(memberof=*)(primarygroupid=*))' -Properties DistinguishedName,ObjectClass,memberof,primaryGroupID,sAMAccountName,samaccounttype, objectSid )
         }
         Catch
         {
@@ -8329,7 +8609,7 @@ Function Get-ADRGroupMember
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
         $ObjSearcher.Filter = "(|(memberof=*)(primarygroupid=*))"
-        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname", "dnshostname", "objectclass", "primarygroupid", "memberof", "samaccountname", "samaccounttype"))
+        $ObjSearcher.PropertiesToLoad.AddRange(("distinguishedname", "dnshostname", "objectclass", "primarygroupid", "memberof", "samaccountname", "samaccounttype", "objectsid"))
         $ObjSearcher.SearchScope = "Subtree"
 
         Try
@@ -8400,7 +8680,7 @@ Function Get-ADROU
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -8505,7 +8785,7 @@ Function Get-ADRGPO
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -8606,7 +8886,7 @@ Function Get-ADRGPLink
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -9041,7 +9321,7 @@ Function Get-ADRDNSZone
         [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $true)]
         [string] $ADROutputDir,
@@ -9443,7 +9723,7 @@ Function Get-ADRPrinter
         [DirectoryServices.DirectoryEntry] $objDomain,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -9555,6 +9835,9 @@ Function Get-ADRComputer
 .PARAMETER ADRComputerSPNs
     [bool]
 
+.PARAMETER OnlyEnabled
+    [bool]
+
 .OUTPUTS
     PSObject.
 #>
@@ -9575,7 +9858,7 @@ Function Get-ADRComputer
         [int] $PassMaxAge = 30,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10,
@@ -9584,7 +9867,10 @@ Function Get-ADRComputer
         [int] $ADRComputers = $true,
 
         [Parameter(Mandatory = $false)]
-        [int] $ADRComputerSPNs = $false
+        [int] $ADRComputerSPNs = $false,
+
+        [Parameter(Mandatory = $false)]
+        [int] $OnlyEnabled = $false
     )
 
     If ($Method -eq 'ADWS')
@@ -9593,7 +9879,14 @@ Function Get-ADRComputer
         {
             Try
             {
-                $ADComputers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306369)(servicePrincipalName=*))" -ResultPageSize $PageSize -Properties Name,servicePrincipalName )
+                If ($OnlyEnabled)
+                {
+                    $ADComputers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306369)(servicePrincipalName=*)(!userAccountControl:1.2.840.113556.1.4.803:=2))" -ResultPageSize $PageSize -Properties Name, servicePrincipalName )
+                }
+                Else
+                {
+                    $ADComputers = @( Get-ADObject -LDAPFilter "(&(samAccountType=805306369)(servicePrincipalName=*))" -ResultPageSize $PageSize -Properties Name,servicePrincipalName )
+                }
             }
             Catch
             {
@@ -9606,7 +9899,14 @@ Function Get-ADRComputer
         {
             Try
             {
-                $ADComputers = @( Get-ADComputer -Filter * -ResultPageSize $PageSize -Properties Description,DistinguishedName,DNSHostName,Enabled,IPv4Address,LastLogonDate,'msDS-AllowedToDelegateTo','ms-ds-CreatorSid','msDS-SupportedEncryptionTypes',Name,OperatingSystem,OperatingSystemHotfix,OperatingSystemServicePack,OperatingSystemVersion,PasswordLastSet,primaryGroupID,SamAccountName,servicePrincipalName,SID,SIDHistory,TrustedForDelegation,TrustedToAuthForDelegation,UserAccountControl,whenChanged,whenCreated )
+                If ($OnlyEnabled)
+                {
+                    $ADComputers = @( Get-ADComputer -Filter 'enabled -eq $true' -ResultPageSize $PageSize -Properties Description,DistinguishedName,DNSHostName,Enabled,IPv4Address,LastLogonDate,'msDS-AllowedToDelegateTo','ms-ds-CreatorSid','msDS-SupportedEncryptionTypes',Name,OperatingSystem,OperatingSystemHotfix,OperatingSystemServicePack,OperatingSystemVersion,PasswordLastSet,primaryGroupID,SamAccountName,servicePrincipalName,SID,SIDHistory,TrustedForDelegation,TrustedToAuthForDelegation,UserAccountControl,whenChanged,whenCreated )
+                }
+                Else
+                {
+                    $ADComputers = @( Get-ADComputer -Filter * -ResultPageSize $PageSize -Properties Description,DistinguishedName,DNSHostName,Enabled,IPv4Address,LastLogonDate,'msDS-AllowedToDelegateTo','ms-ds-CreatorSid','msDS-SupportedEncryptionTypes',Name,OperatingSystem,OperatingSystemHotfix,OperatingSystemServicePack,OperatingSystemVersion,PasswordLastSet,primaryGroupID,SamAccountName,servicePrincipalName,SID,SIDHistory,TrustedForDelegation,TrustedToAuthForDelegation,UserAccountControl,whenChanged,whenCreated )
+                }
             }
             Catch
             {
@@ -9636,7 +9936,14 @@ Function Get-ADRComputer
         {
             $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
             $ObjSearcher.PageSize = $PageSize
-            $ObjSearcher.Filter = "(&(samAccountType=805306369)(servicePrincipalName=*))"
+            If ($OnlyEnabled)
+            {
+                $ObjSearcher.Filter = "(&(samAccountType=805306369)(servicePrincipalName=*)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
+            }
+            Else
+            {
+                $ObjSearcher.Filter = "(&(samAccountType=805306369)(servicePrincipalName=*))"
+            }
             $ObjSearcher.PropertiesToLoad.AddRange(("name","serviceprincipalname"))
             $ObjSearcher.SearchScope = "Subtree"
             Try
@@ -9655,7 +9962,14 @@ Function Get-ADRComputer
         {
             $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
             $ObjSearcher.PageSize = $PageSize
-            $ObjSearcher.Filter = "(samAccountType=805306369)"
+            If ($OnlyEnabled)
+            {
+                $ObjSearcher.Filter = "(&(samAccountType=805306369)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
+            }
+            Else
+            {
+                $ObjSearcher.Filter = "(samAccountType=805306369)"
+            }
             $ObjSearcher.PropertiesToLoad.AddRange(("description","distinguishedname","dnshostname","lastlogontimestamp","msDS-AllowedToDelegateTo","ms-ds-CreatorSid","msDS-SupportedEncryptionTypes","name","objectsid","operatingsystem","operatingsystemhotfix","operatingsystemservicepack","operatingsystemversion","primarygroupid","pwdlastset","samaccountname","serviceprincipalname","sidhistory","useraccountcontrol","whenchanged","whencreated"))
             $ObjSearcher.SearchScope = "Subtree"
 
@@ -9699,8 +10013,113 @@ Function Get-ADRComputer
     }
 }
 
-# based on https://github.com/kfosaaen/Get-LAPSPasswords/blob/master/Get-LAPSPasswords.ps1
 Function Get-ADRLAPSCheck
+{
+<#
+.SYNOPSIS
+    Checks if LAPS (local administrator) is enabled in the current (or specified) domain.
+
+.DESCRIPTION
+    Checks if LAPS (local administrator) is enabled in the current (or specified) domain.
+
+.PARAMETER Method
+    [string]
+    Which method to use; ADWS (default), LDAP.
+
+.PARAMETER objDomainRootDSE
+    [DirectoryServices.DirectoryEntry]
+    Domain Directory Entry object.
+
+.PARAMETER DomainController
+    [string]
+    IP Address of the Domain Controller.
+
+.PARAMETER Credential
+    [Management.Automation.PSCredential]
+    Credentials.
+
+.OUTPUTS
+    Bool.
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Method,
+
+        [Parameter(Mandatory = $false)]
+        [DirectoryServices.DirectoryEntry] $objDomainRootDSE,
+
+        [Parameter(Mandatory = $false)]
+        [string] $DomainController,
+
+        [Parameter(Mandatory = $false)]
+        [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty
+    )
+
+    If ($Method -eq 'ADWS')
+    {
+        Try
+        {
+            $ADRLAPSCheck = @( Get-ADObject "CN=ms-Mcs-AdmPwd,$((Get-ADRootDSE).schemaNamingContext)" )
+        }
+        Catch
+        {
+            Write-Verbose "[*] LAPS is not implemented."
+            Return $false
+        }
+
+        If ($ADRLAPSCheck)
+        {
+            Remove-Variable ADRLAPSCheck
+            Return $true
+        }
+        Else
+        {
+            Return $false
+        }
+    }
+
+    If ($Method -eq 'LDAP')
+    {
+        Try
+        {
+            If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+            {
+                $ADRLAPSCheckDSE = New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($DomainController)/CN=ms-Mcs-AdmPwd,$($objDomainRootDSE.schemaNamingContext)", $Credential.UserName, $Credential.GetNetworkCredential().Password
+                If (-Not ($ADRLAPSCheckDSE.Path))
+                {
+                    $ADRLAPSCheck = $false
+                }
+                Else
+                {
+                    $ADRLAPSCheck = $true
+                    $ADRLAPSCheckDSE.dispose()
+                }
+            }
+            Else
+            {
+                $ADRLAPSCheck = [ADSI]::Exists("LDAP://CN=ms-Mcs-AdmPwd,$($objDomainRootDSE.schemaNamingContext)")
+            }
+        }
+        Catch
+        {
+            Write-Verbose "[Get-ADRLAPSCheck] Error while checking for existance of LAPS Properties"
+            Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
+        }
+
+        If ($ADRLAPSCheck)
+        {
+            Remove-Variable ADRLAPSCheck
+            Return $true
+        }
+        Else
+        {
+            Return $false
+        }
+    }
+}
+
+# based on https://github.com/kfosaaen/Get-LAPSPasswords/blob/master/Get-LAPSPasswords.ps1
+Function Get-ADRLAPS
 {
 <#
 .SYNOPSIS
@@ -9735,8 +10154,8 @@ Function Get-ADRLAPSCheck
         [Parameter(Mandatory = $false)]
         [DirectoryServices.DirectoryEntry] $objDomain,
 
-        [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [Parameter(Mandatory = $false)]
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -9746,16 +10165,11 @@ Function Get-ADRLAPSCheck
     {
         Try
         {
-            $ADComputers = @( Get-ADObject -LDAPFilter "(samAccountType=805306369)" -Properties CN,DNSHostName,'ms-Mcs-AdmPwd','ms-Mcs-AdmPwdExpirationTime' -ResultPageSize $PageSize )
-        }
-        Catch [System.ArgumentException]
-        {
-            Write-Warning "[*] LAPS is not implemented."
-            Return $null
+            $ADComputers = @( Get-ADObject -LDAPFilter "(samAccountType=805306369)" -Properties CN, DNSHostName, 'ms-Mcs-AdmPwd', 'ms-Mcs-AdmPwdExpirationTime',useraccountcontrol -ResultPageSize $PageSize )
         }
         Catch
         {
-            Write-Warning "[Get-ADRLAPSCheck] Error while enumerating LAPS Objects"
+            Write-Warning "[Get-ADRLAPS] Error while enumerating LAPS Objects"
             Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
@@ -9773,7 +10187,7 @@ Function Get-ADRLAPSCheck
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
         $ObjSearcher.Filter = "(samAccountType=805306369)"
-        $ObjSearcher.PropertiesToLoad.AddRange(("cn","dnshostname","ms-mcs-admpwd","ms-mcs-admpwdexpirationtime"))
+        $ObjSearcher.PropertiesToLoad.AddRange(("cn","dnshostname","ms-mcs-admpwd","ms-mcs-admpwdexpirationtime","useraccountcontrol"))
         $ObjSearcher.SearchScope = "Subtree"
         Try
         {
@@ -9781,7 +10195,7 @@ Function Get-ADRLAPSCheck
         }
         Catch
         {
-            Write-Warning "[Get-ADRLAPSCheck] Error while enumerating LAPS Objects"
+            Write-Warning "[Get-ADRLAPS] Error while enumerating LAPS Objects"
             Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
             Return $null
         }
@@ -9789,18 +10203,9 @@ Function Get-ADRLAPSCheck
 
         If ($ADComputers)
         {
-            $LAPSCheck = [ADRecon.LDAPClass]::LAPSCheck($ADComputers)
-            If (-Not $LAPSCheck)
-            {
-                Write-Warning "[*] LAPS is not implemented."
-                Return $null
-            }
-            Else
-            {
-                Write-Verbose "[*] Total LAPS Objects: $([ADRecon.LDAPClass]::ObjectCount($ADComputers))"
-                $LAPSObj = [ADRecon.LDAPClass]::LAPSParser($ADComputers, $Threads)
-                Remove-Variable ADComputers
-            }
+            Write-Verbose "[*] Total LAPS Objects: $([ADRecon.LDAPClass]::ObjectCount($ADComputers))"
+            $LAPSObj = [ADRecon.LDAPClass]::LAPSParser($ADComputers, $Threads)
+            Remove-Variable ADComputers
         }
     }
 
@@ -10418,10 +10823,13 @@ Function Get-ADRACL
         [bool] $ResolveSID = $false,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
-        [int] $Threads = 10
+        [int] $Threads = 10,
+
+        [Parameter(Mandatory = $false)]
+        [string] $DnBase = $($ADDomain.DistinguishedName)
     )
 
     If ($Method -eq 'ADWS')
@@ -10494,7 +10902,7 @@ Function Get-ADRACL
         Try
         {
             Write-Verbose "[*] Enumerating Domain, OU, GPO, User, Computer and Group Objects"
-            $Objs += Get-ADObject -LDAPFilter '(|(objectClass=domain)(objectCategory=organizationalunit)(objectCategory=groupPolicyContainer)(samAccountType=805306368)(samAccountType=805306369)(samaccounttype=268435456)(samaccounttype=268435457)(samaccounttype=536870912)(samaccounttype=536870913))' -Properties DisplayName, DistinguishedName, Name, ntsecuritydescriptor, ObjectClass, objectsid
+            $Objs += Get-ADObject -SearchBase $DnBase -LDAPFilter '(|(objectClass=domain)(objectCategory=organizationalunit)(objectCategory=groupPolicyContainer)(samAccountType=805306368)(samAccountType=805306369)(samaccounttype=268435456)(samaccounttype=268435457)(samaccounttype=536870912)(samaccounttype=536870913))' -Properties DisplayName, DistinguishedName, Name, ntsecuritydescriptor, ObjectClass, objectsid
         }
         Catch
         {
@@ -10643,6 +11051,7 @@ Function Get-ADRACL
         Write-Verbose "[*] Enumerating Domain, OU, GPO, User, Computer and Group Objects"
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomain
         $ObjSearcher.PageSize = $PageSize
+        $objSearcherPath.SearchRoot = "LDAP://$DnBase"
         $ObjSearcher.Filter = "(|(objectClass=domain)(objectCategory=organizationalunit)(objectCategory=groupPolicyContainer)(samAccountType=805306368)(samAccountType=805306369)(samaccounttype=268435456)(samaccounttype=268435457)(samaccounttype=536870912)(samaccounttype=536870913))"
         # https://msdn.microsoft.com/en-us/library/system.directoryservices.securitymasks(v=vs.110).aspx
         $ObjSearcher.SecurityMasks = [System.DirectoryServices.SecurityMasks]::Dacl -bor [System.DirectoryServices.SecurityMasks]::Group -bor [System.DirectoryServices.SecurityMasks]::Owner -bor [System.DirectoryServices.SecurityMasks]::Sacl
@@ -10747,7 +11156,15 @@ Function Get-ADRGPOReport
             # Suppress verbose output on module import
             $SaveVerbosePreference = $script:VerbosePreference
             $script:VerbosePreference = 'SilentlyContinue'
-            Import-Module GroupPolicy -WarningAction Stop -ErrorAction Stop | Out-Null
+
+            If ($PSVersionTable.PSEdition -eq "Core")
+            {
+                Import-Module GroupPolicy -SkipEditionCheck -WarningAction Stop -ErrorAction Stop | Out-Null
+            }
+            Else
+            {
+                Import-Module GroupPolicy -WarningAction Stop -ErrorAction Stop | Out-Null
+            }
             If ($SaveVerbosePreference)
             {
                 $script:VerbosePreference = $SaveVerbosePreference
@@ -10872,7 +11289,7 @@ The TokenHandle result from LogonUser.
 
     If (([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') -and (-not $PSBoundParameters['Quiet']))
     {
-        Write-Warning "[Get-ADRUserImpersonation] powershell.exe is not currently in a single-threaded apartment state, token impersonation may not work."
+        Write-Warning "[Get-ADRUserImpersonation] powershell.exe process is not currently in a single-threaded apartment state, token impersonation may not work."
     }
 
     If ($PSBoundParameters['TokenHandle'])
@@ -11248,7 +11665,7 @@ Function Get-ADRDomainAccountsusedforServiceLogon
         [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
 
         [Parameter(Mandatory = $true)]
-        [int] $PageSize,
+        [int] $PageSize = 200,
 
         [Parameter(Mandatory = $false)]
         [int] $Threads = 10
@@ -11691,7 +12108,7 @@ Function Invoke-ADRecon
     [int]
     Timespan for Dormant accounts. Default 90 days.
 
-.PARAMTER PassMaxAge
+.PARAMETER PassMaxAge
     [int]
     Maximum machine account password age. Default 30 days
 
@@ -11703,9 +12120,17 @@ Function Invoke-ADRecon
     [int]
     The number of threads to use during processing of objects. Default 10.
 
+.PARAMETER OnlyEnabled
+    [bool]
+    Only collect details for enabled objects.
+
 .PARAMETER UseAltCreds
     [bool]
     Whether to use provided credentials or not.
+
+.PARAMETER Logo
+    [string]
+    Which Logo to use in the excel file? ADRecon (default), CyberCX, Payatu.
 
 .OUTPUTS
     STDOUT, CSV, XML, JSON, HTML and/or Excel file is created in the folder specified with the information.
@@ -11718,8 +12143,8 @@ Function Invoke-ADRecon
         [ValidateSet('ADWS', 'LDAP')]
         [string] $Method = 'ADWS',
 
-        [Parameter(Mandatory = $true)]
-        [array] $Collect,
+        [Parameter(Mandatory = $false)]
+        [array] $Collect = 'Default',
 
         [Parameter(Mandatory = $false)]
         [string] $DomainController = '',
@@ -11727,8 +12152,8 @@ Function Invoke-ADRecon
         [Parameter(Mandatory = $false)]
         [Management.Automation.PSCredential] $Credential = [Management.Automation.PSCredential]::Empty,
 
-        [Parameter(Mandatory = $true)]
-        [array] $OutputType,
+        [Parameter(Mandatory = $false)]
+        [array] $OutputType = 'Default',
 
         [Parameter(Mandatory = $false)]
         [string] $ADROutputDir,
@@ -11746,20 +12171,36 @@ Function Invoke-ADRecon
         [int] $Threads = 10,
 
         [Parameter(Mandatory = $false)]
-        [bool] $UseAltCreds = $false
+        [bool] $OnlyEnabled = $false,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $UseAltCreds = $false,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('ADRecon', 'CyberCX', 'Payatu')]
+        [string] $Logo = "ADRecon"
     )
 
-    [string] $ADReconVersion = "v1.24"
+    If ($PSVersionTable.PSEdition -eq "Core")
+    {
+        If ($PSVersionTable.Platform -ne "Win32NT")
+        {
+            Write-Warning "[Invoke-ADRecon] Currently not supported ... Exiting"
+            Return $null
+        }
+    }
+
+    [string] $ADReconVersion = "v1.27"
     Write-Output "[*] ADRecon $ADReconVersion by Prashant Mahajan (@prashant3535)"
 
     If ($GenExcel)
     {
-        If (!(Test-Path $GenExcel))
+        If (-Not (Test-Path $GenExcel))
         {
             Write-Output "[Invoke-ADRecon] Invalid Path ... Exiting"
             Return $null
         }
-        Export-ADRExcel -ExcelPath $GenExcel
+        Export-ADRExcel -ExcelPath $GenExcel -Logo $Logo
         Return $null
     }
 
@@ -11870,54 +12311,47 @@ Function Invoke-ADRecon
     {
         $Advapi32 = Add-Type -MemberDefinition $Advapi32Def -Name "Advapi32" -Namespace ADRecon -PassThru
         $Kernel32 = Add-Type -MemberDefinition $Kernel32Def -Name "Kernel32" -Namespace ADRecon -PassThru
-        #Add-Type -TypeDefinition $PingCastleSMBScannerSource
         $CLR = ([System.Reflection.Assembly]::GetExecutingAssembly().ImageRuntimeVersion)[1]
         If ($Method -eq 'ADWS')
         {
-            <#
             If ($PSVersionTable.PSEdition -eq "Core")
             {
+                # Beginning in PowerShell 6, ReferencedAssemblies doesn't include the default .NET assemblies. You must include a specific reference to them in the value passed to this parameter.
+                # https://docs.microsoft.com/en-gb/powershell/module/Microsoft.PowerShell.Utility/Add-Type?view=powershell-7
+
+                <#
+                TODO: Instead of all assemblies, identify which ones are required.
+                $refFolder = Split-Path ([PSObject].Assembly.Location)
+                $refAssemblies = Get-ChildItem -Path $refFolder -Filter "*.dll" | Select-Object -Expand FullName
+
+                Add-Type -TypeDefinition $($ADWSSource + $PingCastleSMBScannerSource) -ReferencedAssemblies $($refAssemblies + ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location + ([System.Reflection.Assembly]::LoadWithPartialName("System.Management.Automation")).Location + ([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location)
+
+                Remove-Variable refFolder
+                Remove-Variable refAssemblies
+                #>
+
                 $refFolder = Join-Path -Path (Split-Path([PSObject].Assembly.Location)) -ChildPath "ref"
-                Add-Type -TypeDefinition $($ADWSSource+$PingCastleSMBScannerSource) -ReferencedAssemblies ([System.String[]]@(
-                    ([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location
-                    (Join-Path -Path $refFolder -ChildPath "System.Linq.dll")
-                    #([System.Reflection.Assembly]::LoadWithPartialName("System.Linq")).Location
-                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Management.Automation")).Location
+                Add-Type -TypeDefinition $($ADWSSource + $PingCastleSMBScannerSource) -ReferencedAssemblies ([System.String[]]@(
                     (Join-Path -Path $refFolder -ChildPath "System.Collections.dll")
                     (Join-Path -Path $refFolder -ChildPath "System.Collections.NonGeneric.dll")
-                    (Join-Path -Path $refFolder -ChildPath "mscorlib.dll")
-                    (Join-Path -Path $refFolder -ChildPath "netstandard.dll")
-                    (Join-Path -Path $refFolder -ChildPath "System.Runtime.Extensions.dll")
-                    #([System.Reflection.Assembly]::LoadWithPartialName("System.Collections")).Location
-                    #([System.Reflection.Assembly]::LoadWithPartialName("System.Collections.NonGeneric")).Location
-                    #([System.Reflection.Assembly]::LoadWithPartialName("mscorlib")).Location
-                    #([System.Reflection.Assembly]::LoadWithPartialName("netstandard")).Location
-                    #([System.Reflection.Assembly]::LoadWithPartialName("System.Runtime.Extensions")).Location
                     (Join-Path -Path $refFolder -ChildPath "System.Threading.dll")
                     (Join-Path -Path $refFolder -ChildPath "System.Threading.Thread.dll")
-                    (Join-Path -Path $refFolder -ChildPath "System.Console.dll")
                     (Join-Path -Path $refFolder -ChildPath "System.Diagnostics.TraceSource.dll")
-                    ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location
-                    (Join-Path -Path $refFolder -ChildPath "System.Net.Primitives.dll")
+                    ([System.Reflection.Assembly]::LoadWithPartialName("mscorlib")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Linq")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Private.Xml")).Location
                     ([System.Reflection.Assembly]::LoadWithPartialName("System.Security.AccessControl")).Location
-                    ([System.Reflection.Assembly]::LoadWithPartialName("System.IO.FileSystem.AccessControl")).Location
-                    #(Join-Path -Path $refFolder -ChildPath "System.Security.dll")
-                    #(Join-Path -Path $refFolder -ChildPath "System.Security.Principal.dll")
-                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Security.Principal")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Net.Sockets")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Net.Primitives")).Location
                     ([System.Reflection.Assembly]::LoadWithPartialName("System.Security.Principal.Windows")).Location
-                    (Join-Path -Path $refFolder -ChildPath "System.Xml.dll")
-                    (Join-Path -Path $refFolder -ChildPath "System.Xml.XmlDocument.dll")
-                    (Join-Path -Path $refFolder -ChildPath "System.Xml.ReaderWriter.dll")
-                    #([System.Reflection.Assembly]::LoadWithPartialName("System.XML")).Location
-                    (Join-Path -Path $refFolder -ChildPath "System.Net.Sockets.dll")
-                    #([System.Reflection.Assembly]::LoadWithPartialName("System.Runtime")).Location
-                    #(Join-Path -Path $refFolder -ChildPath "System.Runtime.dll")
-                    #(Join-Path -Path $refFolder -ChildPath "System.Runtime.InteropServices.RuntimeInformation.dll")
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.IO.FileSystem.AccessControl")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Console")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.ActiveDirectory.Management")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Management.Automation")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location
                 ))
                 Remove-Variable refFolder
-                # Todo Error: you may need to supply runtime policy
             }
-            #>
             If ($CLR -eq "4")
             {
                 Add-Type -TypeDefinition $($ADWSSource+$PingCastleSMBScannerSource) -ReferencedAssemblies ([System.String[]]@(
@@ -11938,6 +12372,43 @@ Function Invoke-ADRecon
 
         If ($Method -eq 'LDAP')
         {
+            If ($PSVersionTable.PSEdition -eq "Core")
+            {
+                # Beginning in PowerShell 6, ReferencedAssemblies doesn't include the default .NET assemblies. You must include a specific reference to them in the value passed to this parameter.
+                # https://docs.microsoft.com/en-gb/powershell/module/Microsoft.PowerShell.Utility/Add-Type?view=powershell-7
+
+                <#
+                # TODO: Instead of all assemblies, identify which ones are required.
+
+                $refFolder = Join-Path ( Split-Path ([PSObject].Assembly.Location) ) "ref"
+                $refAssemblies = Get-ChildItem -Path $refFolder -Filter "*.dll" | Select-Object -Expand FullName
+                Add-Type -TypeDefinition $($LDAPSource + $PingCastleSMBScannerSource) -ReferencedAssemblies $( $refAssemblies + ([System.Reflection.Assembly]::LoadWithPartialName("System.Management.Automation")).Location + ([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location )
+
+                Remove-Variable refFolder
+                Remove-Variable refAssemblies
+                #>
+
+                $refFolder = Join-Path -Path (Split-Path([PSObject].Assembly.Location)) -ChildPath "ref"
+                Add-Type -TypeDefinition $($LDAPSource + $PingCastleSMBScannerSource) -ReferencedAssemblies ([System.String[]]@(
+                    (Join-Path -Path $refFolder -ChildPath "System.Collections.dll")
+                    (Join-Path -Path $refFolder -ChildPath "System.Collections.NonGeneric.dll")
+                    (Join-Path -Path $refFolder -ChildPath "System.Threading.dll")
+                    (Join-Path -Path $refFolder -ChildPath "System.Threading.Thread.dll")
+                    (Join-Path -Path $refFolder -ChildPath "System.Diagnostics.TraceSource.dll")
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Linq")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Private.Xml")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Security.AccessControl")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Net.Sockets")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Net.Primitives")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Security.Principal.Windows")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.IO.FileSystem.AccessControl")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Net.NameResolution")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Console")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.Management.Automation")).Location
+                    ([System.Reflection.Assembly]::LoadWithPartialName("System.DirectoryServices")).Location
+                ))
+                Remove-Variable refFolder
+            }
             If ($CLR -eq "4")
             {
                 Add-Type -TypeDefinition $($LDAPSource+$PingCastleSMBScannerSource) -ReferencedAssemblies ([System.String[]]@(
@@ -12008,7 +12479,18 @@ Function Invoke-ADRecon
         }
     }
 
-    Write-Output "[*] Running on $RanonComputer"
+    If ($Credential -ne [Management.Automation.PSCredential]::Empty)
+    {
+        $Username = $($Credential.UserName)
+    }
+    Else
+    {
+        $Username = $([Environment]::UserName)
+    }
+
+    Write-Output "[*] Running on $RanonComputer as $Username"
+
+    Remove-Variable Username
 
     Switch ($Collect)
     {
@@ -12257,6 +12739,7 @@ Function Invoke-ADRecon
         }
         Set-Location ADR:
         Write-Debug "ADR PSDrive Created"
+        #return $null
     }
 
     If ($Method -eq 'LDAP')
@@ -12306,6 +12789,7 @@ Function Invoke-ADRecon
             }
         }
         Write-Debug "LDAP Bing Successful"
+        #return $null
     }
 
     Write-Output "[*] Commencing - $date"
@@ -12424,7 +12908,7 @@ Function Invoke-ADRecon
         {
             Write-Output "[-] Users and SPNs - May take some time"
         }
-        Get-ADRUser -Method $Method -date $date -objDomain $objDomain -DormantTimeSpan $DormantTimeSpan -PageSize $PageSize -Threads $Threads -ADRUsers $ADRUsers -ADRUserSPNs $ADRUserSPNs
+        Get-ADRUser -Method $Method -date $date -objDomain $objDomain -DormantTimeSpan $DormantTimeSpan -PageSize $PageSize -Threads $Threads -ADRUsers $ADRUsers -ADRUserSPNs $ADRUserSPNs -OnlyEnabled $OnlyEnabled
         Remove-Variable ADRUsers
         Remove-Variable ADRUserSPNs
     }
@@ -12536,12 +13020,12 @@ Function Invoke-ADRecon
     }
     If ($ADRComputers -or $ADRComputerSPNs)
     {
-        If (!$ADRComputerSPNs)
+        If (-Not $ADRComputerSPNs)
         {
             Write-Output "[-] Computers - May take some time"
             $ADRComputerSPNs = $false
         }
-        ElseIf (!$ADRComputers)
+        ElseIf (-Not $ADRComputers)
         {
             Write-Output "[-] Computer SPNs"
             $ADRComputers = $false
@@ -12550,14 +13034,27 @@ Function Invoke-ADRecon
         {
             Write-Output "[-] Computers and SPNs - May take some time"
         }
-        Get-ADRComputer -Method $Method -date $date -objDomain $objDomain -DormantTimeSpan $DormantTimeSpan -PassMaxAge $PassMaxAge -PageSize $PageSize -Threads $Threads -ADRComputers $ADRComputers -ADRComputerSPNs $ADRComputerSPNs
+
+        Get-ADRComputer -Method $Method -date $date -objDomain $objDomain -DormantTimeSpan $DormantTimeSpan -PassMaxAge $PassMaxAge -PageSize $PageSize -Threads $Threads -ADRComputers $ADRComputers -ADRComputerSPNs $ADRComputerSPNs -OnlyEnabled $OnlyEnabled
+
         Remove-Variable ADRComputers
         Remove-Variable ADRComputerSPNs
     }
     If ($ADRLAPS)
     {
-        Write-Output "[-] LAPS - Needs Privileged Account"
-        $ADRObject = Get-ADRLAPSCheck -Method $Method -objDomain $objDomain -PageSize $PageSize -Threads $Threads
+        Write-Output "[-] LAPS - Needs Privileged Account to get the passwords"
+
+        $ADRLAPSCheck = Get-ADRLAPSCheck -Method $Method -objDomainRootDSE $objDomainRootDSE -DomainController $DomainController -Credential $Credential
+
+        If ($ADRLAPSCheck)
+        {
+            $ADRObject = Get-ADRLAPS -Method $Method -objDomain $objDomain -PageSize $PageSize -Threads $Threads
+        }
+        Else
+        {
+            Write-Warning "[*] LAPS is not implemented."
+        }
+
         If ($ADRObject)
         {
             Export-ADR -ADRObj $ADRObject -ADROutputDir $ADROutputDir -OutputType $OutputType -ADRModuleName "LAPS"
@@ -12641,7 +13138,7 @@ Function Invoke-ADRecon
         }
         'EXCEL'
         {
-            Export-ADRExcel $ADROutputDir
+            Export-ADRExcel -ExcelPath $ADROutputDir -Logo $Logo
         }
     }
     Remove-Variable TotalTime
@@ -12674,7 +13171,7 @@ If ($Log)
     Start-Transcript -Path "$(Get-Location)\ADRecon-Console-Log.txt"
 }
 
-Invoke-ADRecon -GenExcel $GenExcel -Method $Method -Collect $Collect -DomainController $DomainController -Credential $Credential -OutputType $OutputType -ADROutputDir $OutputDir -DormantTimeSpan $DormantTimeSpan -PassMaxAge $PassMaxAge -PageSize $PageSize -Threads $Threads
+Invoke-ADRecon -GenExcel $GenExcel -Method $Method -Collect $Collect -DomainController $DomainController -Credential $Credential -OutputType $OutputType -ADROutputDir $OutputDir -DormantTimeSpan $DormantTimeSpan -PassMaxAge $PassMaxAge -PageSize $PageSize -Threads $Threads -OnlyEnabled $OnlyEnabled -Logo $Logo
 
 If ($Log)
 {
