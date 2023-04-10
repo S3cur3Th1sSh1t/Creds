@@ -65,6 +65,8 @@ proc RtlWalkHeap*(hHeap: HANDLE, LPPROCESS_HEAP_ENTRY : PRTL_HEAP_WALK_ENTRY): B
 proc SystemFunction032*(data: LPVOID, key : LPVOID): NTSTATUS 
   {.discardable, stdcall, dynlib: "advapi32", importc: "SystemFunction032".}
 
+# Somehow the encryption even if non busy heap segments breaks the executable at some point, I guess somehow due to the Nim GC, but I'm not sure about this yet.
+# Had not enough time yet to dig deeper
 proc encryptHeap*(Key: USTRING): VOID =
   var S32Key: USTRING = Key
   var S32Data: USTRING
