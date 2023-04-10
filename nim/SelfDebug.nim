@@ -1,6 +1,7 @@
+# Thanks and Credit to Mr-Un1k0d3r for the idea - https://github.com/Mr-Un1k0d3r/RedTeamCCode/blob/main/byebyedll.c
+
 import winim
 import os
-
 
 
 # Create a Thread of the current Process itself as CreateProcess(argv[0], args, NULL, NULL, TRUE, DEBUG_ONLY_THIS_PROCESS | EXTENDED_STARTUPINFO_PRESENT, NULL, NULL, &si, &pi); so that we can receive debug events
